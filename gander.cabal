@@ -1,21 +1,20 @@
 name:                gander
 version:             0.1.0.0
-synopsis:            Deduplicate git-annex repositories
--- description:         
+synopsis:            The "Git ANnex DEdupeR"
+description:         Deduplicates large numbers of files using git-annex
 license:             LGPL-3
-license-file:        LICENSE
+-- license-file:        LICENSE
 author:              Jeff Johnson
-maintainer:          jefdaj@protonmail.ch
+maintainer:          jefdaj@gmail.com
 -- copyright:           
 -- category:            
 build-type:          Simple
-extra-source-files:  ChangeLog.md
+-- extra-source-files:  ChangeLog.md
 cabal-version:       >=1.10
+data-files:          usage.txt
 
 executable gander
   main-is:             gander.hs
-  -- other-modules:       
-  -- other-extensions:    
-  build-depends:       base >=4.9 && <4.10, filesystem-tree
-  -- hs-source-dirs:      
+  build-depends:       base, docopt, directory-tree
   default-language:    Haskell2010
+  other-modules:       Paths_gander

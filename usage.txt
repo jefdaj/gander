@@ -1,0 +1,40 @@
+The "Git ANnex DedupER" deduplicates files and folders in a git-annex repo.
+
+Usage:
+  gander (-h | --help)
+  gander [-vc] -a ANNEX [-d DEDUP] (add | verify) ORIGINALS [-f FILES] [-l LINKS]
+  gander [-vc] -a ANNEX [-d DEDUP] fsck [-l LINKS]
+  gander [-vc] -a ANNEX gc
+
+Options:
+  -h, --help               Show this help text
+  -v, --verbose            Show each step as it runs
+  -c, --confirm            Prompt to confirm each step before it runs. Implies verbose.
+  -a, --annex-dir ANNEX    Top level git annex directory for deduping.
+  -d, --dedup-dir DEDUP    Dedup/destination directory relative to the annex. Defaults to
+                           top-level. The source directory will be copied here for deduping.
+                           Uses rsync notation, so `dir/` is different from `dir`.
+  -f, --orig-files FILES   Load a previously-generated list of files in ORIGINALS.
+                           No attempt is made to verify this list, so be sure you
+                           haven't changed the ORIGINALS dir since generating it!
+                           If the list doesn't exist yet, it will be created.
+  -l, --dedup-links LINKS  Load a previously-generated list of the links in DEDUP.
+                           No attempt is made to verify this list, so be sure you
+                           haven't changed the DEDUP dir since generating it!
+                           If the list doesn't exist yet, it will be created.
+  ORIGINALS                The directory to act on (copy + dedup or verify).
+
+Commands:
+  add     Copies the SOURCE directory into ANNEX/DEDUP and `git annex add`s it.
+  verify  Checks file names + content to make sure they have been added faithfully.
+  fsck    Runs `git annex fsck` on the DEDUP dir to make sure files match their hashes.
+  gc      Runs `git gc --aggressive` in the ANNEX to speed up future git operations.
+
+Examples:
+
+  gander -v -a /media/jeff/annex -d unsorted/mybook add "/media/jeff/WD My Book/"
+
+  Copy the contents of "/media/jeff/WD My Book" to
+  /media/jeff/annex/unsorted/mybook and annex it, deduping files in the process.
+  Includes hidden files. Note that without the trailing slash the "WD My Book" folder
+  would end up *inside* mybook.
