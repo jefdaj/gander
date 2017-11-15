@@ -1,5 +1,7 @@
 { nixpkgs ? import <nixpkgs> {}, compiler ? "default" }:
 
+# TODO include git-annex as a dep? (use machinery from shortcut)
+
 let
   inherit (nixpkgs) pkgs;
   f = import ./gander.nix;
