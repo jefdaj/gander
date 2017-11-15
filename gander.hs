@@ -77,7 +77,7 @@ scan path = readDirectoryWith hashFile path >>= return . hashTree
 patterns :: Docopt
 patterns = [docoptFile|usage.txt|]
 
-parseConfig :: FilePath -> IO Config
+parseConfige:: FilePath -> IO Config
 parseConfig path = undefined
 
 runCommand :: Config -> IO ()
