@@ -3,6 +3,7 @@ module Main where
 -- TODO break into modules? Main, Types, Config, Scan, Dedup
 -- TODO also expose a library so you can test stuff in the REPL!
 --      (or would loading Main be enough?)
+-- TODO is git-annex an actual dep, or just recommended to go with it?
 
 import System.Console.Docopt hiding (command)
 import System.Directory.Tree
@@ -27,7 +28,8 @@ data Config = Config
  - TODO would storing it in a more efficient way help?
  - TODO would adding timestamps or number of files help?
  -}
-type Hash = String
+newtype Hash = Hash String
+  deriving (Eq, Read, Show)
 
 {- A tree of file names matching (a subdirectory of) the annex,
  - where each dir and file node contains a hash of its contents.
@@ -41,11 +43,13 @@ data HashTree = AnchoredDirTree Hash
  - Could be rewritten to contain links to HashTrees if that helps.
  -}
 data PathsByHash = Map Hash [FilePath]
+  deriving (Eq, Read, Show)
 
 ----------------
 -- scan files --
 ----------------
 
+-- TODO pass other args to in a case statement
 scan :: Config -> IO HashTree
 scan cfg = undefined
 
@@ -53,8 +57,8 @@ scan cfg = undefined
 -- main --
 ----------
 
--- patterns :: Docopt
--- patterns = [docoptFile|USAGE|]
+-- usage :: Docopt
+-- usage = [docoptFile|usage.txt|]
 
 parseConfig :: FilePath -> IO Config
 parseConfig path = undefined
