@@ -1,4 +1,4 @@
-{ mkDerivation, base, docopt, directory-tree, stdenv
+{ mkDerivation, base, docopt, directory-tree, stdenv, filepath
 , cryptohash, bytestring }:
 mkDerivation {
   pname = "gander";
@@ -12,6 +12,7 @@ mkDerivation {
     directory-tree
     cryptohash
     bytestring
+    filepath
   ];
   description = "The \"Git ANnex DEdupeR\"";
   license = stdenv.lib.licenses.lgpl3;
