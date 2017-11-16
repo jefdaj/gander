@@ -19,6 +19,7 @@ executable gander
                        bytestring,
                        cryptohash,
                        docopt,
-                       directory-tree
+                       directory-tree,
+                       filepath
   default-language:    Haskell2010
   other-modules:       Paths_gander

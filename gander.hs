@@ -16,6 +16,7 @@ import System.Console.Docopt      (docoptFile, parseArgsOrExit,
                                    getArgOrExitWith, isPresent, longOption,
                                    shortOption, command, argument)
 import System.Environment         (getArgs)
+import System.FilePath            ((</>))
 
 -----------
 -- types --
@@ -56,6 +57,19 @@ data HashTree
  -}
 data PathsByHash = Map Hash [FilePath]
   deriving Show
+
+---------------------------
+-- read/write hash trees --
+---------------------------
+
+serialize :: HashTree -> String
+serialize = unlines . serialize' ""
+
+serialize' :: FilePath -> HashTree -> [String]
+serialize' dir (File n (Hash h)   ) = [unwords [show h, dir </> n]]
+serialize' dir (Dir  n (Hash h) cs)
+  = map (dir </>) (concatMap (serialize' $ dir </> n) cs) -- recurse on contents
+  ++ [unwords [show h, n]] -- finish with hash of entire dir
 
 ----------
 -- scan --
