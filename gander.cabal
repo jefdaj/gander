@@ -15,6 +15,10 @@ data-files:          usage.txt
 
 executable gander
   main-is:             gander.hs
-  build-depends:       base, docopt, filepath, directory-tree
+  build-depends:       base,
+                       bytestring,
+                       cryptohash,
+                       docopt,
+                       directory-tree
   default-language:    Haskell2010
   other-modules:       Paths_gander
