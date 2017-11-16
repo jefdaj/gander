@@ -3,18 +3,19 @@
 module Main where
 
 -- TODO break into modules? Main, Types, Config, Scan, Dedup
--- TODO also expose a library so you can test stuff in the REPL!
---      (or would loading Main be enough?)
 -- TODO is git-annex an actual dep, or just recommended to go with it?
--- TODO shit, need to add a different data structure to put hashes in the dirs huh?
---      guess the easy/safe way is to start with one of these and transform it?
---      can do that without any additional IO so not so bad I guess
---      Oh, can stop on failures that way too
 
-import System.Console.Docopt hiding (command)
-import System.Directory.Tree
-import System.Environment (getArgs)
-import System.FilePath ((</>))
+import qualified Data.ByteString.Lazy  as LB
+import qualified System.Directory.Tree as DT
+
+import Crypto.Hash                (Digest, SHA256, hashlazy)
+import Data.ByteString.Lazy.Char8 (pack)
+import Data.Either                (partitionEithers)
+import Data.List                  (sort)
+import System.Console.Docopt      (docoptFile, parseArgsOrExit,
+                                   getArgOrExitWith, isPresent, longOption,
+                                   shortOption, command, argument)
+import System.Environment         (getArgs)
 
 -----------
 -- types --
@@ -23,74 +24,91 @@ import System.FilePath ((</>))
 {- Parsed command line args
  - TODO add other stuff from usage.txt, or revise that
  -}
-data Config = Config
-  { command  :: String
-  , annexDir :: FilePath
-  , dedupDir :: FilePath
-  , verbose  :: Bool
-  , confirm  :: Bool
+data Options = Options
+  { verbose :: Bool
+  , confirm :: Bool
+  , force   :: Bool
   }
+  deriving (Read, Show)
 
 {- Checksum (sha256sum?) of a file or folder.
  - For files, should match the corresponding git-annex key.
  - TODO would storing it in a more efficient way help?
  - TODO would adding timestamps or number of files help?
  -}
-newtype Hash = Hash String
-  deriving (Eq, Read, Show)
+newtype Hash = Hash (Digest SHA256)
+  deriving (Eq, Show)
 
 {- A tree of file names matching (a subdirectory of) the annex,
  - where each dir and file node contains a hash of its contents.
  - TODO read and write files
  - TODO would also storing the number of files in each dir help, or timestamps?
  -}
--- data HashTree = AnchoredDirTree Hash
+-- data HashTree = DT.AnchoredDirTree Hash
 --   deriving (Eq, Read, Show)
 data HashTree
-  = File { name :: FileName, hash :: Hash }
-  | Dir  { name :: FileName, hash :: Hash, contents :: [HashTree] }
-  deriving (Read, Show) -- TODO write Eq instance
+  = File { name :: FilePath, hash :: Hash }
+  | Dir  { name :: FilePath, hash :: Hash, contents :: [HashTree] }
+  deriving (Show) -- TODO write Eq instance
 
 {- A map from file/dir hash to a list of duplicate file paths.
  - Could be rewritten to contain links to HashTrees if that helps.
  -}
 data PathsByHash = Map Hash [FilePath]
-  deriving (Eq, Read, Show)
+  deriving Show
 
-----------------
--- scan files --
-----------------
+----------
+-- scan --
+----------
 
+hashBytes :: LB.ByteString -> Digest SHA256
+hashBytes = hashlazy
+
+-- see https://stackoverflow.com/a/30537010
+-- TODO this should match git-annex! maybe use its code directly?
 hashFile :: FilePath -> IO Hash
-hashFile path = undefined
+hashFile path = do
+  sha256sum <- fmap hashBytes $ LB.readFile path
+  return $ Hash sha256sum
 
-hashTree :: AnchoredDirTree Hash -> HashTree
-hashTree = undefined
+-- TODO remove the sort? not needed if tree order is reliable i suppose
+hashHashes :: [Hash] -> Hash
+hashHashes hs = Hash $ hashBytes $ pack txt
+  where
+    txt = unlines $ sort $ map (\(Hash h) -> show h) hs
 
-scan :: FilePath -> IO HashTree
-scan path = readDirectoryWith hashFile path >>= return . hashTree
+hashTree :: DT.DirTree Hash -> Either String HashTree
+hashTree (DT.Failed n e ) = Left  $ n ++ " " ++ show e
+hashTree (DT.File   n f ) = Right $ File n f
+hashTree (DT.Dir    n ts) = case partitionEithers (map hashTree ts) of
+  ([], trees) -> Right $ Dir n (hashHashes $ map hash trees) trees
+  (errors, _) -> Left  $ unlines errors
+
+-- TODO rename hashDir?
+scan :: Options -> FilePath -> IO (DT.DirTree Hash)
+scan opts path = do
+  (_ DT.:/ tree) <- DT.readDirectoryWithL hashFile path
+  return tree
 
 ----------
 -- main --
 ----------
 
-patterns :: Docopt
-patterns = [docoptFile|usage.txt|]
-
-parseConfige:: FilePath -> IO Config
-parseConfig path = undefined
-
-runCommand :: Config -> IO ()
-runCommand cfg = case command cfg of
-  "scan"   -> scan ((annexDir cfg) </> (dedupDir cfg)) >> return ()
-  "add"    -> undefined
-  "verify" -> undefined
-  "fsck"   -> undefined
-  "gc"     -> undefined
-  _        -> putStrLn $ "no such command: " ++ command cfg
-
 main :: IO ()
 main = do
-  args <- parseArgsOrExit patterns =<< getArgs
-  print args
-  putStrLn "Hello, Haskell!"
+  -- parse usage patterns, then use them to parse cli args
+  let ptns = [docoptFile|usage.txt|]
+  args <- parseArgsOrExit ptns =<< getArgs
+  let cmd  name = isPresent args $ command name
+      path name = getArgOrExitWith ptns args $ argument name
+      flag s l  = isPresent args (shortOption s)
+               || isPresent args (longOption  l)
+      opts = Options
+        { verbose = flag 'v' "verbose"
+        , confirm = flag 'c' "confirm"
+        , force   = flag 'f' "force"
+        }
+  -- dispatch on command
+  if cmd "scan"
+    then path "path" >>= scan opts >>= putStrLn . show
+    else print args >> print opts
