@@ -44,4 +44,10 @@ head dupes.txt
 # ./result/share/x86_64-linux-ghc-8.0.2/gander-0.1.0.0
 ```
 
+TODO
+----
+
+Think through the interface a bit more. Should it be like [hashdeep][2]?
+
 [1]: https://git-annex.branchable.com
+[2]: https://github.com/jessek/hashdeep
