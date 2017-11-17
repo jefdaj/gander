@@ -2,9 +2,9 @@ The "Git ANnex DedupER" deduplicates files and folders using git-annex.
 
 Usage:
   gander scan   [-vc]     <path>
+  gander dupes  [-vc]     <scan>
   gander verify [-vc]     <scan> <paths>...
   gander diff   [-vc]     <scan> [<path>] <scan2> [<path2>]
-  gander dupes  [-vc]     <scan> <path>
   gander update [-v(c|f)] <scan> <scans>...
   gander add    [-v(c|f)] <dest> <paths>...
   gander remove [-v(c|f)] <scan> <path>

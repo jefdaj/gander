@@ -10,11 +10,14 @@ import qualified Data.Map              as Map
 import qualified Data.ByteString.Lazy  as LB
 import qualified System.Directory.Tree as DT
 
+import Data.Ord                   (comparing)
+import Control.Arrow              ((&&&))
 import Data.Map                   (Map)
+import Data.Foldable              (toList)
 import Crypto.Hash                (Digest, SHA256, hashlazy)
 import Data.ByteString.Lazy.Char8 (pack)
 import Data.Either                (partitionEithers)
-import Data.List                  (sort, partition)
+import Data.List                  (sort, sortBy, partition)
 import System.Console.Docopt      (docoptFile, parseArgsOrExit,
                                    getArgOrExitWith, isPresent, longOption,
                                    shortOption, command, argument)
@@ -155,6 +158,33 @@ pathsByHash' dir (File n h   ) = [(h, [dir </> n])]
 pathsByHash' dir (Dir  n h cs) = [(h, [dir </> n])]
                                  ++ concatMap (pathsByHash' $ dir </> n) cs
 
+---------------
+-- list dups --
+---------------
+
+-- TODO warning: so far it lists anything annexed as a dup
+
+-- see https://mail.haskell.org/pipermail/beginners/2009-June/001867.html
+sortDescLength :: [[FilePath]] -> [[FilePath]]
+sortDescLength = map snd . sortBy (comparing $ negate . fst) . map (length &&& id)
+
+dupesByNCopies :: PathsByHash -> [[FilePath]]
+dupesByNCopies = sortDescLength . filter (\x -> length x > 1) . toList
+
+printDupes :: [[FilePath]] -> IO ()
+printDupes groups = mapM_ printGroup groups
+  where
+    printGroup paths = mapM_ putStrLn $ paths ++ [""]
+
+dupes :: Options -> FilePath -> IO [[FilePath]]
+dupes opts path = do
+  -- tree <- scan opts path
+  tree <- fmap deserialize $ readFile path
+  -- putStrLn $ show tree
+  let pbyh = pathsByHash tree
+      pdup = dupesByNCopies pbyh
+  return pdup
+
 -----------
 -- tests --
 -----------
@@ -198,6 +228,6 @@ main = do
         , force   = flag 'f' "force"
         }
   -- dispatch on command
-  if cmd "scan"
-    then path "path" >>= scan opts >>= putStrLn . serialize
-    else print args >> print opts
+  if cmd "scan" then path "path" >>= scan opts >>= putStr . serialize
+  else if cmd "dupes" then path "scan" >>= dupes opts >>= printDupes
+  else print args >> print opts

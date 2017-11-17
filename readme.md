@@ -46,6 +46,7 @@ verify that none of your data has been lost in the annex + dedup process.
 Working Examples
 ----------------
 
-gander scan -vc /home/jefdaj/gander > hashes.txt
+gander scan  /home/jefdaj/gander > hashes.txt
+gander dupes /home/jefdaj/gander >  dupes.txt
 
 [1]: https://git-annex.branchable.com
