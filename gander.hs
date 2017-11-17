@@ -57,7 +57,7 @@ newtype Hash = Hash String
 --   deriving (Eq, Read, Show)
 data HashTree
   = File { name :: FilePath, hash :: Hash }
-  | Dir  { name :: FilePath, hash :: Hash, contents :: [HashTree] }
+  | Dir  { name :: FilePath, hash :: Hash, contents :: [HashTree], nFiles :: Int }
   deriving (Eq, Read, Show) -- TODO write Eq instance
 
 -- TODO disable this while testing to ensure deep equality?
@@ -79,8 +79,8 @@ serialize :: HashTree -> String
 serialize = unlines . serialize' ""
 
 serialize' :: FilePath -> HashTree -> [String]
-serialize' dir (File n (Hash h)   ) = [unwords [h, "file", dir </> n]]
-serialize' dir (Dir  n (Hash h) cs)
+serialize' dir (File n (Hash h)     ) = [unwords [h, "file", dir </> n]]
+serialize' dir (Dir  n (Hash h) cs _)
   = concatMap (serialize' $ dir </> n) cs -- recurse on contents
   ++ [unwords [h, "dir ", dir </> n]] -- finish with hash of entire dir
 
@@ -88,6 +88,10 @@ serialize' dir (Dir  n (Hash h) cs)
 -- TODO wtf why is reverse needed? remove that to save RAM
 deserialize :: String -> HashTree
 deserialize = snd . head . foldr accTrees [] . map readLine . reverse . lines
+
+countFiles :: HashTree -> Int
+countFiles (File _ _    ) = 1
+countFiles (Dir  _ _ _ n) = n
 
 {- This one is confusing! It accumulates a list of trees and their indent
  - levels, and when it comes across a dir it uses the indents to determine
@@ -97,7 +101,7 @@ accTrees :: (Hash, String, Int, FilePath) -> [(Int, HashTree)] -> [(Int, HashTre
 accTrees l@(h, t, indent, p) cs = case t of
   "file" -> cs ++ [(indent, File p h)]
   "dir"  -> let (children, siblings) = partition (\(i, t) -> i > indent) cs
-                dir = Dir p h $ map snd children
+                dir = Dir p h (map snd children) (sum $ map (countFiles . snd) children)
             in siblings ++ [(indent, dir)]
   _ -> error $ "invalid line: '" ++ show l ++ "'" 
 
@@ -132,7 +136,7 @@ hashTree :: DT.DirTree Hash -> Either String HashTree
 hashTree (DT.Failed n e ) = Left  $ n ++ " " ++ show e
 hashTree (DT.File   n f ) = Right $ File n f
 hashTree (DT.Dir    n ts) = case partitionEithers (map hashTree ts) of
-  ([], trees) -> Right $ Dir n (hashHashes $ map hash trees) trees
+  ([], trees) -> Right $ Dir n (hashHashes $ map hash trees) trees (sum $ map countFiles trees)
   (errors, _) -> Left  $ unlines errors
 
 -- TODO rename hash?
@@ -163,11 +167,10 @@ mergeDupeLists (n1, l1) (n2, l2) = (n3, l1 ++ l2)
     n3 = trace (show (n1, l1) ++ " " ++ show (n2, l2) ++ " -> " ++ show (n1 + n2)) (n1 + n2)
 
 pathsByHash' :: FilePath -> HashTree -> [(Hash, (Int, [FilePath]))]
-pathsByHash' dir (File n h   ) = [(h, (1, [dir </> n]))]
-pathsByHash' dir (Dir  n h cs) = cPaths ++ [(h, (nFiles, [dir </> n]))]
+pathsByHash' dir (File n h      ) = [(h, (1, [dir </> n]))]
+pathsByHash' dir (Dir  n h cs fs) = cPaths ++ [(h, (fs, [dir </> n]))]
   where
     cPaths = concatMap (pathsByHash' $ dir </> n) cs
-    nFiles = sum $ map (fst . snd) cPaths
 
 ---------------
 -- list dups --
