@@ -5,6 +5,9 @@ module Main where
 -- TODO break into modules? Main, Types, Config, Scan, Dedup
 -- TODO is git-annex an actual dep, or just recommended to go with it?
 -- TODO figure out how to read files + compute hashes in parallel
+-- TODO take annexes into account when scanning:
+--      * just use link basenames if files are annexed
+--      * ignore any .git folders? yeah, assume one annex for now!
 
 import qualified Data.Map              as Map
 import qualified Data.ByteString.Lazy  as LB
@@ -17,12 +20,13 @@ import Data.Foldable              (toList)
 import Crypto.Hash                (Digest, SHA256, hashlazy)
 import Data.ByteString.Lazy.Char8 (pack)
 import Data.Either                (partitionEithers)
-import Data.List                  (sort, sortBy, partition)
+import Data.List                  (sort, sortBy, partition, isInfixOf)
 import System.Console.Docopt      (docoptFile, parseArgsOrExit,
                                    getArgOrExitWith, isPresent, longOption,
                                    shortOption, command, argument)
 import System.Environment         (getArgs)
-import System.FilePath            ((</>), takeFileName, takeDirectory, splitPath)
+import System.FilePath            ((</>), takeBaseName, takeFileName, takeDirectory, splitPath)
+import System.Posix.Files         (getFileStatus, isSymbolicLink, readSymbolicLink)
 
 -----------
 -- types --
@@ -78,6 +82,7 @@ serialize = unlines . serialize' ""
 
 serialize' :: FilePath -> HashTree -> [String]
 serialize' dir (File n (Hash h)     ) = [unwords [h, "file", dir </> n]]
+serialize' dir (Dir  ".git" _ _ _) = [] -- skip git (and annex) files
 serialize' dir (Dir  n (Hash h) cs _)
   = concatMap (serialize' $ dir </> n) cs -- recurse on contents
   ++ [unwords [h, "dir ", dir </> n]] -- finish with hash of entire dir
@@ -118,12 +123,27 @@ readLine line = (Hash h, t, i, takeFileName p)
 hashBytes :: LB.ByteString -> String
 hashBytes = show . (hashlazy :: LB.ByteString -> Digest SHA256)
 
--- see https://stackoverflow.com/a/30537010
--- TODO this should match git-annex! maybe use its code directly?
+annexLink :: FilePath -> IO (Maybe FilePath)
+annexLink path = do
+  status <- getFileStatus path
+  if not (isSymbolicLink status)
+    then return Nothing
+    else do
+      link <- readSymbolicLink path
+      return $ if ".git/annex/objects/" `isInfixOf` link
+        then Just link
+        else Nothing
+
+-- Hashes if necessary, but tries to read it from an annex link first
+-- For the actual hashing see: https://stackoverflow.com/a/30537010
 hashFile :: FilePath -> IO Hash
 hashFile path = do
-  sha256sum <- fmap hashBytes $ LB.readFile path
-  return $ Hash sha256sum
+  link <- annexLink path
+  case link of
+    Just l -> return $ Hash $ drop 20 $ takeBaseName l
+    Nothing -> do
+      sha256sum <- fmap hashBytes $ LB.readFile path
+      return $ Hash sha256sum
 
 -- the "dir:" part prevents empty files and dirs from matching
 -- TODO is there a more elegant way?
@@ -134,8 +154,10 @@ hashHashes hs = Hash $ hashBytes $ pack txt
     txt = unlines $ "dir:" : (sort $ map (\(Hash h) -> h) hs)
 
 hashTree :: DT.DirTree Hash -> Either String HashTree
+hashTree (DT.Failed ".git" _) = Right $ Dir ".git" (Hash "NA") [] 0 -- skip git (and annex) files
 hashTree (DT.Failed n e ) = Left  $ n ++ " " ++ show e
 hashTree (DT.File   n f ) = Right $ File n f
+hashTree (DT.Dir ".git" _) = Right $ Dir ".git" (Hash "NA") [] 0 -- skip git (and annex) files
 hashTree (DT.Dir    n ts) = case partitionEithers (map hashTree ts) of
   ([], trees) -> Right $ Dir n (hashHashes $ map hash trees) trees
                                (sum $ map countFiles trees)
@@ -194,7 +216,7 @@ printDupes :: [(Int, [FilePath])] -> IO ()
 printDupes groups = mapM_ printGroup groups
   where
     printGroup (n, paths) = mapM_ putStrLn
-                          $ [show n ++ " duplicates:"] ++ paths ++ [""]
+                          $ [show n ++ " duplicates:"] ++ sort paths ++ [""]
 
 dupes :: Options -> FilePath -> IO [(Int, [FilePath])]
 dupes opts path = do
