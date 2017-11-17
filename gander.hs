@@ -25,7 +25,7 @@ import System.Console.Docopt      (docoptFile, parseArgsOrExit,
                                    getArgOrExitWith, isPresent, longOption,
                                    shortOption, command, argument)
 import System.Environment         (getArgs)
-import System.FilePath            ((</>), takeBaseName, takeFileName, takeDirectory, splitPath)
+import System.FilePath            ((</>), takeBaseName, takeFileName, splitPath)
 import System.Posix.Files         (getFileStatus, isSymbolicLink, readSymbolicLink)
 
 -----------
@@ -60,6 +60,7 @@ newtype Hash = Hash String
 data HashTree
   = File { name :: FilePath, hash :: Hash }
   | Dir  { name :: FilePath, hash :: Hash, contents :: [HashTree], nFiles :: Int }
+  | Skip { name :: FilePath } -- for files + folders to ignore
   deriving (Eq, Read, Show) -- TODO write Eq instance
 
 -- TODO disable this while testing to ensure deep equality?
@@ -81,8 +82,8 @@ serialize :: HashTree -> String
 serialize = unlines . serialize' ""
 
 serialize' :: FilePath -> HashTree -> [String]
+serialize' _   (Skip  _             ) = []
 serialize' dir (File n (Hash h)     ) = [unwords [h, "file", dir </> n]]
-serialize' dir (Dir  ".git" _ _ _) = [] -- skip git (and annex) files
 serialize' dir (Dir  n (Hash h) cs _)
   = concatMap (serialize' $ dir </> n) cs -- recurse on contents
   ++ [unwords [h, "dir ", dir </> n]] -- finish with hash of entire dir
@@ -93,6 +94,7 @@ deserialize :: String -> HashTree
 deserialize = snd . head . foldr accTrees [] . map readLine . reverse . lines
 
 countFiles :: HashTree -> Int
+countFiles (Skip _      ) = 0
 countFiles (File _ _    ) = 1
 countFiles (Dir  _ _ _ n) = n
 
@@ -103,7 +105,7 @@ countFiles (Dir  _ _ _ n) = n
 accTrees :: (Hash, String, Int, FilePath) -> [(Int, HashTree)] -> [(Int, HashTree)]
 accTrees l@(h, t, indent, p) cs = case t of
   "file" -> cs ++ [(indent, File p h)]
-  "dir"  -> let (children, siblings) = partition (\(i, t) -> i > indent) cs
+  "dir"  -> let (children, siblings) = partition (\(i, _) -> i > indent) cs
                 dir = Dir p h (map snd children)
                               (sum $ map (countFiles . snd) children)
             in siblings ++ [(indent, dir)]
@@ -153,20 +155,26 @@ hashHashes hs = Hash $ hashBytes $ pack txt
   where
     txt = unlines $ "dir:" : (sort $ map (\(Hash h) -> h) hs)
 
+noSkips :: [HashTree] -> [HashTree]
+noSkips [] = []
+noSkips ((Skip _):xs) = noSkips xs
+noSkips (x:xs) = x:noSkips xs
+
 hashTree :: DT.DirTree Hash -> Either String HashTree
-hashTree (DT.Failed ".git" _) = Right $ Dir ".git" (Hash "NA") [] 0 -- skip git (and annex) files
+hashTree (DT.Failed ".git" _) = Right $ Skip ".git" -- skip git (and annex) files
+hashTree (DT.Dir    ".git" _) = Right $ Skip ".git" -- skip git (and annex) files
 hashTree (DT.Failed n e ) = Left  $ n ++ " " ++ show e
 hashTree (DT.File   n f ) = Right $ File n f
-hashTree (DT.Dir ".git" _) = Right $ Dir ".git" (Hash "NA") [] 0 -- skip git (and annex) files
 hashTree (DT.Dir    n ts) = case partitionEithers (map hashTree ts) of
-  ([], trees) -> Right $ Dir n (hashHashes $ map hash trees) trees
-                               (sum $ map countFiles trees)
+  ([], trees) -> let trees' = noSkips trees
+                 in Right $ Dir n (hashHashes $ map hash trees') trees'
+                                  (sum $ map countFiles trees)
   (errors, _) -> Left  $ unlines errors
 
 -- TODO rename hash?
 -- Note that you can't hash a folder while writing to a file inside it!
 scan :: Options -> FilePath -> IO HashTree
-scan opts path = do
+scan _ path = do
   (_ DT.:/ tree) <- DT.readDirectoryWith hashFile path
   let tree' = hashTree tree
   case tree' of
@@ -189,6 +197,7 @@ mergeDupeLists :: (Int, [FilePath]) -> (Int, [FilePath]) -> (Int, [FilePath])
 mergeDupeLists (n1, l1) (n2, l2) = (n1 + n2, l1 ++ l2)
 
 pathsByHash' :: FilePath -> HashTree -> [(Hash, (Int, [FilePath]))]
+pathsByHash' _   (Skip _        ) = []
 pathsByHash' dir (File n h      ) = [(h, (1, [dir </> n]))]
 pathsByHash' dir (Dir  n h cs fs) = cPaths ++ [(h, (fs, [dir </> n]))]
   where
@@ -210,7 +219,7 @@ dupesByNFiles :: DupeMap -> [(Int, [FilePath])]
 dupesByNFiles = sortDescLength . filter hasDupes . toList
 
 hasDupes :: (Int, [FilePath]) -> Bool
-hasDupes (nFiles, paths) = length paths > 1 && nFiles > 0
+hasDupes (nfiles, paths) = length paths > 1 && nfiles > 0
 
 printDupes :: [(Int, [FilePath])] -> IO ()
 printDupes groups = mapM_ printGroup groups
@@ -219,7 +228,7 @@ printDupes groups = mapM_ printGroup groups
                           $ [show n ++ " duplicates:"] ++ sort paths ++ [""]
 
 dupes :: Options -> FilePath -> IO [(Int, [FilePath])]
-dupes opts path = do
+dupes _ path = do
   tree <- fmap deserialize $ readFile path
   let pbyh = pathsByHash tree
       pdup = dupesByNFiles pbyh
@@ -258,8 +267,8 @@ main = do
   -- parse usage patterns, then use them to parse cli args
   let ptns = [docoptFile|usage.txt|]
   args <- parseArgsOrExit ptns =<< getArgs
-  let cmd  name = isPresent args $ command name
-      path name = getArgOrExitWith ptns args $ argument name
+  let cmd  n = isPresent args $ command n
+      path n = getArgOrExitWith ptns args $ argument n
       flag s l  = isPresent args (shortOption s)
                || isPresent args (longOption  l)
       opts = Options
