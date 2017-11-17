@@ -14,6 +14,7 @@ cabal-version:       >=1.10
 data-files:          usage.txt
 
 executable gander
+  ghc-options:         -Wall
   main-is:             gander.hs
   build-depends:       base,
                        bytestring,
