@@ -64,10 +64,12 @@ data HashTree
 instance Eq HashTree where
   t1 == t2 = hash t1 == hash t2
 
+type DupeList = (Int, [FilePath])
+
 {- A map from file/dir hash to a list of duplicate file paths.
  - Could be rewritten to contain links to HashTrees if that helps.
  -}
-type DupeMap = Map Hash (Int, [FilePath])
+type DupeMap = Map Hash DupeList
 
 -------------------------------------
 -- serialize and deserialize trees --
@@ -185,10 +187,10 @@ printHashes = putStr . serialize
 pathsByHash :: HashTree -> DupeMap
 pathsByHash = Map.fromListWith mergeDupeLists . pathsByHash' ""
 
-mergeDupeLists :: (Int, [FilePath]) -> (Int, [FilePath]) -> (Int, [FilePath])
+mergeDupeLists :: DupeList -> DupeList -> DupeList
 mergeDupeLists (n1, l1) (n2, l2) = (n1 + n2, l1 ++ l2)
 
-pathsByHash' :: FilePath -> HashTree -> [(Hash, (Int, [FilePath]))]
+pathsByHash' :: FilePath -> HashTree -> [(Hash, DupeList)]
 pathsByHash' _   (Skip _ _      ) = []
 pathsByHash' dir (File n h      ) = [(h, (1, [dir </> n]))]
 pathsByHash' dir (Dir  n h cs fs) = cPaths ++ [(h, (fs, [dir </> n]))]
@@ -202,18 +204,18 @@ pathsByHash' dir (Dir  n h cs fs) = cPaths ++ [(h, (fs, [dir </> n]))]
 -- TODO warning: so far it lists anything annexed as a dup
 
 -- see https://mail.haskell.org/pipermail/beginners/2009-June/001867.html
-sortDescLength :: [(Int, [FilePath])] -> [(Int, [FilePath])]
+sortDescLength :: [DupeList] -> [DupeList]
 sortDescLength = map snd
                . sortBy (comparing $ negate . fst . snd)
                . map (length &&& id)
 
-dupesByNFiles :: DupeMap -> [(Int, [FilePath])]
+dupesByNFiles :: DupeMap -> [DupeList]
 dupesByNFiles = sortDescLength . filter hasDupes . toList
 
-hasDupes :: (Int, [FilePath]) -> Bool
+hasDupes :: DupeList -> Bool
 hasDupes (nfiles, paths) = length paths > 1 && nfiles > 0
 
-printDupes :: [(Int, [FilePath])] -> IO ()
+printDupes :: [DupeList] -> IO ()
 printDupes groups = mapM_ printGroup groups
   where
     explain fs ds = if fs == ds
@@ -263,7 +265,7 @@ cmdHash _ path = do
     Left  e -> error e
     Right t -> return t
 
-cmdDupes :: Options -> FilePath -> IO [(Int, [FilePath])]
+cmdDupes :: Options -> FilePath -> IO [DupeList]
 cmdDupes _ path = do
   tree <- fmap deserialize $ readFile path
   let pbyh = pathsByHash tree
