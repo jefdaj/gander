@@ -6,6 +6,8 @@ module Main where
 -- TODO is git-annex an actual dep, or just recommended to go with it?
 -- TODO figure out how to read files + compute hashes in parallel
 
+import Debug.Trace
+
 import qualified Data.Map              as Map
 import qualified Data.ByteString.Lazy  as LB
 import qualified System.Directory.Tree as DT
@@ -66,7 +68,6 @@ data HashTree
  - Could be rewritten to contain links to HashTrees if that helps.
  -}
 type DupeMap = Map Hash (Int, [FilePath])
-  -- deriving (Read, Show)
 
 -------------------------------------
 -- serialize and deserialize trees --
@@ -157,11 +158,13 @@ pathsByHash :: HashTree -> DupeMap
 pathsByHash = Map.fromListWith mergeDupeLists . pathsByHash' ""
 
 mergeDupeLists :: (Int, [FilePath]) -> (Int, [FilePath]) -> (Int, [FilePath])
-mergeDupeLists (n1, l1) (n2, l2) = (n1 + n2, l1 ++ l2)
+mergeDupeLists (n1, l1) (n2, l2) = (n3, l1 ++ l2)
+  where
+    n3 = trace (show (n1, l1) ++ " " ++ show (n2, l2) ++ " -> " ++ show (n1 + n2)) (n1 + n2)
 
 pathsByHash' :: FilePath -> HashTree -> [(Hash, (Int, [FilePath]))]
 pathsByHash' dir (File n h   ) = [(h, (1, [dir </> n]))]
-pathsByHash' dir (Dir  n h cs) = [(h, (nFiles, [dir </> n]))] ++ cPaths
+pathsByHash' dir (Dir  n h cs) = cPaths ++ [(h, (nFiles, [dir </> n]))]
   where
     cPaths = concatMap (pathsByHash' $ dir </> n) cs
     nFiles = sum $ map (fst . snd) cPaths
@@ -174,23 +177,28 @@ pathsByHash' dir (Dir  n h cs) = [(h, (nFiles, [dir </> n]))] ++ cPaths
 
 -- see https://mail.haskell.org/pipermail/beginners/2009-June/001867.html
 sortDescLength :: [(Int, [FilePath])] -> [(Int, [FilePath])]
-sortDescLength = map snd . sortBy (comparing $ negate . fst . snd) . map (length &&& id)
+sortDescLength = map snd
+               . sortBy (comparing $ negate . fst . snd)
+               . map (length &&& id)
 
-dupesByNCopies :: DupeMap -> [(Int, [FilePath])]
-dupesByNCopies = sortDescLength . filter (\x -> length (snd x) > 1) . toList
+dupesByNFiles :: DupeMap -> [(Int, [FilePath])]
+dupesByNFiles = sortDescLength . filter hasDupes . toList
+
+hasDupes :: (Int, [FilePath]) -> Bool
+hasDupes (nFiles, paths) = length paths > 1 && nFiles > 0
 
 printDupes :: [(Int, [FilePath])] -> IO ()
 printDupes groups = mapM_ printGroup groups
   where
     printGroup (n, paths) = mapM_ putStrLn
-                          $ [show n ++ " duplicate files total:"]
+                          $ [show n ++ " duplicate files:"]
                           ++ paths ++ [""]
 
 dupes :: Options -> FilePath -> IO [(Int, [FilePath])]
 dupes opts path = do
   tree <- fmap deserialize $ readFile path
   let pbyh = pathsByHash tree
-      pdup = dupesByNCopies pbyh
+      pdup = dupesByNFiles pbyh
   return pdup
 
 -----------
