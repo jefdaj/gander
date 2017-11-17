@@ -134,7 +134,7 @@ hashTree (DT.Dir    n ts) = case partitionEithers (map hashTree ts) of
   ([], trees) -> Right $ Dir n (hashHashes $ map hash trees) trees
   (errors, _) -> Left  $ unlines errors
 
--- TODO rename hashDir?
+-- TODO rename hash?
 -- Note that you can't hash a folder while writing to a file inside it!
 scan :: Options -> FilePath -> IO HashTree
 scan opts path = do
@@ -143,6 +143,9 @@ scan opts path = do
   case tree' of
     Left  e -> error e
     Right t -> return t
+
+printScan :: HashTree -> IO ()
+printScan = putStr . serialize
 
 ---------------------
 -- build dupe maps --
@@ -178,9 +181,7 @@ printDupes groups = mapM_ printGroup groups
 
 dupes :: Options -> FilePath -> IO [[FilePath]]
 dupes opts path = do
-  -- tree <- scan opts path
   tree <- fmap deserialize $ readFile path
-  -- putStrLn $ show tree
   let pbyh = pathsByHash tree
       pdup = dupesByNCopies pbyh
   return pdup
@@ -228,6 +229,6 @@ main = do
         , force   = flag 'f' "force"
         }
   -- dispatch on command
-  if cmd "scan" then path "path" >>= scan opts >>= putStr . serialize
+  if cmd "scan" then path "path" >>= scan opts >>= printScan
   else if cmd "dupes" then path "scan" >>= dupes opts >>= printDupes
   else print args >> print opts
