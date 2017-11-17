@@ -43,12 +43,9 @@ sha256sum + path of every file and folder. They extend the format used
 Gander can scan and compare both annexed and non-annexed files, which lets you
 verify that none of your data has been lost in the annex + dedup process.
 
-Example
--------
+Working Examples
+----------------
 
-Suppose you have a large number of old files spread over multiple hard drives.
-They include a lot of duplicates because you went through several rounds of
-"better back up everything up to be sure!", and eventually lost track of what
-was what.
+gander scan -vc /home/jefdaj/gander > hashes.txt
 
 [1]: https://git-annex.branchable.com

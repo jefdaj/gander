@@ -53,6 +53,10 @@ data HashTree
   | Dir  { name :: FilePath, hash :: Hash, contents :: [HashTree] }
   deriving (Eq, Read, Show) -- TODO write Eq instance
 
+-- TODO disable this while testing to ensure deep equality?
+-- instance Eq HashTree where
+--   t1 == t2 = hash t1 == hash t2
+
 {- A map from file/dir hash to a list of duplicate file paths.
  - Could be rewritten to contain links to HashTrees if that helps.
  -}
