@@ -125,11 +125,13 @@ hashFile path = do
   sha256sum <- fmap hashBytes $ LB.readFile path
   return $ Hash sha256sum
 
+-- the "dir:" part prevents empty files and dirs from matching
+-- TODO is there a more elegant way?
 -- TODO remove the sort? not needed if tree order is reliable i suppose
 hashHashes :: [Hash] -> Hash
 hashHashes hs = Hash $ hashBytes $ pack txt
   where
-    txt = unlines $ sort $ map (\(Hash h) -> h) hs
+    txt = unlines $ "dir:" : (sort $ map (\(Hash h) -> h) hs)
 
 hashTree :: DT.DirTree Hash -> Either String HashTree
 hashTree (DT.Failed n e ) = Left  $ n ++ " " ++ show e
@@ -192,8 +194,7 @@ printDupes :: [(Int, [FilePath])] -> IO ()
 printDupes groups = mapM_ printGroup groups
   where
     printGroup (n, paths) = mapM_ putStrLn
-                          $ [show n ++ " duplicate files:"]
-                          ++ paths ++ [""]
+                          $ [show n ++ " duplicates:"] ++ paths ++ [""]
 
 dupes :: Options -> FilePath -> IO [(Int, [FilePath])]
 dupes opts path = do
