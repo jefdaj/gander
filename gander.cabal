@@ -17,6 +17,7 @@ executable gander
   main-is:             gander.hs
   build-depends:       base,
                        bytestring,
+                       containers,
                        cryptohash,
                        docopt,
                        directory-tree,
