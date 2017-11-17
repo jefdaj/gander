@@ -153,7 +153,7 @@ hashFile path = do
 hashHashes :: [Hash] -> Hash
 hashHashes hs = Hash $ hashBytes $ pack txt
   where
-    txt = unlines $ "dir:" : (sort $ map (\(Hash h) -> h) hs)
+    txt = show $ sort $ map (\(Hash h) -> h) hs
 
 noSkips :: [HashTree] -> [HashTree]
 noSkips [] = []
@@ -224,8 +224,13 @@ hasDupes (nfiles, paths) = length paths > 1 && nfiles > 0
 printDupes :: [(Int, [FilePath])] -> IO ()
 printDupes groups = mapM_ printGroup groups
   where
+    explain fs ds = if fs == ds
+      then "# " ++ show fs ++ " duplicate files"
+      else "# " ++ show ds ++ " duplicate dirs with " ++ show (div fs ds)
+                ++ " files each (" ++ show fs ++ " total)"
     printGroup (n, paths) = mapM_ putStrLn
-                          $ [show n ++ " duplicates:"] ++ sort paths ++ [""]
+                          $ [explain n (length paths)]
+                          ++ sort paths ++ [""]
 
 dupes :: Options -> FilePath -> IO [(Int, [FilePath])]
 dupes _ path = do
