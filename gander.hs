@@ -65,7 +65,7 @@ data HashTree
 {- A map from file/dir hash to a list of duplicate file paths.
  - Could be rewritten to contain links to HashTrees if that helps.
  -}
-type PathsByHash = Map Hash [FilePath]
+type DupeMap = Map Hash (Int, [FilePath])
   -- deriving (Read, Show)
 
 -------------------------------------
@@ -153,13 +153,18 @@ printScan = putStr . serialize
 
 -- TODO can Foldable or Traversable simplify these?
 
-pathsByHash :: HashTree -> PathsByHash
-pathsByHash = Map.fromListWith (++) . pathsByHash' ""
+pathsByHash :: HashTree -> DupeMap
+pathsByHash = Map.fromListWith mergeDupeLists . pathsByHash' ""
 
-pathsByHash' :: FilePath -> HashTree -> [(Hash, [FilePath])]
-pathsByHash' dir (File n h   ) = [(h, [dir </> n])]
-pathsByHash' dir (Dir  n h cs) = [(h, [dir </> n])]
-                                 ++ concatMap (pathsByHash' $ dir </> n) cs
+mergeDupeLists :: (Int, [FilePath]) -> (Int, [FilePath]) -> (Int, [FilePath])
+mergeDupeLists (n1, l1) (n2, l2) = (n1 + n2, l1 ++ l2)
+
+pathsByHash' :: FilePath -> HashTree -> [(Hash, (Int, [FilePath]))]
+pathsByHash' dir (File n h   ) = [(h, (1, [dir </> n]))]
+pathsByHash' dir (Dir  n h cs) = [(h, (nFiles, [dir </> n]))] ++ cPaths
+  where
+    cPaths = concatMap (pathsByHash' $ dir </> n) cs
+    nFiles = sum $ map (fst . snd) cPaths
 
 ---------------
 -- list dups --
@@ -168,18 +173,20 @@ pathsByHash' dir (Dir  n h cs) = [(h, [dir </> n])]
 -- TODO warning: so far it lists anything annexed as a dup
 
 -- see https://mail.haskell.org/pipermail/beginners/2009-June/001867.html
-sortDescLength :: [[FilePath]] -> [[FilePath]]
-sortDescLength = map snd . sortBy (comparing $ negate . fst) . map (length &&& id)
+sortDescLength :: [(Int, [FilePath])] -> [(Int, [FilePath])]
+sortDescLength = map snd . sortBy (comparing $ negate . fst . snd) . map (length &&& id)
 
-dupesByNCopies :: PathsByHash -> [[FilePath]]
-dupesByNCopies = sortDescLength . filter (\x -> length x > 1) . toList
+dupesByNCopies :: DupeMap -> [(Int, [FilePath])]
+dupesByNCopies = sortDescLength . filter (\x -> length (snd x) > 1) . toList
 
-printDupes :: [[FilePath]] -> IO ()
+printDupes :: [(Int, [FilePath])] -> IO ()
 printDupes groups = mapM_ printGroup groups
   where
-    printGroup paths = mapM_ putStrLn $ paths ++ [""]
+    printGroup (n, paths) = mapM_ putStrLn
+                          $ [show n ++ " duplicate files total:"]
+                          ++ paths ++ [""]
 
-dupes :: Options -> FilePath -> IO [[FilePath]]
+dupes :: Options -> FilePath -> IO [(Int, [FilePath])]
 dupes opts path = do
   tree <- fmap deserialize $ readFile path
   let pbyh = pathsByHash tree
@@ -203,7 +210,7 @@ roundTripTree path = do
   putStrLn $ "str1 == str2? "   ++ show (str1  == str2)
   return $ tree1 == tree2
 
-mapTree :: FilePath -> IO PathsByHash
+mapTree :: FilePath -> IO DupeMap
 mapTree path = do
   let opts = Options False False False
   tree <- scan opts path
