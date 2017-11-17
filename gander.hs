@@ -41,7 +41,7 @@ data Options = Options
  - TODO would adding timestamps or number of files help?
  -}
 newtype Hash = Hash String
-  deriving (Eq, Read, Show)
+  deriving (Eq, Read, Show, Ord)
 
 {- A tree of file names matching (a subdirectory of) the annex,
  - where each dir and file node contains a hash of its contents.
@@ -62,8 +62,8 @@ data HashTree
 {- A map from file/dir hash to a list of duplicate file paths.
  - Could be rewritten to contain links to HashTrees if that helps.
  -}
-data PathsByHash = Map Hash [FilePath]
-  deriving (Read, Show)
+type PathsByHash = Map Hash [FilePath]
+  -- deriving (Read, Show)
 
 -------------------------------------
 -- serialize and deserialize trees --
@@ -145,30 +145,22 @@ scan opts path = do
 -- build dupe maps --
 ---------------------
 
-pathsByHashMap :: HashTree -> PathsByHash
-pathsByHashMap = undefined
+-- TODO can Foldable or Traversable simplify these?
 
-pathsByHashList :: HashTree -> [(Hash, FilePath)]
-pathsByHashList = pathsByHashList' ""
+pathsByHash :: HashTree -> PathsByHash
+pathsByHash = Map.fromListWith (++) . pathsByHash' ""
 
--- for reference:
--- serialize' :: FilePath -> HashTree -> [String]
--- serialize' dir (File n (Hash h)   ) = [unwords [h, "file", dir </> n]]
--- serialize' dir (Dir  n (Hash h) cs)
---   = concatMap (serialize' $ dir </> n) cs -- recurse on contents
---   ++ [unwords [h, "dir ", dir </> n]] -- finish with hash of entire dir
-
-pathsByHashList' :: FilePath -> HashTree -> [(Hash, FilePath)]
-pathsByHashList' = undefined
--- pathsByHashList' dir (File n h   ) = [(h, dir </> n)]
--- pathsByHashList' dir (Dir  n h cs) = [(h, dir </> n)] ++ 
+pathsByHash' :: FilePath -> HashTree -> [(Hash, [FilePath])]
+pathsByHash' dir (File n h   ) = [(h, [dir </> n])]
+pathsByHash' dir (Dir  n h cs) = [(h, [dir </> n])]
+                                 ++ concatMap (pathsByHash' $ dir </> n) cs
 
 -----------
 -- tests --
 -----------
 
-roundTrip :: FilePath -> IO Bool
-roundTrip path = do
+roundTripTree :: FilePath -> IO Bool
+roundTripTree path = do
   let opts = Options False False False
   tree1 <- scan opts path
   let str1  = serialize   tree1
@@ -179,6 +171,13 @@ roundTrip path = do
   putStrLn $ "tree1 == tree2? " ++ show (tree1 == tree2)
   putStrLn $ "str1 == str2? "   ++ show (str1  == str2)
   return $ tree1 == tree2
+
+mapTree :: FilePath -> IO PathsByHash
+mapTree path = do
+  let opts = Options False False False
+  tree <- scan opts path
+  let m = pathsByHash tree
+  return m
 
 ----------
 -- main --
