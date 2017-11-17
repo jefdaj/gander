@@ -6,8 +6,6 @@ module Main where
 -- TODO is git-annex an actual dep, or just recommended to go with it?
 -- TODO figure out how to read files + compute hashes in parallel
 
-import Debug.Trace
-
 import qualified Data.Map              as Map
 import qualified Data.ByteString.Lazy  as LB
 import qualified System.Directory.Tree as DT
@@ -101,7 +99,8 @@ accTrees :: (Hash, String, Int, FilePath) -> [(Int, HashTree)] -> [(Int, HashTre
 accTrees l@(h, t, indent, p) cs = case t of
   "file" -> cs ++ [(indent, File p h)]
   "dir"  -> let (children, siblings) = partition (\(i, t) -> i > indent) cs
-                dir = Dir p h (map snd children) (sum $ map (countFiles . snd) children)
+                dir = Dir p h (map snd children)
+                              (sum $ map (countFiles . snd) children)
             in siblings ++ [(indent, dir)]
   _ -> error $ "invalid line: '" ++ show l ++ "'" 
 
@@ -136,7 +135,8 @@ hashTree :: DT.DirTree Hash -> Either String HashTree
 hashTree (DT.Failed n e ) = Left  $ n ++ " " ++ show e
 hashTree (DT.File   n f ) = Right $ File n f
 hashTree (DT.Dir    n ts) = case partitionEithers (map hashTree ts) of
-  ([], trees) -> Right $ Dir n (hashHashes $ map hash trees) trees (sum $ map countFiles trees)
+  ([], trees) -> Right $ Dir n (hashHashes $ map hash trees) trees
+                               (sum $ map countFiles trees)
   (errors, _) -> Left  $ unlines errors
 
 -- TODO rename hash?
@@ -162,9 +162,7 @@ pathsByHash :: HashTree -> DupeMap
 pathsByHash = Map.fromListWith mergeDupeLists . pathsByHash' ""
 
 mergeDupeLists :: (Int, [FilePath]) -> (Int, [FilePath]) -> (Int, [FilePath])
-mergeDupeLists (n1, l1) (n2, l2) = (n3, l1 ++ l2)
-  where
-    n3 = trace (show (n1, l1) ++ " " ++ show (n2, l2) ++ " -> " ++ show (n1 + n2)) (n1 + n2)
+mergeDupeLists (n1, l1) (n2, l2) = (n1 + n2, l1 ++ l2)
 
 pathsByHash' :: FilePath -> HashTree -> [(Hash, (Int, [FilePath]))]
 pathsByHash' dir (File n h      ) = [(h, (1, [dir </> n]))]
