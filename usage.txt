@@ -3,7 +3,7 @@ The "Git ANnex DedupER" deduplicates files and folders using git-annex.
 Usage:
   gander scan   [-vc]     <path>
   gander dupes  [-vc]     <scan>
-  gander verify [-vc]     <scan> <paths>...
+  gander verify [-vc]     <scan> [<paths>...]
   gander diff   [-vc]     <scan> [<path>] <scan2> [<path2>]
   gander update [-v(c|f)] <scan> <scans>...
   gander add    [-v(c|f)] <dest> <paths>...
@@ -16,9 +16,9 @@ Options:
 
 Commands:
   scan    Scans files + folders and (for now) prints their hashes to stdout.
+  dupes   List duplicate files + folders in <scan>.
   verify  Rescan on or more paths and make sure their hashes match <scan>.
   diff    Compare two scans for differences. The paths limit comparison to subdirectories.
-  dupes   List duplicates in <scan> for each of the given paths.
   add     Copies each <path> into <dest> and `git annex add`s it.
           <dest> needs to be in an annex, of course. Uses rsync syntax (see examples).
   remove  `git rm` a path after checking that all files in it are duplicates.
