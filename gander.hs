@@ -5,9 +5,6 @@ module Main where
 -- TODO break into modules? Main, Types, Config, Scan, Dedup
 -- TODO is git-annex an actual dep, or just recommended to go with it?
 -- TODO figure out how to read files + compute hashes in parallel
--- TODO take annexes into account when scanning:
---      * just use link basenames if files are annexed
---      * ignore any .git folders? yeah, assume one annex for now!
 
 import qualified Data.Map              as Map
 import qualified Data.ByteString.Lazy  as LB
@@ -176,18 +173,8 @@ hashTree (DT.Dir    n ts) = case partitionEithers (map hashTree ts) of
                                   (sum $ map countFiles trees)
   (errors, _) -> Left  $ unlines errors
 
--- TODO rename hash?
--- Note that you can't hash a folder while writing to a file inside it!
-scan :: Options -> FilePath -> IO HashTree
-scan _ path = do
-  (_ DT.:/ tree) <- DT.readDirectoryWith hashFile path
-  let tree' = hashTree tree
-  case tree' of
-    Left  e -> error e
-    Right t -> return t
-
-printScan :: HashTree -> IO ()
-printScan = putStr . serialize
+printHashes :: HashTree -> IO ()
+printHashes = putStr . serialize
 
 ---------------------
 -- build dupe maps --
@@ -237,21 +224,14 @@ printDupes groups = mapM_ printGroup groups
                           $ [explain n (length paths)]
                           ++ sort paths ++ [""]
 
-dupes :: Options -> FilePath -> IO [(Int, [FilePath])]
-dupes _ path = do
-  tree <- fmap deserialize $ readFile path
-  let pbyh = pathsByHash tree
-      pdup = dupesByNFiles pbyh
-  return pdup
-
------------
--- tests --
------------
+----------------
+-- repl tests --
+----------------
 
 roundTripTree :: FilePath -> IO Bool
 roundTripTree path = do
   let opts = Options False False False
-  tree1 <- scan opts path
+  tree1 <- cmdHash opts path
   let str1  = serialize   tree1
       tree2 = deserialize str1
       str2  = serialize   tree2
@@ -265,13 +245,30 @@ roundTripTree path = do
 mapTree :: FilePath -> IO DupeMap
 mapTree path = do
   let opts = Options False False False
-  tree <- scan opts path
+  tree <- cmdHash opts path
   let m = pathsByHash tree
   return m
 
-----------
--- main --
-----------
+---------------
+-- interface --
+---------------
+
+-- TODO rename hash?
+-- Note that you can't hash a folder while writing to a file inside it!
+cmdHash :: Options -> FilePath -> IO HashTree
+cmdHash _ path = do
+  (_ DT.:/ tree) <- DT.readDirectoryWith hashFile path
+  let tree' = hashTree tree
+  case tree' of
+    Left  e -> error e
+    Right t -> return t
+
+cmdDupes :: Options -> FilePath -> IO [(Int, [FilePath])]
+cmdDupes _ path = do
+  tree <- fmap deserialize $ readFile path
+  let pbyh = pathsByHash tree
+      pdup = dupesByNFiles pbyh
+  return pdup
 
 main :: IO ()
 main = do
@@ -288,6 +285,6 @@ main = do
         , force   = flag 'f' "force"
         }
   -- dispatch on command
-  if cmd "scan" then path "path" >>= scan opts >>= printScan
-  else if cmd "dupes" then path "scan" >>= dupes opts >>= printDupes
+  if      cmd "hash"  then path "path"   >>= cmdHash  opts >>= printHashes
+  else if cmd "dupes" then path "hashes" >>= cmdDupes opts >>= printDupes
   else print args >> print opts
