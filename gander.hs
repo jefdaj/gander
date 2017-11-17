@@ -6,9 +6,11 @@ module Main where
 -- TODO is git-annex an actual dep, or just recommended to go with it?
 -- TODO figure out how to read files + compute hashes in parallel
 
+import qualified Data.Map              as Map
 import qualified Data.ByteString.Lazy  as LB
 import qualified System.Directory.Tree as DT
 
+import Data.Map                   (Map)
 import Crypto.Hash                (Digest, SHA256, hashlazy)
 import Data.ByteString.Lazy.Char8 (pack)
 import Data.Either                (partitionEithers)
@@ -66,6 +68,8 @@ data PathsByHash = Map Hash [FilePath]
 -------------------------------------
 -- serialize and deserialize trees --
 -------------------------------------
+
+-- TODO can Foldable or Traversable simplify these?
 
 serialize :: HashTree -> String
 serialize = unlines . serialize' ""
@@ -136,6 +140,28 @@ scan opts path = do
   case tree' of
     Left  e -> error e
     Right t -> return t
+
+---------------------
+-- build dupe maps --
+---------------------
+
+pathsByHashMap :: HashTree -> PathsByHash
+pathsByHashMap = undefined
+
+pathsByHashList :: HashTree -> [(Hash, FilePath)]
+pathsByHashList = pathsByHashList' ""
+
+-- for reference:
+-- serialize' :: FilePath -> HashTree -> [String]
+-- serialize' dir (File n (Hash h)   ) = [unwords [h, "file", dir </> n]]
+-- serialize' dir (Dir  n (Hash h) cs)
+--   = concatMap (serialize' $ dir </> n) cs -- recurse on contents
+--   ++ [unwords [h, "dir ", dir </> n]] -- finish with hash of entire dir
+
+pathsByHashList' :: FilePath -> HashTree -> [(Hash, FilePath)]
+pathsByHashList' = undefined
+-- pathsByHashList' dir (File n h   ) = [(h, dir </> n)]
+-- pathsByHashList' dir (Dir  n h cs) = [(h, dir </> n)] ++ 
 
 -----------
 -- tests --

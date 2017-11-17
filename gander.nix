@@ -1,5 +1,5 @@
 { mkDerivation, base, docopt, directory-tree, stdenv, filepath
-, cryptohash, bytestring }:
+, cryptohash, bytestring, containers }:
 mkDerivation {
   pname = "gander";
   version = "0.1.0.0";
@@ -8,6 +8,7 @@ mkDerivation {
   isExecutable = true;
   executableHaskellDepends = [
     base
+    containers
     docopt
     directory-tree
     cryptohash
