@@ -58,14 +58,14 @@ newtype Hash = Hash String
 -- data HashTree = DT.AnchoredDirTree Hash
 --   deriving (Eq, Read, Show)
 data HashTree
-  = File { name :: FilePath, hash :: Hash }
+  = Skip { name :: FilePath, hash :: Hash } -- for files + folders to ignore
+  | File { name :: FilePath, hash :: Hash }
   | Dir  { name :: FilePath, hash :: Hash, contents :: [HashTree], nFiles :: Int }
-  | Skip { name :: FilePath } -- for files + folders to ignore
-  deriving (Eq, Read, Show) -- TODO write Eq instance
+  deriving (Read, Show)
 
 -- TODO disable this while testing to ensure deep equality?
--- instance Eq HashTree where
---   t1 == t2 = hash t1 == hash t2
+instance Eq HashTree where
+  t1 == t2 = hash t1 == hash t2
 
 {- A map from file/dir hash to a list of duplicate file paths.
  - Could be rewritten to contain links to HashTrees if that helps.
@@ -82,7 +82,7 @@ serialize :: HashTree -> String
 serialize = unlines . serialize' ""
 
 serialize' :: FilePath -> HashTree -> [String]
-serialize' _   (Skip  _             ) = []
+serialize' _   (Skip  _ _           ) = []
 serialize' dir (File n (Hash h)     ) = [unwords [h, "file", dir </> n]]
 serialize' dir (Dir  n (Hash h) cs _)
   = concatMap (serialize' $ dir </> n) cs -- recurse on contents
@@ -94,7 +94,7 @@ deserialize :: String -> HashTree
 deserialize = snd . head . foldr accTrees [] . map readLine . reverse . lines
 
 countFiles :: HashTree -> Int
-countFiles (Skip _      ) = 0
+countFiles (Skip _ _    ) = 0
 countFiles (File _ _    ) = 1
 countFiles (Dir  _ _ _ n) = n
 
@@ -124,6 +124,11 @@ readLine line = (Hash h, t, i, takeFileName p)
 
 hashBytes :: LB.ByteString -> String
 hashBytes = show . (hashlazy :: LB.ByteString -> Digest SHA256)
+
+-- this is for hashing the "skip" nodes so they equate properly
+-- TODO any good way to remove it?
+hashName :: String -> Hash
+hashName = Hash . hashBytes . pack
 
 annexLink :: FilePath -> IO (Maybe FilePath)
 annexLink path = do
@@ -157,12 +162,12 @@ hashHashes hs = Hash $ hashBytes $ pack txt
 
 noSkips :: [HashTree] -> [HashTree]
 noSkips [] = []
-noSkips ((Skip _):xs) = noSkips xs
+noSkips ((Skip _ _):xs) = noSkips xs
 noSkips (x:xs) = x:noSkips xs
 
 hashTree :: DT.DirTree Hash -> Either String HashTree
-hashTree (DT.Failed ".git" _) = Right $ Skip ".git" -- skip git (and annex) files
-hashTree (DT.Dir    ".git" _) = Right $ Skip ".git" -- skip git (and annex) files
+hashTree (DT.Failed ".git" _) = Right $ Skip ".git" (hashName ".git") -- skip git (and annex) files
+hashTree (DT.Dir    ".git" _) = Right $ Skip ".git" (hashName ".git") -- skip git (and annex) files
 hashTree (DT.Failed n e ) = Left  $ n ++ " " ++ show e
 hashTree (DT.File   n f ) = Right $ File n f
 hashTree (DT.Dir    n ts) = case partitionEithers (map hashTree ts) of
@@ -197,7 +202,7 @@ mergeDupeLists :: (Int, [FilePath]) -> (Int, [FilePath]) -> (Int, [FilePath])
 mergeDupeLists (n1, l1) (n2, l2) = (n1 + n2, l1 ++ l2)
 
 pathsByHash' :: FilePath -> HashTree -> [(Hash, (Int, [FilePath]))]
-pathsByHash' _   (Skip _        ) = []
+pathsByHash' _   (Skip _ _      ) = []
 pathsByHash' dir (File n h      ) = [(h, (1, [dir </> n]))]
 pathsByHash' dir (Dir  n h cs fs) = cPaths ++ [(h, (fs, [dir </> n]))]
   where
@@ -253,6 +258,7 @@ roundTripTree path = do
   putStrLn str1
   putStrLn $ show tree1
   putStrLn $ "tree1 == tree2? " ++ show (tree1 == tree2)
+  putStrLn $ "show tree1 == show tree2? " ++ show (show tree1 == show tree2)
   putStrLn $ "str1 == str2? "   ++ show (str1  == str2)
   return $ tree1 == tree2
 
