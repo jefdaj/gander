@@ -16,9 +16,28 @@ whether it worked for you! Open to new use cases or syntax or whatever.
 Examples
 --------
 
+Make a list of duplicate files in the repo itself.
+
 ```.bash
-gander scan  /home/jefdaj/gander > hashes.txt
-gander dupes /home/jefdaj/gander >  dupes.txt
+gander scan . > hashes.txt && gander dupes hashes.txt
+# 3 duplicates:
+# ./.stack-work/install/x86_64-linux-nix/lts-9.3/8.0.2/share/x86_64-linux-ghc-8.0.2/gander-0.1.0.0/usage.txt
+# ./result/share/x86_64-linux-ghc-8.0.2/gander-0.1.0.0/usage.txt
+# ./usage.txt
+#
+# 2 duplicates:
+# ./.stack-work/install/x86_64-linux-nix/lts-9.3/8.0.2/share/x86_64-linux-ghc-8.0.2/gander-0.1.0.0
+# ./result/share/x86_64-linux-ghc-8.0.2/gander-0.1.0.0
+#
+# 2 duplicates:
+# ./.stack-work/dist/x86_64-linux-nix/Cabal-1.24.2.0/package.conf.inplace
+# ./.stack-work/install/x86_64-linux-nix/lts-9.3/8.0.2/pkgdb
+#
+# 2 duplicates:
+# ./.stack-work/install/x86_64-linux-nix/lts-9.3/8.0.2/share/x86_64-linux-ghc-8.0.2
+# ./result/share/x86_64-linux-ghc-8.0.2
+#
+# ...
 ```
 
 [1]: https://git-annex.branchable.com
