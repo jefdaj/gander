@@ -34,7 +34,6 @@ import System.Posix.Files         (getFileStatus, isSymbolicLink, readSymbolicLi
  -}
 data Options = Options
   { verbose :: Bool
-  , confirm :: Bool
   , force   :: Bool
   }
   deriving (Read, Show)
@@ -283,7 +282,6 @@ main = do
                || isPresent args (longOption  l)
       opts = Options
         { verbose = flag 'v' "verbose"
-        , confirm = flag 'c' "confirm"
         , force   = flag 'f' "force"
         }
   -- dispatch on command
