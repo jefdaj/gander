@@ -1,6 +1,4 @@
-{ nixpkgs ? import <nixpkgs> {}, compiler ? "default" }:
-
-# TODO include git-annex as a dep? (use machinery from shortcut)
+{ nixpkgs ? import <nixpkgs> {}, compiler ? "default", doBenchmark ? false }:
 
 let
   inherit (nixpkgs) pkgs;
@@ -8,7 +6,8 @@ let
   haskellPackages = if compiler == "default"
                        then pkgs.haskellPackages
                        else pkgs.haskell.packages.${compiler};
-  drv = haskellPackages.callPackage f {};
+  variant = if doBenchmark then pkgs.haskell.lib.doBenchmark else pkgs.lib.id;
+  drv = variant (haskellPackages.callPackage f {});
 
 in
   if pkgs.lib.inNixShell then drv.env else drv
