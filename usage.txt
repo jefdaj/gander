@@ -1,24 +1,27 @@
-The "Git ANnex DedupER" deduplicates files and folders using git-annex.
+The "Git ANnex DEdupeR" deduplicates files and folders using git-annex.
 
 Usage:
   gander hash   [-vc]     <path>
   gander dupes  [-vc]     <hashes>
-  gander verify [-vc]     <hashes> [<paths>...]
-  gander diff   [-vc]     <hashes1> [<path>] <hashes2> [<path2>]
+  gander fsck   [-vc]     <hashes> [<dir>...]
+  gander diff   [-vc]     <hashes1> <hashes2> [<dir1> <dir2>]
   gander update [-v(c|f)] <oldhashes> <newhashes>...
   gander add    [-v(c|f)] <dest> <paths>...
   gander remove [-v(c|f)] <hashes> <path>
 
 Options:
   -v, --verbose  Explain each step as it runs.
-  -c, --confirm  Prompt to confirm each step before it runs.
   -f, --force    Change existing files without requiring confirmation.
+  -c, --confirm  Prompt to confirm each step before it runs, even
+                 when non-destructive. Mainly for debugging.
 
 Commands:
   hash    Reads files + folders and prints their hashes to stdout.
   dupes   List duplicate files + folders in <hashes>.
-  verify  Re-read one or more paths and make sure their hashes still match <hashes>.
-  diff    Compare two sets of hashes for differences. The paths limit comparison to subdirectories.
+  fsck    Re-read one or more paths and make sure their hashes still match <hashes>.
+          <dir> limits it to one or more subdirectories.
+  diff    Compare two sets of hashes for differences. <dir>s limit comparison
+          to subdirectories.
   add     Copies each <path> into <dest> and `git annex add`s it.
           <dest> needs to be in an annex, of course. Uses rsync syntax (see examples).
   remove  `git rm` a path after checking that all files in it are duplicates.
@@ -33,3 +36,10 @@ Examples:
   /media/jeff/dedup/unsorted/mybook and annex it, deduping files in the process.
   Includes hidden files. Note that without the trailing slash the "WD My Book"
   folder would end up *inside* mybook (rsync syntax).
+
+  gander hash "/media/jeff/WD My Book"           > mybook-orig-hashes.txt
+  gander hash  /media/jeff/dedup/unsorted/mybook > mybook-annexed-hashes.txt
+  gander diff mybook-{orig,annexed}-hashes.txt
+
+  Hash the original files and their annexed equivalents to double-check that
+  they were copied faithfully.
