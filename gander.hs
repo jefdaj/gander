@@ -231,7 +231,7 @@ printDupes groups = mapM_ printGroup groups
 
 roundTripTree :: FilePath -> IO Bool
 roundTripTree path = do
-  let opts = Options False False False
+  let opts = Options { verbose=False, force=False }
   tree1 <- cmdHash opts path
   let str1  = serialize   tree1
       tree2 = deserialize str1
@@ -245,7 +245,7 @@ roundTripTree path = do
 
 mapTree :: FilePath -> IO DupeMap
 mapTree path = do
-  let opts = Options False False False
+  let opts = Options { verbose=False, force=False }
   tree <- cmdHash opts path
   let m = pathsByHash tree
   return m
