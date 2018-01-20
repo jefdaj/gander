@@ -13,18 +13,18 @@ import qualified System.Directory.Tree as DT
 
 import Data.Ord                   (comparing)
 import Control.Arrow              ((&&&))
-import Control.Monad              (when)
+import Control.Monad              (when, forM)
 import Data.Map                   (Map)
 import Data.Foldable              (toList)
 import Crypto.Hash                (Digest, SHA256, hashlazy)
 import Data.ByteString.Lazy.Char8 (pack)
-import Data.Either                (partitionEithers)
-import Data.List                  (sort, sortBy, partition, isInfixOf)
+import Data.List                  (sort, sortBy, partition, isInfixOf, intersperse)
 import System.Console.Docopt      (docoptFile, parseArgsOrExit,
                                    getArgOrExitWith, isPresent, longOption,
                                    shortOption, command, argument)
 import System.Environment         (getArgs)
 import System.FilePath            ((</>), takeBaseName, takeFileName, splitPath)
+import System.IO.Unsafe           (unsafeInterleaveIO)
 import System.Posix.Files         (getFileStatus, isSymbolicLink, readSymbolicLink)
 
 -----------
@@ -71,6 +71,32 @@ type DupeList = (Int, [FilePath])
  - Could be rewritten to contain links to HashTrees if that helps.
  -}
 type DupeMap = Map Hash DupeList
+
+---------------------------
+-- lazily hash and print --
+---------------------------
+
+-- Note that this part doesn't build any trees. Should it?
+
+hashTree :: Options -> DT.AnchoredDirTree FilePath -> IO [(Hash, String, FilePath)]
+hashTree _ (a DT.:/ (DT.Failed n e )) = error $ (a </> n) ++ ": " ++ show e
+hashTree os (_ DT.:/ (DT.File _ f)) = do
+  h <- unsafeInterleaveIO $ hashFile os f
+  return [(h, "file", f)]
+hashTree os (a DT.:/ (DT.Dir n cs)) = do
+  let root = a </> n
+      hashSubtree t = unsafeInterleaveIO $ hashTree os $ root DT.:/ t
+  subHashes <- fmap concat $ forM cs hashSubtree
+  let rootHash = hashHashes $ map (\(h, _, _) -> h) subHashes
+  return $ subHashes ++ [(rootHash, "dir ", root)]
+
+-- TODO use serialize for this
+printHashes :: Options -> DT.AnchoredDirTree FilePath -> IO ()
+printHashes opts tree = do
+  hashes <- hashTree opts tree
+  mapM_ printHash hashes
+  where
+    printHash (Hash h, t, p) = putStrLn $ concat $ intersperse " " [h, t, p]
 
 -------------------------------------
 -- serialize and deserialize trees --
@@ -154,6 +180,7 @@ hashFile opts path = do
       when (verbose opts) (putStrLn $ sha256sum ++ " " ++ path)
       return $ Hash sha256sum
 
+-- TODO should the hashes include filenames? ie are two dirs with a different name different?
 -- the "dir:" part prevents empty files and dirs from matching
 -- TODO is there a more elegant way?
 -- TODO remove the sort? not needed if tree order is reliable i suppose
@@ -167,19 +194,20 @@ noSkips [] = []
 noSkips ((Skip _ _):xs) = noSkips xs
 noSkips (x:xs) = x:noSkips xs
 
-hashTree :: DT.DirTree Hash -> Either String HashTree
-hashTree (DT.Failed ".git" _) = Right $ Skip ".git" (hashName ".git") -- skip git (and annex) files
-hashTree (DT.Dir    ".git" _) = Right $ Skip ".git" (hashName ".git") -- skip git (and annex) files
-hashTree (DT.Failed n e ) = Left  $ n ++ " " ++ show e
-hashTree (DT.File   n f ) = Right $ File n f
-hashTree (DT.Dir    n ts) = case partitionEithers (map hashTree ts) of
-  ([], trees) -> let trees' = noSkips trees
-                 in Right $ Dir n (hashHashes $ map hash trees') trees'
-                                  (sum $ map countFiles trees)
-  (errors, _) -> Left  $ unlines errors
+-- TODO write an equivalent that serializes as it goes rather than accumulating
+-- hashTree :: DT.DirTree Hash -> Either String HashTree
+-- hashTree (DT.Failed ".git" _) = Right $ Skip ".git" (hashName ".git") -- skip git (and annex) files
+-- hashTree (DT.Dir    ".git" _) = Right $ Skip ".git" (hashName ".git") -- skip git (and annex) files
+-- hashTree (DT.Failed n e ) = Left  $ n ++ " " ++ show e
+-- hashTree (DT.File   n f ) = Right $ File n f
+-- hashTree (DT.Dir    n ts) = case partitionEithers (map hashTree ts) of
+--   ([], trees) -> let trees' = noSkips trees
+--                  in Right $ Dir n (hashHashes $ map hash trees') trees'
+--                                   (sum $ map countFiles trees)
+--   (errors, _) -> Left  $ unlines errors
 
-printHashes :: HashTree -> IO ()
-printHashes = putStr . serialize
+-- printHashes :: HashTree -> IO ()
+-- printHashes = putStr . serialize
 
 ---------------------
 -- build dupe maps --
@@ -233,40 +261,36 @@ printDupes groups = mapM_ printGroup groups
 -- repl tests --
 ----------------
 
-roundTripTree :: Bool -> FilePath -> IO Bool
-roundTripTree beVerbose path = do
-  let opts = Options { verbose=beVerbose, force=False }
-  tree1 <- cmdHash opts path
-  let str1  = serialize   tree1
-      tree2 = deserialize str1
-      str2  = serialize   tree2
-  putStrLn str1
-  putStrLn $ show tree1
-  putStrLn $ "tree1 == tree2? " ++ show (tree1 == tree2)
-  putStrLn $ "show tree1 == show tree2? " ++ show (show tree1 == show tree2)
-  putStrLn $ "str1 == str2? "   ++ show (str1  == str2)
-  return $ tree1 == tree2
+-- TODO rewrite with new hashTree
+-- roundTripTree :: Bool -> FilePath -> IO Bool
+-- roundTripTree beVerbose path = do
+--   let opts = Options { verbose=beVerbose, force=False }
+--   tree1 <- cmdHash opts path
+--   let str1  = serialize   tree1
+--       tree2 = deserialize str1
+--       str2  = serialize   tree2
+--   putStrLn str1
+--   putStrLn $ show tree1
+--   putStrLn $ "tree1 == tree2? " ++ show (tree1 == tree2)
+--   putStrLn $ "show tree1 == show tree2? " ++ show (show tree1 == show tree2)
+--   putStrLn $ "str1 == str2? "   ++ show (str1  == str2)
+--   return $ tree1 == tree2
 
-mapTree :: FilePath -> IO DupeMap
-mapTree path = do
-  let opts = Options { verbose=True, force=False }
-  tree <- cmdHash opts path
-  let m = pathsByHash tree
-  return m
+-- TODO rewrite with new hashTree
+-- mapTree :: FilePath -> IO DupeMap
+-- mapTree path = do
+--   let opts = Options { verbose=True, force=False }
+--   tree <- cmdHash opts path
+--   let m = pathsByHash tree
+--   return m
 
 ---------------
 -- interface --
 ---------------
 
--- TODO rename hash?
 -- Note that you can't hash a folder while writing to a file inside it!
-cmdHash :: Options -> FilePath -> IO HashTree
-cmdHash opts path = do
-  (_ DT.:/ tree) <- DT.readDirectoryWithL (hashFile opts) path
-  let tree' = hashTree tree
-  case tree' of
-    Left  e -> error e
-    Right t -> return t
+cmdHash :: Options -> FilePath -> IO ()
+cmdHash opts path = DT.readDirectoryWithL return path >>= printHashes opts
 
 cmdDupes :: Options -> FilePath -> IO [DupeList]
 cmdDupes _ path = do
@@ -289,6 +313,6 @@ main = do
         , force   = flag 'f' "force"
         }
   -- dispatch on command
-  if      cmd "hash"  then path "path"   >>= cmdHash  opts >>= printHashes
+  if      cmd "hash"  then path "path"   >>= cmdHash opts
   else if cmd "dupes" then path "hashes" >>= cmdDupes opts >>= printDupes
   else print args >> print opts
