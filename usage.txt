@@ -1,29 +1,27 @@
 The "Git ANnex DEdupeR" deduplicates files and folders using git-annex.
 
 Usage:
-  gander hash   [-vc]     <path>
-  gander dupes  [-vc]     <hashes>
-  gander fsck   [-vc]     <hashes> [<dir>...]
-  gander diff   [-vc]     <hashes1> <hashes2> [<dir1> <dir2>]
-  gander update [-v(c|f)] <oldhashes> <newhashes>...
-  gander add    [-v(c|f)] <dest> <paths>...
-  gander remove [-v(c|f)] <hashes> <path>
+  gander hash   [-v]  <path>
+  gander dupes  [-v]  <hashes>
+  gander fsck   [-v]  <hashes> [<dir>...]
+  gander diff   [-v]  <hashes1> <hashes2> [<dir1> <dir2>]
+  gander update [-vf] <oldhashes> <newhashes>...
+  gander add    [-vf] <dest> <paths>...
+  gander remove [-vf] <hashes> <path>
 
 Options:
-  -v, --verbose  Explain each step as it runs.
   -f, --force    Change existing files without requiring confirmation.
-  -c, --confirm  Prompt to confirm each step before it runs, even
-                 when non-destructive. Mainly for debugging.
+  -v, --verbose  Explain each step as it runs.
 
 Commands:
   hash    Reads files + folders and prints their hashes to stdout.
   dupes   List duplicate files + folders in <hashes>.
-  fsck    Re-read one or more paths and make sure their hashes still match <hashes>.
+  fsck    Re-read one or more paths and make sure their hashes are correct.
           <dir> limits it to one or more subdirectories.
   diff    Compare two sets of hashes for differences. <dir>s limit comparison
           to subdirectories.
   add     Copies each <path> into <dest> and `git annex add`s it.
-          <dest> needs to be in an annex, of course. Uses rsync syntax (see examples).
+          <dest> needs to be in an annex, of course. See examples for syntax.
   remove  `git rm` a path after checking that all files in it are duplicates.
           Prompts to confirm unless `--force`d.
   update  Updates <oldhashes> with new hashes for one or more subdirectories.
