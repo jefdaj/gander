@@ -1,3 +1,4 @@
+{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE QuasiQuotes #-}
 
 module Main where
@@ -12,6 +13,7 @@ import qualified System.Directory.Tree as DT
 
 import Data.Ord                   (comparing)
 import Control.Arrow              ((&&&))
+import Control.Monad              (when)
 import Data.Map                   (Map)
 import Data.Foldable              (toList)
 import Crypto.Hash                (Digest, SHA256, hashlazy)
@@ -141,13 +143,15 @@ annexLink path = do
 
 -- Hashes if necessary, but tries to read it from an annex link first
 -- For the actual hashing see: https://stackoverflow.com/a/30537010
-hashFile :: FilePath -> IO Hash
-hashFile path = do
+-- Note that this can only print file hashes, not the whole streaming trees format
+hashFile :: Options -> FilePath -> IO Hash
+hashFile opts path = do
   link <- annexLink path
   case link of
     Just l -> return $ Hash $ drop 20 $ takeBaseName l
     Nothing -> do
-      sha256sum <- fmap hashBytes $ LB.readFile path
+      !sha256sum <- fmap hashBytes $ LB.readFile path
+      when (verbose opts) (putStrLn $ sha256sum ++ " " ++ path)
       return $ Hash sha256sum
 
 -- the "dir:" part prevents empty files and dirs from matching
@@ -229,9 +233,9 @@ printDupes groups = mapM_ printGroup groups
 -- repl tests --
 ----------------
 
-roundTripTree :: FilePath -> IO Bool
-roundTripTree path = do
-  let opts = Options { verbose=False, force=False }
+roundTripTree :: Bool -> FilePath -> IO Bool
+roundTripTree beVerbose path = do
+  let opts = Options { verbose=beVerbose, force=False }
   tree1 <- cmdHash opts path
   let str1  = serialize   tree1
       tree2 = deserialize str1
@@ -245,7 +249,7 @@ roundTripTree path = do
 
 mapTree :: FilePath -> IO DupeMap
 mapTree path = do
-  let opts = Options { verbose=False, force=False }
+  let opts = Options { verbose=True, force=False }
   tree <- cmdHash opts path
   let m = pathsByHash tree
   return m
@@ -257,8 +261,8 @@ mapTree path = do
 -- TODO rename hash?
 -- Note that you can't hash a folder while writing to a file inside it!
 cmdHash :: Options -> FilePath -> IO HashTree
-cmdHash _ path = do
-  (_ DT.:/ tree) <- DT.readDirectoryWith hashFile path
+cmdHash opts path = do
+  (_ DT.:/ tree) <- DT.readDirectoryWithL (hashFile opts) path
   let tree' = hashTree tree
   case tree' of
     Left  e -> error e
