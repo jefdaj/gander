@@ -57,9 +57,9 @@ newtype Hash = Hash String
  -}
 -- data HashTree = DT.AnchoredDirTree Hash
 --   deriving (Eq, Read, Show)
+--   TODO rename name -> path?
 data HashTree
-  = Skip { name :: FilePath, hash :: Hash } -- for files + folders to ignore
-  | File { name :: FilePath, hash :: Hash }
+  = File { name :: FilePath, hash :: Hash }
   | Dir  { name :: FilePath, hash :: Hash, contents :: [HashTree], nFiles :: Int }
   deriving (Read, Show)
 
@@ -120,7 +120,6 @@ serialize :: HashTree -> String
 serialize = unlines . serialize' ""
 
 serialize' :: FilePath -> HashTree -> [String]
-serialize' _   (Skip  _ _           ) = []
 serialize' dir (File n (Hash h)     ) = [unwords [h, "file", dir </> n]]
 serialize' dir (Dir  n (Hash h) cs _)
   = concatMap (serialize' $ dir </> n) cs -- recurse on contents
@@ -132,7 +131,6 @@ deserialize :: String -> HashTree
 deserialize = snd . head . foldr accTrees [] . map readLine . reverse . lines
 
 countFiles :: HashTree -> Int
-countFiles (Skip _ _    ) = 0
 countFiles (File _ _    ) = 1
 countFiles (Dir  _ _ _ n) = n
 
@@ -201,26 +199,6 @@ hashHashes hs = Hash $ hashBytes $ pack txt
   where
     txt = show $ sort $ map (\(Hash h) -> h) hs
 
-noSkips :: [HashTree] -> [HashTree]
-noSkips [] = []
-noSkips ((Skip _ _):xs) = noSkips xs
-noSkips (x:xs) = x:noSkips xs
-
--- TODO write an equivalent that serializes as it goes rather than accumulating
--- hashTree :: DT.DirTree Hash -> Either String HashTree
--- hashTree (DT.Failed ".git" _) = Right $ Skip ".git" (hashName ".git") -- skip git (and annex) files
--- hashTree (DT.Dir    ".git" _) = Right $ Skip ".git" (hashName ".git") -- skip git (and annex) files
--- hashTree (DT.Failed n e ) = Left  $ n ++ " " ++ show e
--- hashTree (DT.File   n f ) = Right $ File n f
--- hashTree (DT.Dir    n ts) = case partitionEithers (map hashTree ts) of
---   ([], trees) -> let trees' = noSkips trees
---                  in Right $ Dir n (hashHashes $ map hash trees') trees'
---                                   (sum $ map countFiles trees)
---   (errors, _) -> Left  $ unlines errors
-
--- printHashes :: HashTree -> IO ()
--- printHashes = putStr . serialize
-
 ---------------------
 -- build dupe maps --
 ---------------------
@@ -234,7 +212,6 @@ mergeDupeLists :: DupeList -> DupeList -> DupeList
 mergeDupeLists (n1, l1) (n2, l2) = (n1 + n2, l1 ++ l2)
 
 pathsByHash' :: FilePath -> HashTree -> [(Hash, DupeList)]
-pathsByHash' _   (Skip _ _      ) = []
 pathsByHash' dir (File n h      ) = [(h, (1, [dir </> n]))]
 pathsByHash' dir (Dir  n h cs fs) = cPaths ++ [(h, (fs, [dir </> n]))]
   where

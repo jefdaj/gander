@@ -1,5 +1,4 @@
-fix the skipping mechanism
-  remove Skip from custom tree type
+x fix the skipping mechanism
 add cmdTest
   round-trip a dir through the serialization
 add cmdDiff
