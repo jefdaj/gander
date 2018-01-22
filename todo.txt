@@ -1,0 +1,14 @@
+fix the skipping mechanism
+  use DT.filterDir to remove .git and other ignorable files
+  add an exclude list of regexes and hook up to filterDir step
+  remove Skip from custom tree type
+add cmdTest
+  round-trip a dir through the serialization
+add cmdDiff
+  wait, is this actually needed?
+  would be nice to have the smallest possible printed tree explaining differences
+add cmdUpdate
+  should it use two hashes files, or one + the actual dir to be updated?
+add cmdAdd
+add cmdRemove
+add cmdDedup which will loop through asking to delete + updating hashes
