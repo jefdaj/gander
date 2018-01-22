@@ -303,7 +303,6 @@ main = do
   excludeList <- if (flag 'e' "exclude")
                    then short 'e' >>= readFile >>= return . lines
                    else return [".git*"]
-  putStrLn $ show excludeList
   let opts = Options
         { verbose = flag 'v' "verbose"
         , force   = flag 'f' "force"
