@@ -1,6 +1,4 @@
 fix the skipping mechanism
-  use DT.filterDir to remove .git and other ignorable files
-  add an exclude list of regexes and hook up to filterDir step
   remove Skip from custom tree type
 add cmdTest
   round-trip a dir through the serialization

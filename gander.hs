@@ -24,6 +24,7 @@ import System.Console.Docopt      (docoptFile, parseArgsOrExit,
                                    shortOption, command, argument)
 import System.Environment         (getArgs)
 import System.FilePath            ((</>), takeBaseName, takeFileName, splitPath)
+import System.FilePath.Glob       (compile, match)
 import System.IO.Unsafe           (unsafeInterleaveIO)
 import System.Posix.Files         (getFileStatus, isSymbolicLink, readSymbolicLink)
 
@@ -37,6 +38,7 @@ import System.Posix.Files         (getFileStatus, isSymbolicLink, readSymbolicLi
 data Options = Options
   { verbose :: Bool
   , force   :: Bool
+  , exclude :: [String]
   }
   deriving (Read, Show)
 
@@ -77,6 +79,16 @@ type DupeMap = Map Hash DupeList
 ---------------------------
 
 -- Note that this part doesn't build any trees. Should it?
+
+-- TODO add IO in order to say which files are being excluded?
+excludeGlobs :: Options
+             -> (DT.AnchoredDirTree FilePath -> DT.AnchoredDirTree FilePath)
+excludeGlobs opts (a DT.:/ tree) = (a DT.:/ DT.filterDir keep tree)
+  where
+    noneMatch ps s = not $ any (\p -> match (compile p) s) ps
+    keep (DT.Dir  n _) = noneMatch (exclude opts) n
+    keep (DT.File n _) = noneMatch (exclude opts) n
+    keep _ = True
 
 hashTree :: Options -> DT.AnchoredDirTree FilePath -> IO [(Hash, String, FilePath)]
 hashTree _ (a DT.:/ (DT.Failed n e )) = error $ (a </> n) ++ ": " ++ show e
@@ -290,7 +302,9 @@ printDupes groups = mapM_ printGroup groups
 
 -- Note that you can't hash a folder while writing to a file inside it!
 cmdHash :: Options -> FilePath -> IO ()
-cmdHash opts path = DT.readDirectoryWithL return path >>= printHashes opts
+cmdHash opts path = do
+  tree <- DT.readDirectoryWithL return path
+  printHashes opts $ excludeGlobs opts tree
 
 cmdDupes :: Options -> FilePath -> IO [DupeList]
 cmdDupes _ path = do
@@ -306,11 +320,17 @@ main = do
   args <- parseArgsOrExit ptns =<< getArgs
   let cmd  n = isPresent args $ command n
       path n = getArgOrExitWith ptns args $ argument n
+      short n = getArgOrExitWith ptns args $ shortOption n
       flag s l  = isPresent args (shortOption s)
                || isPresent args (longOption  l)
-      opts = Options
+  excludeList <- if (flag 'e' "exclude")
+                   then short 'e' >>= readFile >>= return . lines
+                   else return [".git*"]
+  putStrLn $ show excludeList
+  let opts = Options
         { verbose = flag 'v' "verbose"
         , force   = flag 'f' "force"
+        , exclude = excludeList
         }
   -- dispatch on command
   if      cmd "hash"  then path "path"   >>= cmdHash opts

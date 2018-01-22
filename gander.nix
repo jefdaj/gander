@@ -1,5 +1,5 @@
 { mkDerivation, base, bytestring, containers, cryptohash
-, directory-tree, docopt, filepath, stdenv, unix
+, directory-tree, docopt, filepath, Glob, stdenv, unix
 }:
 mkDerivation {
   pname = "gander";
@@ -10,7 +10,7 @@ mkDerivation {
   enableSeparateDataOutput = true;
   executableHaskellDepends = [
     base bytestring containers cryptohash directory-tree docopt
-    filepath unix
+    filepath Glob unix
   ];
   description = "The \"Git ANnex DEdupeR\"";
   license = stdenv.lib.licenses.lgpl3;
