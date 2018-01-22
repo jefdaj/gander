@@ -23,6 +23,7 @@ executable gander
                        docopt,
                        directory-tree,
                        filepath,
+                       Glob,
                        unix
   default-language:    Haskell2010
   other-modules:       Paths_gander
