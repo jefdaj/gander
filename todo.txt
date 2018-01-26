@@ -11,6 +11,8 @@ break into logical modules by command. something like...
   |-- Tree.hs   : read a list/stream of hashes into a tree (and serialize it again?)
   `-- Update.hs : update one hash tree with another representing an updated subdirectory
 
+are the fancier ones needed though? might be able to do fine without dedup, delete, import
+
 work out the dependencies for that too. something like...
 
   Hash -> Gander
