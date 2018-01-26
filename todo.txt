@@ -1,11 +1,25 @@
-x fix the skipping mechanism
-add cmdTest
-  round-trip a dir through the serialization
-add cmdDiff
-  wait, is this actually needed?
-  would be nice to have the smallest possible printed tree explaining differences
-add cmdUpdate
-  should it use two hashes files, or one + the actual dir to be updated?
-add cmdAdd
-add cmdRemove
-add cmdDedup which will loop through asking to delete + updating hashes
+break into logical modules by command. something like...
+
+  Gander.hs : main docopt + dispatch code
+  Gander
+  |-- Dedup.hs  : repeatedly find dups and prompt to delete/sort the worst one
+  |-- Delete.hs : remove a subtree after double-checking that all files are dups
+  |-- Diff.hs   : make a diff tree from two hash trees and use it to show differences
+  |-- Dupes.hs  : make a dupe map from a hash tree (or list?) and list duplicate groups
+  |-- Hash.hs   : stream + print hashes from disk using unsafeInterleaveIO
+  |-- Import.hs : rsync + annex add files, then make sure before/after diff is empty
+  |-- Tree.hs   : read a list/stream of hashes into a tree (and serialize it again?)
+  `-- Update.hs : update one hash tree with another representing an updated subdirectory
+
+work out the dependencies for that too. something like...
+
+  Hash -> Gander
+  Hash -> Tree -> {Update, Diff, Delete, Dupes} -> Gander
+  Diff -> Import -> Gander
+  Dupes -> Delete -> Dedup -> Gander
+  Delete -> Gander
+
+  (But does Dupes get made from a Tree or Stream/List directly?)
+  (And do Stream/Lists get made from Trees too?)
+
+don't need explicit tests; the test is round-tripping our actual filenames + files
