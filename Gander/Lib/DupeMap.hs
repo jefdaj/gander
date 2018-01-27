@@ -1,5 +1,7 @@
 module Gander.Lib.DupeMap
-  ( pathsByHash
+  ( DupeList
+  , DupeMap
+  , pathsByHash
   , mergeDupeLists
   , sortDescLength
   , dupesByNFiles
@@ -8,16 +10,25 @@ module Gander.Lib.DupeMap
   )
   where
 
-import Gander.Types
+import Gander.Lib.Hash
+import Gander.Lib.HashTree
 
 import Control.Arrow   ((&&&))
 import Data.Foldable   (toList)
 import Data.List       (sort, sortBy)
+import Data.Map        (Map)
 import Data.Map        (fromListWith)
 import Data.Ord        (comparing)
 import System.FilePath ((</>))
 
 -- TODO can Foldable or Traversable simplify these?
+
+type DupeList = (Int, [FilePath])
+
+{- A map from file/dir hash to a list of duplicate file paths.
+ - Could be rewritten to contain links to HashTrees if that helps.
+ -}
+type DupeMap = Map Hash DupeList
 
 pathsByHash :: HashTree -> DupeMap
 pathsByHash = fromListWith mergeDupeLists . pathsByHash' ""

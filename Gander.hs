@@ -7,7 +7,6 @@ module Main where
 -- TODO is git-annex an actual dep, or just recommended to go with it?
 -- TODO figure out how to read files + compute hashes in parallel
 
-import Gander.Types
 import Gander.Lib.HashTree
 import Gander.Lib.DupeMap
 
