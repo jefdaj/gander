@@ -3,6 +3,10 @@ module Gander.Cmd
   , cmdDiff
   , cmdDupes
   , cmdTest
+  -- TODO cmdUpdate (easy)
+  -- TODO cmdAdd (fairly easy)
+  -- TODO cmdRm (fairly easy)
+  -- TODO cmdDedup (maybe long)
   )
   where
 
