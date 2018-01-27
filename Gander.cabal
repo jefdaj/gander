@@ -1,4 +1,4 @@
-name:                gander
+name:                Gander
 version:             0.1.0.0
 synopsis:            The "Git ANnex DEdupeR"
 description:         Deduplicates large numbers of files using git-annex
@@ -15,7 +15,7 @@ data-files:          usage.txt
 
 executable gander
   ghc-options:         -Wall
-  main-is:             gander.hs
+  main-is:             Gander.hs
   build-depends:       base,
                        bytestring,
                        containers,

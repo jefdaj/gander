@@ -7,7 +7,6 @@ mkDerivation {
   src = ./.;
   isLibrary = false;
   isExecutable = true;
-  enableSeparateDataOutput = true;
   executableHaskellDepends = [
     base bytestring containers cryptohash directory-tree docopt
     filepath Glob unix

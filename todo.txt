@@ -1,27 +1,7 @@
-break into logical modules by command. something like...
-
-  Gander.hs : main docopt + dispatch code
-  Gander
-  |-- Dedup.hs  : repeatedly find dups and prompt to delete/sort the worst one
-  |-- Delete.hs : remove a subtree after double-checking that all files are dups
-  |-- Diff.hs   : make a diff tree from two hash trees and use it to show differences
-  |-- Dupes.hs  : make a dupe map from a hash tree (or list?) and list duplicate groups
-  |-- Hash.hs   : stream + print hashes from disk using unsafeInterleaveIO
-  |-- Import.hs : rsync + annex add files, then make sure before/after diff is empty
-  |-- Tree.hs   : read a list/stream of hashes into a tree (and serialize it again?)
-  `-- Update.hs : update one hash tree with another representing an updated subdirectory
-
-are the fancier ones needed though? might be able to do fine without dedup, delete, import
-
-work out the dependencies for that too. something like...
-
-  Hash -> Gander
-  Hash -> Tree -> {Update, Diff, Delete, Dupes} -> Gander
-  Diff -> Import -> Gander
-  Dupes -> Delete -> Dedup -> Gander
-  Delete -> Gander
-
-  (But does Dupes get made from a Tree or Stream/List directly?)
-  (And do Stream/Lists get made from Trees too?)
-
+remove Types.hs if possible, or convert to just Options.hs
+would it help to break up HashTree.hs further?
+are the fancier modules needed? might be able to do fine without dedup, delete, import
+does Dupes get made from a Tree or Stream/List directly?
+do Stream/Lists get made from Trees too?
+should Add be called Move?
 don't need explicit tests; the test is round-tripping our actual filenames + files
