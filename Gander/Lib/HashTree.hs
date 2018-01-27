@@ -1,9 +1,12 @@
 module Gander.Lib.HashTree
   ( HashTree(..)
   , excludeGlobs -- TODO no need to export?
+  , buildTree
   , hashTree
   , printHashes
+  , prettyHashLine
   , serializeTree
+  , flattenTree
   , deserializeTree
   )
   where
@@ -12,10 +15,16 @@ import Gander.Lib.Hash
 import qualified System.Directory.Tree as DT
 
 import Control.Monad        (forM)
-import Data.List            (partition, intersperse)
+import Data.List            (partition)
 import System.FilePath      ((</>), takeFileName, splitPath)
 import System.FilePath.Glob (compile, match)
 import System.IO.Unsafe     (unsafeInterleaveIO)
+
+type HashLine = (Hash, String, FilePath)
+
+-- TODO actual Pretty instance
+prettyHashLine :: HashLine -> String
+prettyHashLine (Hash h, t, p) = unwords [h, t, p]
 
 {- A tree of file names matching (a subdirectory of) the annex,
  - where each dir and file node contains a hash of its contents.
@@ -43,7 +52,16 @@ excludeGlobs excludes (a DT.:/ tree) = (a DT.:/ DT.filterDir keep tree)
     keep (DT.File n _) = noneMatch excludes n
     keep _ = True
 
-hashTree :: Bool -> DT.AnchoredDirTree FilePath -> IO [(Hash, String, FilePath)]
+-- buildTree2 :: [HashLine] -> HashTree
+-- buildTree2 = snd . head . foldr accTrees []
+
+buildTree :: [String] -> FilePath -> IO (DT.AnchoredDirTree FilePath)
+buildTree excludes path = do
+  tree <- DT.readDirectoryWithL return path
+  return $ excludeGlobs excludes tree
+
+-- TODO have this build a tree and then flatten to get the lines
+hashTree :: Bool -> DT.AnchoredDirTree FilePath -> IO [HashLine]
 hashTree _ (a DT.:/ (DT.Failed n e )) = error $ (a </> n) ++ ": " ++ show e
 hashTree v (_ DT.:/ (DT.File _ f)) = do
   h <- unsafeInterleaveIO $ hashFile v f
@@ -59,27 +77,29 @@ hashTree v (a DT.:/ (DT.Dir n cs)) = do
 printHashes :: Bool -> DT.AnchoredDirTree FilePath -> IO ()
 printHashes verbose tree = do
   hashes <- hashTree verbose tree
-  mapM_ printHash hashes
-  where
-    printHash (Hash h, t, p) = putStrLn $ concat $ intersperse " " [h, t, p]
+  mapM_ (putStrLn . prettyHashLine) hashes
 
 -------------------------------------
 -- serialize and deserializeTree trees --
 -------------------------------------
 
 -- TODO can Foldable or Traversable simplify these?
-
 serializeTree :: HashTree -> String
-serializeTree = unlines . serialize' ""
+serializeTree = unlines . map prettyHashLine . flattenTree' ""
 
-serialize' :: FilePath -> HashTree -> [String]
-serialize' dir (File n (Hash h)     ) = [unwords [h, "file", dir </> n]]
-serialize' dir (Dir  n (Hash h) cs _)
-  = concatMap (serialize' $ dir </> n) cs -- recurse on contents
-  ++ [unwords [h, "dir ", dir </> n]] -- finish with hash of entire dir
+flattenTree :: HashTree -> [HashLine]
+flattenTree = flattenTree' ""
+
+flattenTree' :: FilePath -> HashTree -> [(Hash, String, FilePath)]
+flattenTree' dir (File n h     ) = [(h, "file", dir </> n)]
+flattenTree' dir (Dir  n h cs _) = subtrees ++ [wholeDir]
+  where
+    subtrees = concatMap (flattenTree' $ dir </> n) cs
+    wholeDir = (h, "dir ", dir </> n)
 
 -- TODO error on null string/lines?
 -- TODO wtf why is reverse needed? remove that to save RAM
+-- TODO refactor so there's a proper buildTree function and this uses it
 deserializeTree :: String -> HashTree
 deserializeTree = snd . head . foldr accTrees [] . map readLine . reverse . lines
 
@@ -106,3 +126,6 @@ readLine line = (Hash h, t, i, takeFileName p)
     [h, t]   = words tmp            -- first two words are hash and type
     (tmp, p) = splitAt 70 line      -- rest of the line is the path
     i        = length $ splitPath p -- get indent level from path
+
+-- readLine2 :: HashLine -> (Hash, String, Int, FilePath)
+-- readLine2 (Hash h, t, p) = (Hash h, t, length $ splitPath p, takeFileName p)
