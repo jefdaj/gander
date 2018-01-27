@@ -9,15 +9,17 @@ maintainer:          jefdaj@gmail.com
 -- copyright:           
 -- category:            
 build-type:          Simple
--- extra-source-files:  ChangeLog.md
 cabal-version:       >=1.10
 data-files:          usage.txt
 
 executable gander
   ghc-options:         -Wall
   main-is:             Gander.hs
-  other-modules:       Gander.Lib,
+  other-modules:       Gander.Cmd,
+                       Gander.Cmd.Hash,
+                       Gander.Cmd.Dupes,
                        Gander.Config,
+                       Gander.Lib,
                        Gander.Lib.Hash,
                        Gander.Lib.HashTree,
                        Gander.Lib.DupeMap

@@ -4,7 +4,7 @@ module Gander.Cmd.Hash
   where
 
 import Gander.Config
-import Gander.Lib.HashTree (excludeGlobs, printHashes)
+import Gander.Lib (excludeGlobs, printHashes)
 import System.Directory.Tree (readDirectoryWithL)
 
 -- Note that you can't hash a folder while writing to a file inside it!

@@ -13,5 +13,3 @@ data Config = Config
   , exclude :: [String]
   }
   deriving (Read, Show)
-
-
