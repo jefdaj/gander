@@ -1,7 +1,6 @@
-{-# LANGUAGE BangPatterns #-}
-
 module Gander.Lib.HashTree
-  ( excludeGlobs -- TODO no need to export?
+  ( HashTree(..)
+  , excludeGlobs -- TODO no need to export?
   , hashTree
   , printHashes
   , serializeTree
@@ -9,18 +8,31 @@ module Gander.Lib.HashTree
   )
   where
 
-import Gander.Types
-import qualified Data.ByteString.Lazy  as LB
+import Gander.Lib.Hash
 import qualified System.Directory.Tree as DT
 
-import System.IO.Unsafe           (unsafeInterleaveIO)
-import Control.Monad              (when, forM)
-import Crypto.Hash                (Digest, SHA256, hashlazy)
-import Data.ByteString.Lazy.Char8 (pack)
-import Data.List                  (sort, partition, isInfixOf, intersperse)
-import System.FilePath            ((</>), takeBaseName, takeFileName, splitPath)
-import System.FilePath.Glob       (compile, match)
-import System.Posix.Files         (getFileStatus, isSymbolicLink, readSymbolicLink)
+import Control.Monad        (forM)
+import Data.List            (partition, intersperse)
+import System.FilePath      ((</>), takeFileName, splitPath)
+import System.FilePath.Glob (compile, match)
+import System.IO.Unsafe     (unsafeInterleaveIO)
+
+{- A tree of file names matching (a subdirectory of) the annex,
+ - where each dir and file node contains a hash of its contents.
+ - TODO read and write files
+ - TODO would also storing the number of files in each dir help, or timestamps?
+ -}
+-- data HashTree = DT.AnchoredDirTree Hash
+--   deriving (Eq, Read, Show)
+--   TODO rename name -> path?
+data HashTree
+  = File { name :: FilePath, hash :: Hash }
+  | Dir  { name :: FilePath, hash :: Hash, contents :: [HashTree], nFiles :: Int }
+  deriving (Read, Show)
+
+-- TODO disable this while testing to ensure deep equality?
+instance Eq HashTree where
+  t1 == t2 = hash t1 == hash t2
 
 excludeGlobs :: [String]
              -> (DT.AnchoredDirTree FilePath -> DT.AnchoredDirTree FilePath)
@@ -94,43 +106,3 @@ readLine line = (Hash h, t, i, takeFileName p)
     [h, t]   = words tmp            -- first two words are hash and type
     (tmp, p) = splitAt 70 line      -- rest of the line is the path
     i        = length $ splitPath p -- get indent level from path
-
-----------------------
--- build hash trees --
-----------------------
-
-hashBytes :: LB.ByteString -> String
-hashBytes = show . (hashlazy :: LB.ByteString -> Digest SHA256)
-
-annexLink :: FilePath -> IO (Maybe FilePath)
-annexLink path = do
-  status <- getFileStatus path
-  if not (isSymbolicLink status)
-    then return Nothing
-    else do
-      link <- readSymbolicLink path
-      return $ if ".git/annex/objects/" `isInfixOf` link
-        then Just link
-        else Nothing
-
--- Hashes if necessary, but tries to read it from an annex link first
--- For the actual hashing see: https://stackoverflow.com/a/30537010
--- Note that this can only print file hashes, not the whole streaming trees format
-hashFile :: Bool -> FilePath -> IO Hash
-hashFile verbose path = do
-  link <- annexLink path
-  case link of
-    Just l -> return $ Hash $ drop 20 $ takeBaseName l
-    Nothing -> do
-      !sha256sum <- fmap hashBytes $ LB.readFile path
-      when verbose (putStrLn $ sha256sum ++ " " ++ path)
-      return $ Hash sha256sum
-
--- TODO should the hashes include filenames? ie are two dirs with a different name different?
--- the "dir:" part prevents empty files and dirs from matching
--- TODO is there a more elegant way?
--- TODO remove the sort? not needed if tree order is reliable i suppose
-hashHashes :: [Hash] -> Hash
-hashHashes hs = Hash $ hashBytes $ pack txt
-  where
-    txt = show $ sort $ map (\(Hash h) -> h) hs
