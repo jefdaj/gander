@@ -17,13 +17,14 @@ executable gander
   main-is:             Gander.hs
   other-modules:       Gander.Cmd,
                        Gander.Cmd.Hash,
+                       Gander.Cmd.Diff,
                        Gander.Cmd.Dupes,
                        Gander.Cmd.Test,
                        Gander.Config,
                        Gander.Lib,
                        Gander.Lib.Hash,
                        Gander.Lib.HashTree,
-                       Gander.Lib.Changes,
+                       Gander.Lib.Diff,
                        Gander.Lib.DupeMap
   build-depends:       base,
                        bytestring,
