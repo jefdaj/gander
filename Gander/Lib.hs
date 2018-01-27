@@ -15,6 +15,7 @@ module Gander.Lib
   , DupeMap
   , dupesByNFiles
   , printDupes
+  , pathsByHash
   )
   where
 
