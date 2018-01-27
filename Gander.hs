@@ -18,6 +18,21 @@ import System.Console.Docopt (docoptFile, parseArgsOrExit,
                               getArgOrExitWith, isPresent, longOption,
                               shortOption, command, argument)
 
+-----------
+-- types --
+-----------
+
+{- Parsed command line args
+ - TODO add other stuff from usage.txt, or revise that
+ -}
+-- TODO remove from non-Cmd modules
+data Options = Options
+  { verbose :: Bool
+  , force   :: Bool
+  , exclude :: [String]
+  }
+  deriving (Read, Show)
+
 ----------------
 -- repl tests --
 ----------------
@@ -53,7 +68,7 @@ import System.Console.Docopt (docoptFile, parseArgsOrExit,
 cmdHash :: Options -> FilePath -> IO ()
 cmdHash opts path = do
   tree <- DT.readDirectoryWithL return path
-  printHashes opts $ excludeGlobs opts tree
+  printHashes (verbose opts) $ excludeGlobs (exclude opts) tree
 
 cmdDupes :: Options -> FilePath -> IO [DupeList]
 cmdDupes _ path = do

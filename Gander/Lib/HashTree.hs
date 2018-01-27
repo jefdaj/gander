@@ -22,32 +22,31 @@ import System.FilePath            ((</>), takeBaseName, takeFileName, splitPath)
 import System.FilePath.Glob       (compile, match)
 import System.Posix.Files         (getFileStatus, isSymbolicLink, readSymbolicLink)
 
--- TODO add IO in order to say which files are being excluded?
-excludeGlobs :: Options
+excludeGlobs :: [String]
              -> (DT.AnchoredDirTree FilePath -> DT.AnchoredDirTree FilePath)
-excludeGlobs opts (a DT.:/ tree) = (a DT.:/ DT.filterDir keep tree)
+excludeGlobs excludes (a DT.:/ tree) = (a DT.:/ DT.filterDir keep tree)
   where
     noneMatch ps s = not $ any (\p -> match (compile p) s) ps
-    keep (DT.Dir  n _) = noneMatch (exclude opts) n
-    keep (DT.File n _) = noneMatch (exclude opts) n
+    keep (DT.Dir  n _) = noneMatch excludes n
+    keep (DT.File n _) = noneMatch excludes n
     keep _ = True
 
-hashTree :: Options -> DT.AnchoredDirTree FilePath -> IO [(Hash, String, FilePath)]
+hashTree :: Bool -> DT.AnchoredDirTree FilePath -> IO [(Hash, String, FilePath)]
 hashTree _ (a DT.:/ (DT.Failed n e )) = error $ (a </> n) ++ ": " ++ show e
-hashTree os (_ DT.:/ (DT.File _ f)) = do
-  h <- unsafeInterleaveIO $ hashFile os f
+hashTree v (_ DT.:/ (DT.File _ f)) = do
+  h <- unsafeInterleaveIO $ hashFile v f
   return [(h, "file", f)]
-hashTree os (a DT.:/ (DT.Dir n cs)) = do
+hashTree v (a DT.:/ (DT.Dir n cs)) = do
   let root = a </> n
-      hashSubtree t = unsafeInterleaveIO $ hashTree os $ root DT.:/ t
+      hashSubtree t = unsafeInterleaveIO $ hashTree v $ root DT.:/ t
   subHashes <- fmap concat $ forM cs hashSubtree
   let rootHash = hashHashes $ map (\(h, _, _) -> h) subHashes
   return $ subHashes ++ [(rootHash, "dir ", root)]
 
 -- TODO use serialize for this
-printHashes :: Options -> DT.AnchoredDirTree FilePath -> IO ()
-printHashes opts tree = do
-  hashes <- hashTree opts tree
+printHashes :: Bool -> DT.AnchoredDirTree FilePath -> IO ()
+printHashes verbose tree = do
+  hashes <- hashTree verbose tree
   mapM_ printHash hashes
   where
     printHash (Hash h, t, p) = putStrLn $ concat $ intersperse " " [h, t, p]
@@ -117,14 +116,14 @@ annexLink path = do
 -- Hashes if necessary, but tries to read it from an annex link first
 -- For the actual hashing see: https://stackoverflow.com/a/30537010
 -- Note that this can only print file hashes, not the whole streaming trees format
-hashFile :: Options -> FilePath -> IO Hash
-hashFile opts path = do
+hashFile :: Bool -> FilePath -> IO Hash
+hashFile verbose path = do
   link <- annexLink path
   case link of
     Just l -> return $ Hash $ drop 20 $ takeBaseName l
     Nothing -> do
       !sha256sum <- fmap hashBytes $ LB.readFile path
-      when (verbose opts) (putStrLn $ sha256sum ++ " " ++ path)
+      when verbose (putStrLn $ sha256sum ++ " " ++ path)
       return $ Hash sha256sum
 
 -- TODO should the hashes include filenames? ie are two dirs with a different name different?
