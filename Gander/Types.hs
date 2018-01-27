@@ -1,19 +1,8 @@
 module Gander.Types where
 
 import Data.Map (Map)
-import qualified Data.Map as Map
 
 -- TODO can this be removed with better module isolation?
-
-{- Parsed command line args
- - TODO add other stuff from usage.txt, or revise that
- -}
-data Options = Options
-  { verbose :: Bool
-  , force   :: Bool
-  , exclude :: [String]
-  }
-  deriving (Read, Show)
 
 {- Checksum (sha256sum?) of a file or folder.
  - For files, should match the corresponding git-annex key.
