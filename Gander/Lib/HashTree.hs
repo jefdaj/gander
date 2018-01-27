@@ -1,8 +1,6 @@
 module Gander.Lib.HashTree
   ( HashTree(..)
-  , excludeGlobs -- TODO no need to export?
   , buildTree
-  , hashTree
   , printHashes
   , prettyHashLine
   , serializeTree
@@ -52,32 +50,30 @@ excludeGlobs excludes (a DT.:/ tree) = (a DT.:/ DT.filterDir keep tree)
     keep (DT.File n _) = noneMatch excludes n
     keep _ = True
 
--- buildTree2 :: [HashLine] -> HashTree
--- buildTree2 = snd . head . foldr accTrees []
-
-buildTree :: [String] -> FilePath -> IO (DT.AnchoredDirTree FilePath)
-buildTree excludes path = do
+buildTree :: Bool -> [String] -> FilePath -> IO HashTree
+buildTree beVerbose excludes path = do
   tree <- DT.readDirectoryWithL return path
-  return $ excludeGlobs excludes tree
+  buildTree' beVerbose $ excludeGlobs excludes tree
 
--- TODO have this build a tree and then flatten to get the lines
-hashTree :: Bool -> DT.AnchoredDirTree FilePath -> IO [HashLine]
-hashTree _ (a DT.:/ (DT.Failed n e )) = error $ (a </> n) ++ ": " ++ show e
-hashTree v (_ DT.:/ (DT.File _ f)) = do
+buildTree' :: Bool -> DT.AnchoredDirTree FilePath -> IO HashTree
+buildTree' _ (a DT.:/ (DT.Failed n e )) = error $ (a </> n) ++ ": " ++ show e
+buildTree' v (_ DT.:/ (DT.File n f)) = do
   h <- unsafeInterleaveIO $ hashFile v f
-  return [(h, "file", f)]
-hashTree v (a DT.:/ (DT.Dir n cs)) = do
+  return File { name = n, hash = h }
+buildTree' v (a DT.:/ (DT.Dir n cs)) = do
   let root = a </> n
-      hashSubtree t = unsafeInterleaveIO $ hashTree v $ root DT.:/ t
-  subHashes <- fmap concat $ forM cs hashSubtree
-  let rootHash = hashHashes $ map (\(h, _, _) -> h) subHashes
-  return $ subHashes ++ [(rootHash, "dir ", root)]
+      hashSubtree t = unsafeInterleaveIO $ buildTree' v $ root DT.:/ t
+  subTrees <- forM cs hashSubtree
+  return Dir
+    { name     = n
+    , contents = subTrees
+    , hash     = hashHashes $ map hash subTrees
+    , nFiles   = sum $ map countFiles subTrees
+    }
 
 -- TODO use serialize for this
-printHashes :: Bool -> DT.AnchoredDirTree FilePath -> IO ()
-printHashes verbose tree = do
-  hashes <- hashTree verbose tree
-  mapM_ (putStrLn . prettyHashLine) hashes
+printHashes :: HashTree -> IO ()
+printHashes tree = mapM_ (putStrLn . prettyHashLine) (flattenTree tree)
 
 -------------------------------------
 -- serialize and deserializeTree trees --
@@ -126,6 +122,3 @@ readLine line = (Hash h, t, i, takeFileName p)
     [h, t]   = words tmp            -- first two words are hash and type
     (tmp, p) = splitAt 70 line      -- rest of the line is the path
     i        = length $ splitPath p -- get indent level from path
-
--- readLine2 :: HashLine -> (Hash, String, Int, FilePath)
--- readLine2 (Hash h, t, p) = (Hash h, t, length $ splitPath p, takeFileName p)

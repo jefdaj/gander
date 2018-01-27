@@ -5,7 +5,6 @@ module Gander.Lib
   -- hashtree
   , HashTree(..)
   , buildTree
-  , excludeGlobs
   , flattenTree
   , serializeTree
   , deserializeTree
