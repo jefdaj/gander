@@ -17,6 +17,7 @@ executable gander
   ghc-options:         -Wall
   main-is:             Gander.hs
   other-modules:       Gander.Lib,
+                       Gander.Config,
                        Gander.Lib.Hash,
                        Gander.Lib.HashTree,
                        Gander.Lib.DupeMap
