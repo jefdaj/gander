@@ -1,5 +1,6 @@
 module Gander.Config
   ( Config(..)
+  , defaultConfig
   )
   where
 
@@ -13,3 +14,10 @@ data Config = Config
   , exclude :: [String]
   }
   deriving (Read, Show)
+
+defaultConfig :: Config
+defaultConfig = Config
+  { verbose = True
+  , force = False
+  , exclude = [".git*"]
+  }

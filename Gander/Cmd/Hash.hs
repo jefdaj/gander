@@ -4,11 +4,8 @@ module Gander.Cmd.Hash
   where
 
 import Gander.Config
-import Gander.Lib (excludeGlobs, printHashes)
-import System.Directory.Tree (readDirectoryWithL)
+import Gander.Lib (buildTree, printHashes)
 
 -- Note that you can't hash a folder while writing to a file inside it!
 cmdHash :: Config -> FilePath -> IO ()
-cmdHash cfg path = do
-  tree <- readDirectoryWithL return path
-  printHashes (verbose cfg) $ excludeGlobs (exclude cfg) tree
+cmdHash cfg path = buildTree (exclude cfg) path >>= printHashes (verbose cfg)

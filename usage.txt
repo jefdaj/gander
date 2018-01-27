@@ -8,6 +8,7 @@ Usage:
   gander [-vf] add    <dest> <paths>...
   gander [-vf] remove <hashes> <path>
   gander [-vf] update <oldhashes> <newhashes>...
+  gander [-v]  test   <path>
 
 Options:
   -f, --force    Change existing files without requiring confirmation.
@@ -27,6 +28,7 @@ Commands:
   remove  `git rm` a path after checking that all files in it are duplicates.
           Prompts to confirm unless `--force`d.
   update  Updates <oldhashes> with new hashes for one or more subdirectories.
+  test    Build a hash tree and round-trip it to check serialization.
 
 Examples:
 

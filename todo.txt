@@ -1,3 +1,4 @@
+write/rewrite cmdTest
 would it help to break up HashTree.hs further?
 are the fancier modules needed? might be able to do fine without dedup, delete, import
 does Dupes get made from a Tree or Stream/List directly?

@@ -18,6 +18,7 @@ executable gander
   other-modules:       Gander.Cmd,
                        Gander.Cmd.Hash,
                        Gander.Cmd.Dupes,
+                       Gander.Cmd.Test,
                        Gander.Config,
                        Gander.Lib,
                        Gander.Lib.Hash,
