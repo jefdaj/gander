@@ -10,6 +10,10 @@ module Gander.Lib
   , deserializeTree
   , printHashes
 
+  -- diff
+  , Diff(..)
+  , diff
+
   -- dupemap
   , DupeList
   , DupeMap
@@ -21,4 +25,5 @@ module Gander.Lib
 
 import Gander.Lib.Hash
 import Gander.Lib.HashTree
+import Gander.Lib.Diff
 import Gander.Lib.DupeMap
