@@ -13,6 +13,8 @@ module Gander.Lib
   -- diff
   , Diff(..)
   , diff
+  , prettyDiff
+  , printDiffs
 
   -- dupemap
   , DupeList

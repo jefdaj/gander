@@ -1,6 +1,8 @@
 module Gander.Lib.Diff
   ( Diff(..)
   , diff
+  , prettyDiff
+  , printDiffs
   )
   where
 
@@ -12,6 +14,14 @@ data Diff
   | Removed FilePath
   | Changed FilePath
   deriving (Read, Show)
+
+prettyDiff :: Diff -> String
+prettyDiff (Added   f) = "added '"   ++ f ++ "'"
+prettyDiff (Removed f) = "removed '" ++ f ++ "'"
+prettyDiff (Changed f) = "changed '" ++ f ++ "'"
+
+printDiffs :: [Diff] -> IO ()
+printDiffs = mapM_ (putStrLn . prettyDiff)
 
 diff :: HashTree -> HashTree -> [Diff]
 diff = diff' ""
