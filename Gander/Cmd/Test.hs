@@ -12,8 +12,8 @@ cmdTest = roundTripTree
 
 roundTripTree :: Config -> FilePath -> IO ()
 roundTripTree cfg path = do
-  tree1 <- buildTree (exclude cfg) path
-  printHashes (verbose cfg) tree1
+  tree1 <- buildTree (verbose cfg) (exclude cfg) path
+  printHashes tree1
   -- print $ flattenTree tree1
 
 -- TODO rewrite with new hashTree
