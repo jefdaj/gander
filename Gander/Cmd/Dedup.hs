@@ -12,3 +12,13 @@ module Gander.Cmd.Dedup where
 --   rm all but the one picked, double-checking they all still have the same hash
 --   (error if not)
 --   move the one picked if not at final destination
+
+-- TODO getSubTree :: HashTree -> FilePath -> HashTree
+
+-- TODO cmdDedup :: Config -> FilePath -> Maybe FilePath -> IO ()
+--      cmdDedup cfg root msub = do
+--        tree <- buildTree (verbose cfg) (exclude cfg) root
+--        let tree' = case msub of
+--                      Nothing -> tree
+--                      Just sub -> getSubTree tree sub
+--        ...
