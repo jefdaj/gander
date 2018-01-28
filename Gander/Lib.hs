@@ -8,6 +8,7 @@ module Gander.Lib
   , flattenTree
   , serializeTree
   , deserializeTree
+  , hashHashes
   , printHashes
 
   -- diff

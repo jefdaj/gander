@@ -3,7 +3,7 @@ module Gander.Cmd
   , cmdDiff
   , cmdDupes
   , cmdTest
-  -- TODO cmdUpdate (easy)
+  , cmdUpdate
   -- TODO cmdAdd (fairly easy)
   -- TODO cmdRm (fairly easy)
   -- TODO cmdDedup (maybe long)
@@ -14,3 +14,4 @@ import Gander.Cmd.Hash
 import Gander.Cmd.Diff
 import Gander.Cmd.Dupes
 import Gander.Cmd.Test
+import Gander.Cmd.Update
