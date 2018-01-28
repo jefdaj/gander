@@ -1,6 +1,6 @@
 module Gander.Cmd.Diff where
 
-import Gander.Config
+import Gander.Config (Config(..))
 import Gander.Lib (buildTree, diff, printDiffs)
 
 cmdDiff :: Config -> FilePath -> FilePath -> IO ()

@@ -1,8 +1,7 @@
 module Gander.Cmd.Dupes where
 
-import Gander.Config
-import Gander.Lib (deserializeTree)
-import Gander.Lib.DupeMap
+import Gander.Config (Config(..))
+import Gander.Lib (deserializeTree, pathsByHash, dupesByNFiles, printDupes)
 
 cmdDupes :: Config -> FilePath -> IO ()
 cmdDupes _ path = do
