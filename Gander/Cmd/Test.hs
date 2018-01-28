@@ -1,8 +1,4 @@
-module Gander.Cmd.Test
-  ( cmdTest
-  , testSerialization
-  )
-  where
+module Gander.Cmd.Test where
 
 import Gander.Config (Config(..))
 import Gander.Lib (buildTree, printHashes, serializeTree, deserializeTree,

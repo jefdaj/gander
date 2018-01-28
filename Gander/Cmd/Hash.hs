@@ -1,11 +1,9 @@
-module Gander.Cmd.Hash
-  ( cmdHash
-  )
-  where
+module Gander.Cmd.Hash where
 
-import Gander.Config
+import Gander.Config (Config(..))
 import Gander.Lib (buildTree, printHashes)
 
--- Note that you can't hash a folder while writing to a file inside it!
 cmdHash :: Config -> FilePath -> IO ()
-cmdHash cfg path = buildTree (verbose cfg) (exclude cfg) path >>= printHashes
+cmdHash cfg path = do
+  tree <- buildTree (verbose cfg) (exclude cfg) path
+  printHashes tree
