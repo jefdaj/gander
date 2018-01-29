@@ -49,7 +49,7 @@ noSlash = reverse . dropWhile (== '/') . reverse
 rsync :: Bool -> FilePath -> FilePath -> IO ()
 rsync verbose src dest = do
   out <- readProcess "rsync" ["-aErvz", "--delete", noSlash src ++ "/", noSlash dest] ""
-  when verbose $ mapM_ putStrLn $ lines out
+  when verbose $ putStrLn out
 
 withAnnex :: Bool -> FilePath -> (FilePath -> IO a) -> IO a
 withAnnex verbose path fn = do
@@ -63,12 +63,12 @@ withAnnex verbose path fn = do
 annexAdd :: Bool -> FilePath -> IO ()
 annexAdd verbose path = withAnnex verbose path $ \dir -> do
   out <- readProcess "git" ["-C", dir, "annex", "add", path] ""
-  when verbose $ mapM_ putStrLn $ lines out
+  when verbose $ putStrLn out
 
 gitRm :: Bool -> FilePath -> IO ()
 gitRm verbose path = withAnnex verbose path $ \dir -> do
   out <- readProcess "git" ["-C", dir, "rm", "-rf", path] ""
-  when verbose $ mapM_ putStrLn $ lines out
+  when verbose $ putStrLn out
 
 userSaysYes :: String -> IO Bool
 userSaysYes question = do

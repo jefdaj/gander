@@ -58,6 +58,7 @@ dupesByNFiles = sortDescLength . filter hasDupes . toList
 hasDupes :: DupeList -> Bool
 hasDupes (nfiles, paths) = length paths > 1 && nfiles > 0
 
+-- TODO use this as the basis for the dedup repl
 printDupes :: [DupeList] -> IO ()
 printDupes groups = mapM_ printGroup groups
   where

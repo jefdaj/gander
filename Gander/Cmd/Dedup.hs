@@ -1,24 +1,40 @@
 module Gander.Cmd.Dedup where
 
+import Control.Monad (when)
 import Gander.Config (Config(..))
-import Gander.Lib (HashTree(..), readTree, userSaysYes)
+import Gander.Lib (DupeList, readTree, userSaysYes, pathsByHash, dupesByNFiles, withAnnex)
 import System.IO (hFlush, stdout)
 import System.Console.ANSI (clearScreen)
 import System.Exit (exitSuccess)
+import System.Process        (readProcess)
 
 cmdDedup :: Config -> FilePath -> FilePath -> IO ()
-cmdDedup cfg hashes dir = do
-  tree <- readTree hashes
-  -- TODO finish it here!
-  return ()
+cmdDedup cfg hashes _ = do
+  tree  <- readTree hashes
+  let dupes = dupesByNFiles $ pathsByHash tree
+  mapM_ (\dl -> userPicks dl >>= dedupGroup cfg dl) dupes
+
+-- TODO check that they share the same annex?
+-- TODO check that dupes is longer than 2 (1?)
+-- TODO current code is wrong whenever picking a number besides 1!
+dedupGroup :: Config -> DupeList  -> Maybe FilePath -> IO ()
+dedupGroup cfg (_, dupes) dest = case dest of
+  Nothing -> return ()
+  Just path -> withAnnex (verbose cfg) path $ \dir -> do
+    when (path /= head dupes) $ do
+      out <- readProcess "git" ["-C", dir, "mv", head dupes, path] ""
+      when (verbose cfg) $ putStrLn out
+    outs <- mapM (\f -> readProcess "git" ["-C", dir, "rm", "-rf", f] "") dupes'
+    when (verbose cfg) $ mapM_ putStrLn outs
+    where
+      dupes' = filter (/= path) (tail dupes)
 
 -- Prompt the user where to put the one duplicate from each group we want to keep.
 -- The choice could be one of the existing paths or a new one they enter.
 -- It could also be Nothing if they choose to skip the group.
 -- TODO have a default save dir for custom paths?
-userPicks :: [FilePath] -> IO (Maybe FilePath)
-userPicks paths = do
-  -- TODO unify this with promptToPick since they seem to be the same...
+userPicks :: DupeList -> IO (Maybe FilePath)
+userPicks (n, paths) = do
   clearScreen
   let nDupes = length paths :: Int
   putStrLn $ "These " ++ show nDupes ++ " are duplicates:"
@@ -36,8 +52,8 @@ userPicks paths = do
     confirm <- userSaysYes $ "Save to '" ++ answer ++ "'?"
     if confirm
       then return $ Just answer
-      else userPicks paths
-
+      else userPicks (n, paths)
+ 
 listDupes :: Int -> [FilePath] -> IO ()
 listDupes howMany paths = putStrLn $ unlines numbered
   where
