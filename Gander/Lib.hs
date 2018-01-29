@@ -4,6 +4,7 @@ module Gander.Lib
 
   -- hashtree
   , HashTree(..)
+  , readTree
   , buildTree
   , flattenTree
   , serializeTree
@@ -23,6 +24,7 @@ module Gander.Lib
   , dupesByNFiles
   , printDupes
   , pathsByHash
+  , allDupes
 
   -- git
   , pathComponents -- TODO not really git related right?
@@ -31,6 +33,8 @@ module Gander.Lib
   , rsync
   , annexAdd
   , absolutize
+  , gitRm
+  , withAnnex
   )
   where
 
