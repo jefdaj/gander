@@ -21,6 +21,7 @@ executable gander
                        Gander.Cmd.Dupes,
                        Gander.Cmd.Test,
                        Gander.Cmd.Update,
+                       Gander.Cmd.Add,
                        Gander.Config,
                        Gander.Lib,
                        Gander.Lib.Hash,
@@ -36,6 +37,7 @@ executable gander
                        filepath,
                        Glob,
                        unix,
-                       pretty-simple
+                       pretty-simple,
+                       process
   default-language:    Haskell2010
   other-modules:       Paths_gander
