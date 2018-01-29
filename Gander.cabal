@@ -24,6 +24,7 @@ executable gander
                        Gander.Cmd.Copy,
                        Gander.Config,
                        Gander.Lib,
+                       Gander.Lib.Git,
                        Gander.Lib.Hash,
                        Gander.Lib.HashTree,
                        Gander.Lib.Diff,
@@ -33,11 +34,13 @@ executable gander
                        containers,
                        cryptohash,
                        docopt,
+                       directory,
                        directory-tree,
                        filepath,
                        Glob,
                        unix,
                        pretty-simple,
-                       process
+                       process,
+                       MissingH
   default-language:    Haskell2010
   other-modules:       Paths_gander
