@@ -8,7 +8,7 @@ module Main where
 -- TODO figure out how to read files + compute hashes in parallel
 
 import Gander.Config         (Config(..))
-import Gander.Cmd            (cmdHash, cmdDiff, cmdDupes, cmdTest)
+import Gander.Cmd            (cmdHash, cmdDiff, cmdDupes, cmdTest, cmdUpdate)
 import System.Console.Docopt (docoptFile, parseArgsOrExit,
                               getArgOrExitWith, isPresent, longOption,
                               shortOption, command, argument)
@@ -40,4 +40,9 @@ main = do
     cmdDiff cfg old new
   else if cmd "dupes" then path "hashes" >>= cmdDupes cfg
   else if cmd "test"  then path "path"   >>= cmdTest  cfg
+  else if cmd "update" then do
+    mainTree <- path "main"
+    subTree  <- path "sub"
+    subPath  <- path "path"
+    cmdUpdate cfg mainTree subTree subPath
   else print args >> print cfg

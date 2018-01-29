@@ -7,7 +7,7 @@ Usage:
   gander [-v]  diff   <old> <new>
   gander [-vf] add    <dest> <paths>...
   gander [-vf] remove <hashes> <path>
-  gander [-vf] update <oldhashes> <newhashes>...
+  gander [-vf] update <main> <sub> <path>
   gander [-v]  test   <path>
 
 Options:
@@ -26,7 +26,7 @@ Commands:
           <dest> needs to be in an annex, of course. See examples for syntax.
   remove  `git rm` a path after checking that all files in it are duplicates.
           Prompts to confirm unless `--force`d.
-  update  Updates <oldhashes> with new hashes for one or more subdirectories.
+  update  Updates <main> hashes with new ones from <sub>, inserted at <path>.
   test    Build a hash tree and round-trip it to check serialization.
 
 Examples:

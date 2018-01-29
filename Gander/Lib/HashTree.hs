@@ -35,11 +35,11 @@ prettyHashLine (Hash h, t, p) = unwords [h, t, p]
 data HashTree
   = File { name :: FilePath, hash :: Hash }
   | Dir  { name :: FilePath, hash :: Hash, contents :: [HashTree], nFiles :: Int }
-  deriving (Read, Show)
+  deriving (Read, Show, Eq, Ord) -- TODO switch to hash-based equality after testing
 
 -- TODO disable this while testing to ensure deep equality?
-instance Eq HashTree where
-  t1 == t2 = hash t1 == hash t2
+-- instance Eq HashTree where
+  -- t1 == t2 = hash t1 == hash t2
 
 excludeGlobs :: [String]
              -> (DT.AnchoredDirTree FilePath -> DT.AnchoredDirTree FilePath)
@@ -50,6 +50,7 @@ excludeGlobs excludes (a DT.:/ tree) = (a DT.:/ DT.filterDir keep tree)
     keep (DT.File n _) = noneMatch excludes n
     keep _ = True
 
+-- TODO are contents sorted? they probably should be for stable hashes
 buildTree :: Bool -> [String] -> FilePath -> IO HashTree
 buildTree beVerbose excludes path = do
   tree <- DT.readDirectoryWithL return path
