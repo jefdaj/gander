@@ -23,6 +23,7 @@ executable gander
                        Gander.Cmd.Update,
                        Gander.Cmd.Annex,
                        Gander.Cmd.Rm,
+                       Gander.Cmd.Dedup,
                        Gander.Config,
                        Gander.Lib,
                        Gander.Lib.Git,
