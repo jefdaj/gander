@@ -11,6 +11,7 @@ import System.FilePath       (addTrailingPathSeparator, normalise, takeDirectory
 import System.FilePath       (pathSeparator, splitPath)
 import System.Path.NameManip (guess_dotdot, absolute_path)
 import System.Process        (readProcess)
+import System.IO (hFlush, stdout)
 
 pathComponents :: FilePath -> [String]
 pathComponents f = filter (not . null)
@@ -68,3 +69,13 @@ gitRm :: Bool -> FilePath -> IO ()
 gitRm verbose path = withAnnex verbose path $ \dir -> do
   out <- readProcess "git" ["-C", dir, "rm", "-rf", path] ""
   when verbose $ mapM_ putStrLn $ lines out
+
+userSaysYes :: String -> IO Bool
+userSaysYes question = do
+  putStr $ question ++ " (yes/no) "
+  hFlush stdout
+  let answers = [("yes", True), ("no", False)]
+  answer <- getLine
+  case lookup answer answers of
+    Nothing -> userSaysYes question
+    Just b  -> return b

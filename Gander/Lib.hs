@@ -35,6 +35,7 @@ module Gander.Lib
   , absolutize
   , gitRm
   , withAnnex
+  , userSaysYes
   )
   where
 
