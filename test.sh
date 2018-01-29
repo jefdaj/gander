@@ -17,5 +17,6 @@ gander hash dir2 > dir2.txt
 mv dir2 dir1/a/b
 gander hash dir1 > moved.txt
 
-gander update dir1.txt dir2.txt "a/b" > updated.txt
+gander update dir1.txt dir2.txt "a/b/dir2" > updated.txt
+echo "comparing moved hashes to updated ones..."
 diff moved.txt updated.txt && echo "hooray it works!"
