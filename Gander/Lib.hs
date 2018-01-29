@@ -27,6 +27,10 @@ module Gander.Lib
   -- git
   , pathComponents -- TODO not really git related right?
   , findAnnex
+  , inAnnex
+  , rsync
+  , annexAdd
+  , absolutize
   )
   where
 
