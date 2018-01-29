@@ -1,5 +1,8 @@
 {-# LANGUAGE BangPatterns #-}
 
+-- TODO hashHashes should be hashDir
+-- TODO should it also hash filenames?
+
 module Gander.Lib.Hash
   ( Hash(..)
   , hashFile

@@ -6,6 +6,8 @@ module Gander.Lib.Diff
   )
   where
 
+import Debug.Trace
+
 import Gander.Lib.HashTree (HashTree(..))
 import System.FilePath ((</>))
 
@@ -27,11 +29,11 @@ diff :: HashTree -> HashTree -> [Diff]
 diff = diff' ""
 
 diff' :: FilePath -> HashTree -> HashTree -> [Diff]
-diff' _ old new | old == new = []
-diff' r (File _ _    ) (File _ _    ) = [Changed r]
-diff' r (File _ _    ) (Dir  d _ _ _) = [Removed r, Added $ r </> d]
-diff' r (Dir  d _ _ _) (File _ _    ) = [Removed $ r </> d, Added r]
-diff' r (Dir _ _ os _) (Dir _ _ ns _) = added ++ removed ++ changed
+diff' _ old new | old == new = trace "no changes" []
+diff' r (File _ _    ) (File _ _    ) = trace "single file change" [Changed r]
+diff' r (File _ _    ) (Dir  d _ _ _) = trace "file to dir" [Removed r, Added $ r </> d]
+diff' r (Dir  d _ _ _) (File _ _    ) = trace "dir to file" [Removed $ r </> d, Added r]
+diff' r (Dir _ _ os _) (Dir _ _ ns _) = trace "dir changed" (added ++ removed ++ changed)
   where
     added   = [Added   $ r </> name x | x <- ns, not $ name x `elem` map name os]
     removed = [Removed $ r </> name x | x <- os, not $ name x `elem` map name ns]

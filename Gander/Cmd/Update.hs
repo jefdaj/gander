@@ -1,11 +1,15 @@
 module Gander.Cmd.Update where
 
--- TODO do the replace operation with lenses? or dropTo?
+-- TODO if this gets super complicated, might be worth making lenses?
+-- TODO move most of this to Lib once it works
+-- TODO rename update to insert?
+
+import Debug.Trace
 
 import Gander.Config (Config(..))
 import Gander.Lib (HashTree(..), buildTree, printHashes, hashHashes)
 import System.FilePath (pathSeparator, splitPath, joinPath)
-import Data.List (find)
+import Data.List (find, sort)
 
 -- import qualified System.Directory.Tree as DT
 
@@ -18,21 +22,12 @@ cmdUpdate :: Config -> FilePath -> FilePath -> FilePath -> IO ()
 cmdUpdate cfg root sub path = do
   tree1 <- buildTree (verbose cfg) (exclude cfg) root
   tree2 <- buildTree (verbose cfg) (exclude cfg) sub
-  printHashes $ updateSubTree path tree1 tree2
+  printHashes $ insertTreeInDir path tree1 tree2
 
 pathComponents :: FilePath -> [String]
 pathComponents f = filter (not . null)
                  $ map (filter (/= pathSeparator))
                  $ splitPath f
-
--- TODO remove once rewritten to update
-subTreeExists :: FilePath -> HashTree -> Bool
-subTreeExists p (File n _) = p == n
-subTreeExists p (Dir n _ cs _) = case pathComponents p of
-  []      -> True
-  (n':p') -> case find (\c -> name c == n') cs of
-               Nothing -> False
-               Just d' -> subTreeExists (joinPath p') d'
 
 wrapInEmptyDir :: FilePath -> HashTree -> HashTree
 wrapInEmptyDir n t = Dir { name = n, hash = h, contents = cs, nFiles = nFiles t }
@@ -42,10 +37,26 @@ wrapInEmptyDir n t = Dir { name = n, hash = h, contents = cs, nFiles = nFiles t 
 
 wrapInEmptyDirs :: FilePath -> HashTree -> HashTree
 wrapInEmptyDirs p t = case pathComponents p of
-  [] -> error "went too far!"
+  []     -> error "wrapInEmptyDirs needs at least one dir"
+  (n:[]) -> wrapInEmptyDir n t
   (n:ns) -> wrapInEmptyDir n $ wrapInEmptyDirs (joinPath ns) t
 
--- This inserts the sub tree into the main one at the path.
--- If the path doesn't exist, it makes empty dirs up to it first.
-updateSubTree :: FilePath -> HashTree -> HashTree -> HashTree
-updateSubTree path main sub = undefined
+-- TODO should contents be sorted by name rather than current Ord instance
+insertTreeInDir :: FilePath -> HashTree -> HashTree -> HashTree
+insertTreeInDir _ (File _ _) _ = error "can't insert tree in file"
+insertTreeInDir path _ _ | null (pathComponents path) = error "can't insert tree at null path"
+insertTreeInDir path main sub = main { hash = h', contents = cs', nFiles = n' }
+  where
+    comps  = trace path $ pathComponents path
+    dir    = head comps
+    path'  = joinPath $ tail comps
+    h'     = hashHashes $ map hash cs'
+    cs'    = sort $ filter (\c -> name c /= dir) (contents main) ++ [newSub]
+    n'     = nFiles main + nFiles newSub - case oldSub of { Nothing -> 0; Just s -> nFiles s; }
+    sub'   = sub { name = last comps }
+    oldSub = find (\c -> name c == dir) (contents main)
+    newSub = if length comps == 1
+               then sub'
+               else case oldSub of
+                 Nothing -> wrapInEmptyDirs path sub'
+                 Just d  -> insertTreeInDir path' d sub'
