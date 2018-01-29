@@ -21,7 +21,7 @@ executable gander
                        Gander.Cmd.Dupes,
                        Gander.Cmd.Test,
                        Gander.Cmd.Update,
-                       Gander.Cmd.Copy,
+                       Gander.Cmd.Annex,
                        Gander.Config,
                        Gander.Lib,
                        Gander.Lib.Git,
