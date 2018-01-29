@@ -8,7 +8,7 @@ module Main where
 -- TODO figure out how to read files + compute hashes in parallel
 
 import Gander.Config         (Config(..))
-import Gander.Cmd            (cmdHash, cmdDiff, cmdDupes, cmdTest, cmdUpdate)
+import Gander.Cmd            (cmdHash, cmdDiff, cmdDupes, cmdTest, cmdUpdate, cmdAdd)
 import System.Console.Docopt (docoptFile, parseArgsOrExit,
                               getArgOrExitWith, isPresent, longOption,
                               shortOption, command, argument)
@@ -45,4 +45,8 @@ main = do
     subTree  <- path "sub"
     subPath  <- path "path"
     cmdUpdate cfg mainTree subTree subPath
+  else if cmd "add" then do
+    src  <- path "src"
+    dest <- path "dest"
+    cmdAdd cfg src dest
   else print args >> print cfg

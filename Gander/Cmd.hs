@@ -4,7 +4,7 @@ module Gander.Cmd
   , cmdDupes
   , cmdTest
   , cmdUpdate
-  -- TODO cmdAdd (fairly easy)
+  , cmdAdd
   -- TODO cmdRm (fairly easy)
   -- TODO cmdDedup (maybe long)
   )
@@ -15,3 +15,4 @@ import Gander.Cmd.Diff
 import Gander.Cmd.Dupes
 import Gander.Cmd.Test
 import Gander.Cmd.Update
+import Gander.Cmd.Add
