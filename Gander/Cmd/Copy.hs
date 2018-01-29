@@ -1,5 +1,6 @@
 module Gander.Cmd.Copy where
 
+-- TODO also annex add it, and rename back to add... or annex? import?
 -- TODO add rsync to nix dependencies
 
 import Control.Monad  (when)

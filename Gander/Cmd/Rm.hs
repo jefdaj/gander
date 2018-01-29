@@ -1,5 +1,7 @@
 module Gander.Cmd.Rm where
 
+-- TODO move the annex-related stuff into a Lib module? could use for Add too
+
 -- TODO cmdRm :: Config -> FilePath -> FilePath -> IO ()
 --      cmdRm cfg root sub = do
 --        tree1 <- buildTree (verbose cfg) (exclude cfg) root

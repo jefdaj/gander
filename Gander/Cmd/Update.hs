@@ -3,8 +3,8 @@ module Gander.Cmd.Update where
 -- TODO move most of this to Lib once it works
 
 import Gander.Config (Config(..))
-import Gander.Lib (HashTree(..), deserializeTree, printHashes, hashHashes)
-import System.FilePath (pathSeparator, splitPath, joinPath)
+import Gander.Lib (HashTree(..), deserializeTree, printHashes, hashHashes, pathComponents)
+import System.FilePath (joinPath)
 import Data.List (find, sortBy)
 import Data.Function (on)
 import Data.Ord      (compare)
@@ -14,11 +14,6 @@ cmdUpdate _ root sub path = do
   tree1 <- fmap deserializeTree $ readFile root
   tree2 <- fmap deserializeTree $ readFile sub
   printHashes $ insertTreeInDir tree1 tree2 path
-
-pathComponents :: FilePath -> [String]
-pathComponents f = filter (not . null)
-                 $ map (filter (/= pathSeparator))
-                 $ splitPath f
 
 wrapInEmptyDir :: FilePath -> HashTree -> HashTree
 wrapInEmptyDir n t = Dir { name = n, hash = h, contents = cs, nFiles = nFiles t }
