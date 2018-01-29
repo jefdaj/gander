@@ -5,7 +5,7 @@ module Gander.Cmd
   , cmdTest
   , cmdUpdate
   , cmdAnnex
-  -- TODO cmdRm (fairly easy)
+  , cmdRm
   -- TODO cmdDedup (maybe long)
   )
   where
@@ -16,3 +16,4 @@ import Gander.Cmd.Dupes
 import Gander.Cmd.Test
 import Gander.Cmd.Update
 import Gander.Cmd.Annex
+import Gander.Cmd.Rm

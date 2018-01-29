@@ -1,5 +1,6 @@
 module Gander.Lib.HashTree
   ( HashTree(..)
+  , readTree
   , buildTree
   , printHashes
   , prettyHashLine
@@ -51,6 +52,9 @@ excludeGlobs excludes (a DT.:/ tree) = (a DT.:/ DT.filterDir keep tree)
     keep (DT.Dir  n _) = noneMatch excludes n
     keep (DT.File n _) = noneMatch excludes n
     keep _ = True
+
+readTree :: FilePath -> IO HashTree
+readTree = fmap deserializeTree . readFile
 
 -- TODO are contents sorted? they probably should be for stable hashes
 buildTree :: Bool -> [String] -> FilePath -> IO HashTree

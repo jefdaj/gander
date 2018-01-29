@@ -7,9 +7,11 @@ module Gander.Lib.DupeMap
   , dupesByNFiles
   , hasDupes
   , printDupes
+  , allDupes
   )
   where
 
+import Prelude hiding (lookup)
 import Gander.Lib.Hash
 import Gander.Lib.HashTree
 
@@ -17,7 +19,7 @@ import Control.Arrow   ((&&&))
 import Data.Foldable   (toList)
 import Data.List       (sort, sortBy)
 import Data.Map        (Map)
-import Data.Map        (fromListWith)
+import Data.Map        (fromListWith, keys, lookup)
 import Data.Ord        (comparing)
 import System.FilePath ((</>))
 
@@ -66,3 +68,18 @@ printDupes groups = mapM_ printGroup groups
     printGroup (n, paths) = mapM_ putStrLn
                           $ [explain n (length paths)]
                           ++ sort paths ++ [""]
+
+-- helper for allDupes
+-- TODO how to make the lookups safe?
+anotherCopy :: Hash -> DupeMap -> DupeMap -> Bool
+anotherCopy h mainMap subMap = nMain > nSub
+  where
+    (Just nMain) = fmap fst $ lookup h mainMap
+    (Just nSub ) = fmap fst $ lookup h subMap
+
+allDupes :: HashTree -> HashTree -> Bool
+allDupes mainTree subTree = all safeToRmHash $ keys subDupes
+  where
+    mainDupes = pathsByHash mainTree
+    subDupes  = pathsByHash subTree
+    safeToRmHash h = anotherCopy h mainDupes subDupes

@@ -8,7 +8,8 @@ module Main where
 -- TODO figure out how to read files + compute hashes in parallel
 
 import Gander.Config         (Config(..))
-import Gander.Cmd            (cmdHash, cmdDiff, cmdDupes, cmdTest, cmdUpdate, cmdAnnex)
+import Gander.Cmd            (cmdHash, cmdDiff, cmdDupes, cmdTest,
+                              cmdUpdate, cmdAnnex, cmdRm)
 import System.Console.Docopt (docoptFile, parseArgsOrExit,
                               getArgOrExitWith, isPresent, longOption,
                               shortOption, command, argument)
@@ -49,4 +50,9 @@ main = do
     src  <- path "src"
     dest <- path "dest"
     cmdAnnex cfg src dest
+  else if cmd "delete" then do
+    hashes    <- path "root"
+    delhashes <- path "sub"
+    delpath   <- path "path"
+    cmdRm cfg hashes delhashes delpath
   else print args >> print cfg

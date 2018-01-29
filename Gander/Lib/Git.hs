@@ -3,6 +3,7 @@ module Gander.Lib.Git where
 -- TODO rename Util? Files? System?
 -- TODO add git-annex, rsync to nix dependencies
 
+import Control.Monad         (when)
 import Data.List             (isPrefixOf)
 import Data.Maybe            (fromJust)
 import System.Directory      (getHomeDirectory, doesDirectoryExist)
@@ -44,17 +45,26 @@ inAnnex = fmap (not . null) . findAnnex
 noSlash :: FilePath -> FilePath
 noSlash = reverse . dropWhile (== '/') . reverse
 
-rsync :: FilePath -> FilePath -> IO ()
-rsync src dest = do
+rsync :: Bool -> FilePath -> FilePath -> IO ()
+rsync verbose src dest = do
   out <- readProcess "rsync" ["-aErvz", "--delete", noSlash src ++ "/", noSlash dest] ""
-  mapM_ putStrLn $ lines out
+  when verbose $ mapM_ putStrLn $ lines out
 
--- TODO check that git is clean (no unstaged files etc) first? nah just don't commit
-annexAdd :: FilePath -> IO ()
-annexAdd path = do
+withAnnex :: Bool -> FilePath -> (FilePath -> IO a) -> IO a
+withAnnex verbose path fn = do
   annex <- findAnnex path
   case annex of
     Nothing -> error $ "'" ++ path ++ "' is not in a git-annex repo"
     Just dir -> do
-      out <- readProcess "git" ["-C", dir, "annex", "add", path] ""
-      mapM_ putStrLn $ lines out
+      when verbose $ putStrLn $ "using git-annex repo '" ++ dir ++ "'"
+      fn dir
+
+annexAdd :: Bool -> FilePath -> IO ()
+annexAdd verbose path = withAnnex verbose path $ \dir -> do
+  out <- readProcess "git" ["-C", dir, "annex", "add", path] ""
+  when verbose $ mapM_ putStrLn $ lines out
+
+gitRm :: Bool -> FilePath -> IO ()
+gitRm verbose path = withAnnex verbose path $ \dir -> do
+  out <- readProcess "git" ["-C", dir, "rm", "-rf", path] ""
+  when verbose $ mapM_ putStrLn $ lines out

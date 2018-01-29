@@ -6,7 +6,7 @@ Usage:
   gander [-v]  fsck   <hashes> [<dir>...]
   gander [-v]  diff   <old> <new>
   gander [-vf] annex  <src> <dest>
-  gander [-vf] remove <hashes> <path>
+  gander [-vf] delete <root> <sub> <path>
   gander [-vf] update <main> <sub> <path>
   gander [-v]  test   <path>
 
@@ -23,7 +23,7 @@ Commands:
           <dir> limits it to one or more subdirectories.
   diff    Print changes in <new> relative to <old>. TODO take hashes here too!
   annex   Copies each <src> to <dest>, annexes <dest>, and checks that hashes match.
-  remove  `git rm` a path after checking that all files in it are duplicates.
+  delete  `git rm` a path after checking that all files in it are duplicates.
           Prompts to confirm unless `--force`d.
   update  Updates <main> hashes with new ones from <sub>, inserted at <path>.
   test    Build a hash tree and round-trip it to check serialization.

@@ -1,16 +1,32 @@
 module Gander.Cmd.Rm where
 
--- TODO move the annex-related stuff into a Lib module? could use for Add too
+import Control.Monad (when)
+import Gander.Config (Config(..))
+import Gander.Lib    (readTree, gitRm, allDupes)
+import System.IO (hFlush, stdout)
 
--- TODO cmdRm :: Config -> FilePath -> FilePath -> IO ()
---      cmdRm cfg root sub = do
---        tree1 <- buildTree (verbose cfg) (exclude cfg) root
---        tree2 <- buildTree (verbose cfg) (exclude cfg) sub
---        guard1 <- safeToRm tree1 tree2
---        guard2 <- userConfirms "ok to remove last copy of ... ?"
---        when (guard1 || guard2) (rmDir root sub)
+-- TODO list files with no duplicates when confirming
+cmdRm :: Config -> FilePath -> FilePath -> FilePath -> IO ()
+cmdRm cfg root sub path = do
+  safe <- safeToRm root sub
+  let rm = gitRm (verbose cfg) path
+  if safe || force cfg then rm else do
+    let msg = "ok to remove last copy of some files in '" ++ path ++ "'?"
+    confirm <- userSaysYes msg
+    when confirm rm
 
--- TODO safeToRm :: HashTree -> HashTree -> Bool
--- TODO userConfirms :: String -> IO Bool
--- TODO rmDir :: FilePath -> FilePath -> IO ()
--- TODO findAnnex :: FilePath -> IO (Maybe FilePath)
+userSaysYes :: String -> IO Bool
+userSaysYes question = do
+  putStr $ question ++ " (yes/no) "
+  hFlush stdout
+  let answers = [("yes", True), ("no", False)]
+  answer <- getLine
+  case lookup answer answers of
+    Nothing -> userSaysYes question
+    Just b  -> return b
+
+safeToRm :: FilePath -> FilePath -> IO Bool
+safeToRm main toRm = do
+  tree1 <- readTree main
+  tree2 <- readTree toRm
+  return $ allDupes tree1 tree2

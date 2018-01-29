@@ -13,11 +13,13 @@ cmdAnnex cfg src dest = do
   dest' <- absolutize dest
   annexed <- inAnnex dest'
   when (not annexed) (error "destination should be in a git-annex repo")
-  _ <- rsync src dest'
-  _ <- annexAdd dest'
+  _ <- rsync (verbose cfg) src dest' -- TODO control verbosity
+  _ <- annexAdd (verbose cfg) dest'
   before <- buildTree (verbose cfg) (exclude cfg) src
   after  <- buildTree (verbose cfg) (exclude cfg) dest'
   -- diff contents rather than top-level trees because the name probably changed
+  when ((length $ contents before) /= (length $ contents after))
+    (error "something went wrong during copy!")
   let diffs = concatMap (\(a,b) -> diff a b)
             $ zip (contents before) (contents after)
   when (not $ null diffs) $ do
