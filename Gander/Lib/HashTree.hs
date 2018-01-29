@@ -13,7 +13,9 @@ import Gander.Lib.Hash
 import qualified System.Directory.Tree as DT
 
 import Control.Monad        (forM)
-import Data.List            (partition)
+import Data.List            (partition, sortBy)
+import Data.Function        (on)
+import Data.Ord             (compare)
 import System.FilePath      ((</>), takeFileName, splitPath)
 import System.FilePath.Glob (compile, match)
 import System.IO.Unsafe     (unsafeInterleaveIO)
@@ -65,11 +67,12 @@ buildTree' v (a DT.:/ (DT.Dir n cs)) = do
   let root = a </> n
       hashSubtree t = unsafeInterleaveIO $ buildTree' v $ root DT.:/ t
   subTrees <- forM cs hashSubtree
+  let cs' = sortBy (compare `on` name) subTrees
   return Dir
     { name     = n
-    , contents = subTrees
-    , hash     = hashHashes $ map hash subTrees
-    , nFiles   = sum $ map countFiles subTrees
+    , contents = cs'
+    , hash     = hashHashes $ map hash cs'
+    , nFiles   = sum $ map countFiles cs'
     }
 
 -- TODO use serialize for this
