@@ -42,6 +42,7 @@ executable gander
                        unix,
                        pretty-simple,
                        process,
+                       ansi-terminal,
                        MissingH
   default-language:    Haskell2010
   other-modules:       Paths_gander

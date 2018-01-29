@@ -1,6 +1,6 @@
 { mkDerivation, base, bytestring, containers, cryptohash
 , directory-tree, docopt, filepath, Glob, stdenv, unix, pretty-simple, process
-, MissingH, directory
+, MissingH, directory, ansi-terminal
 }:
 mkDerivation {
   pname = "gander";
@@ -11,6 +11,7 @@ mkDerivation {
   executableHaskellDepends = [
     base bytestring containers cryptohash directory-tree docopt
     filepath Glob unix pretty-simple process MissingH directory
+    ansi-terminal
   ];
   description = "The \"Git ANnex DEdupeR\"";
   license = stdenv.lib.licenses.lgpl3;

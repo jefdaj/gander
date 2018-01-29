@@ -7,9 +7,8 @@ module Main where
 -- TODO is git-annex an actual dep, or just recommended to go with it?
 -- TODO figure out how to read files + compute hashes in parallel
 
+import Gander.Cmd
 import Gander.Config         (Config(..))
-import Gander.Cmd            (cmdHash, cmdDiff, cmdDupes, cmdTest,
-                              cmdUpdate, cmdAnnex, cmdRm)
 import System.Console.Docopt (docoptFile, parseArgsOrExit,
                               getArgOrExitWith, isPresent, longOption,
                               shortOption, command, argument)
@@ -55,4 +54,8 @@ main = do
     delhashes <- path "sub"
     delpath   <- path "path"
     cmdRm cfg hashes delhashes delpath
+  else if cmd "dedup" then do
+    hashes <- path "hashes"
+    dpath  <- path "path"
+    cmdDedup cfg hashes dpath
   else print args >> print cfg
