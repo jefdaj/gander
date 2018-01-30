@@ -98,6 +98,9 @@ listAllFiles anchor (File n h     ) = [(h, anchor </> n)]
 listAllFiles anchor (Dir  n _ cs _) = concatMap (listAllFiles $ anchor </> n) cs
 
 
+-- TODO rewrite allDupes by removing the subtree first then testing membership
+--      (that way can use the removing part separately in cmdDedup)
+
 -- helper for allDupes
 -- TODO how to make the lookups safe?
 anotherCopy :: Hash -> DupeMap -> DupeMap -> Bool

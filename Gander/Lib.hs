@@ -53,6 +53,7 @@ module Gander.Lib
   , gitRm
   , withAnnex
   , userSaysYes
+  , noSlash
   )
   where
 

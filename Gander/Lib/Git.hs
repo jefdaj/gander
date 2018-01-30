@@ -62,7 +62,8 @@ withAnnex verbose path fn = do
 
 annexAdd :: Bool -> FilePath -> IO ()
 annexAdd verbose path = withAnnex verbose path $ \dir -> do
-  out <- readProcess "git" ["-C", dir, "annex", "add", path] ""
+  out <- readProcess "git" ["-C", dir, "annex", "add",
+                            "--include-dotfiles", path] ""
   when verbose $ putStrLn out
 
 gitRm :: Bool -> FilePath -> IO ()
