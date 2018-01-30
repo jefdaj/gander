@@ -2,7 +2,8 @@ module Gander.Cmd.Dedup where
 
 import Control.Monad (when)
 import Gander.Config (Config(..))
-import Gander.Lib (DupeList, readTree, userSaysYes, pathsByHash, dupesByNFiles, withAnnex)
+import Gander.Lib (DupeList, readTree, userSaysYes, pathsByHash,
+                   dupesByNFiles, withAnnex, absolutize, noSlash)
 import System.IO (hFlush, stdout)
 import System.Console.ANSI (clearScreen)
 import System.Exit (exitSuccess)
@@ -20,14 +21,17 @@ cmdDedup cfg hashes _ = do
 dedupGroup :: Config -> DupeList  -> Maybe FilePath -> IO ()
 dedupGroup cfg (_, _, dupes) dest = case dest of
   Nothing -> return ()
-  Just path -> withAnnex (verbose cfg) path $ \dir -> do
-    when (path /= head dupes) $ do
-      out <- readProcess "git" ["-C", dir, "mv", head dupes, path] ""
-      when (verbose cfg) $ putStrLn out
-    outs <- mapM (\f -> readProcess "git" ["-C", dir, "rm", "-rf", f] "") dupes'
-    when (verbose cfg) $ mapM_ putStrLn outs
-    where
-      dupes' = filter (/= path) (tail dupes)
+  Just path -> do
+    path' <- fmap noSlash $ absolutize path
+    dupes' <- fmap (map noSlash) (mapM absolutize dupes)
+    let absDupes = filter (/= path') (tail dupes')
+    withAnnex (verbose cfg) path' $ \dir -> do
+      when (path' /= head dupes') $ do
+        -- TODO also capture exit code and don't clear screen if error
+        out <- readProcess "git" ["-C", dir, "mv", head dupes', path'] ""
+        when (verbose cfg) $ putStrLn out
+      outs <- mapM (\f -> readProcess "git" ["-C", dir, "rm", "-rf", f] "") absDupes
+      when (verbose cfg) $ mapM_ putStrLn outs
 
 -- Prompt the user where to put the one duplicate from each group we want to keep.
 -- The choice could be one of the existing paths or a new one they enter.
