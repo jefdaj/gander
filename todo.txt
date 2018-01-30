@@ -1,4 +1,4 @@
 would it help to break up HashTree.hs further?
-are the fancier modules needed? might be able to do fine without dedup, delete, import
-should Add be called Move?
 put dir/file before hash and split on that to handle newlines in filenames
+asciinema demo:
+  fork from master or dedup-1-compiles-but-broken?
