@@ -1,8 +1,9 @@
 module Gander.Cmd.Dedup where
 
+import Data.Foldable (toList)
 import Control.Monad (when)
 import Gander.Config (Config(..))
-import Gander.Lib (DupeList, readTree, userSaysYes, pathsByHash,
+import Gander.Lib (Hash, HashTree(..), DupeList, readTree, userSaysYes, pathsByHash,
                    dupesByNFiles, withAnnex, absolutize, noSlash)
 import System.IO (hFlush, stdout)
 import System.Console.ANSI (clearScreen)
@@ -10,10 +11,27 @@ import System.Exit (exitSuccess)
 import System.Process        (readProcess)
 
 cmdDedup :: Config -> FilePath -> FilePath -> IO ()
-cmdDedup cfg hashes _ = do
-  tree  <- readTree hashes
-  let dupes = dupesByNFiles $ pathsByHash tree
-  mapM_ (\dl -> userPicks dl >>= dedupGroup cfg dl) dupes
+cmdDedup cfg hashes path = readTree hashes >>= dedupLoop cfg path []
+
+-- cmdDedup cfg hashes _ = do
+--   tree  <- readTree hashes
+--   let dupes = dupesByNFiles $ pathsByHash tree
+--   -- TODO state monad or some kind of accumulator for tree here
+--   -- TODO and then recalculate dupes after each step
+--   mapM_ (\dl -> userPicks dl >>= dedupGroup cfg dl) dupes
+
+-- TODO how to properly thread the changed tree through each step?
+dedupLoop :: Config -> FilePath -> [Hash] -> HashTree -> IO ()
+dedupLoop cfg path ignored tree = do
+  let dupes       = dupesByNFiles $ pathsByHash tree -- TODO toList here?
+      dupesToSort = filter (\(h,_) -> not $ h `elem` ignored) (toList dupes)
+      (h1, paths) = head dupesToSort
+      ignored'    = h1:ignored
+  when (null dupes) (putStrLn "congrats! no more duplicates" >> exitSuccess)
+  copyToKeep <- userPicks paths
+  dedupGroup cfg paths copyToKeep
+  let tree' = tree -- TODO need to update tree to remove non-keepers!
+  dedupLoop  cfg path ignored' tree'
 
 -- TODO check that they share the same annex?
 -- TODO check that dupes is longer than 2 (1?)
