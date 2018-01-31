@@ -1,4 +1,26 @@
 would it help to break up HashTree.hs further?
 put dir/file before hash and split on that to handle newlines in filenames
-asciinema demo:
+
+better interface:
+  all commands start with the main hashes file
+  find repo based on that and stick with it throughout
+  init command to create repo + empty hashes file
+
+asciinema demos:
   fork from master or dedup-1-compiles-but-broken?
+
+  both demos:
+    init repo with empty hashes
+    add some files
+    hash + list dupes separately
+    dedup them
+
+  first demo because this works already:
+    want manual control to work gander into an existing workflow
+    do the operations separately
+    manage hash files yourself
+    mix freely with git operations
+
+  second demo that will be more for brian:
+    want to use the repo specifically for deduping as simply as possible
+    add a gander init command to create repo, annex init, create empty hashes.txt
