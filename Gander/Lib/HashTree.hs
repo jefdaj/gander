@@ -2,6 +2,7 @@ module Gander.Lib.HashTree
   ( HashTree(..)
   , readTree
   , buildTree
+  , readOrBuildTree
   , printHashes
   , prettyHashLine
   , serializeTree
@@ -20,6 +21,7 @@ import Data.Ord             (compare)
 import System.FilePath      ((</>), takeFileName, splitPath)
 import System.FilePath.Glob (compile, match)
 import System.IO.Unsafe     (unsafeInterleaveIO)
+import System.Directory     (doesFileExist, doesDirectoryExist)
 
 type HashLine = (Hash, String, FilePath)
 
@@ -78,6 +80,16 @@ buildTree' v (a DT.:/ (DT.Dir n cs)) = do
     , hash     = hashHashes $ map hash cs'
     , nFiles   = sum $ map countFiles cs'
     }
+
+-- If passed a file this assumes it contains hashes and builds a tree of them;
+-- If passed a dir it will scan it first and then build the tree.
+readOrBuildTree :: Bool -> [String] -> FilePath -> IO HashTree
+readOrBuildTree verbose exclude path = do
+  isDir  <- doesDirectoryExist path
+  isFile <- doesFileExist      path
+  if      isFile then readTree path
+  else if isDir then buildTree verbose exclude path
+  else error $ "No such file: '" ++ path ++ "'"
 
 -- TODO use serialize for this
 printHashes :: HashTree -> IO ()

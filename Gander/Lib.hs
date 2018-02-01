@@ -6,6 +6,7 @@ module Gander.Lib
   , HashTree(..)
   , readTree
   , buildTree
+  , readOrBuildTree
   , flattenTree
   , serializeTree
   , deserializeTree
