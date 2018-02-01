@@ -1,6 +1,8 @@
 would it help to break up HashTree.hs further?
 put dir/file before hash and split on that to handle newlines in filenames
 
+when listing dupes, sort paths by n components then alphabet
+
 better interface:
   all commands start with the main hashes file
   find repo based on that and stick with it throughout
@@ -8,6 +10,12 @@ better interface:
 
 asciinema demos:
   fork from master or dedup-1-compiles-but-broken?
+
+  make a pile of duplicated files/folders
+    download free music
+    randomly list 2 folders in it
+    copy the first into the second
+    then do files into folders too?
 
   both demos:
     init repo with empty hashes
