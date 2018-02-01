@@ -1,11 +1,11 @@
 module Gander.Cmd.Dupes where
 
 import Gander.Config (Config(..))
-import Gander.Lib (readTree, pathsByHash, dupesByNFiles, printDupes)
+import Gander.Lib (readOrBuildTree, pathsByHash, dupesByNFiles, printDupes)
 
 cmdDupes :: Config -> FilePath -> IO ()
-cmdDupes _ path = do
-  tree <- readTree path
+cmdDupes cfg path = do
+  tree <- readOrBuildTree (verbose cfg) (exclude cfg) path
   let pbyh = pathsByHash tree
       pdup = dupesByNFiles pbyh
   printDupes pdup
