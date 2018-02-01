@@ -2,6 +2,11 @@ gander
 ======
 
 The "Git ANnex DedupER" deduplicates large numbers of files with git-annex.
+
+See the demo:
+
+[![asciicast](https://asciinema.org/a/s2zlclVKqAlqgUBgZlZfqcSqH.png)](https://asciinema.org/a/s2zlclVKqAlqgUBgZlZfqcSqH)
+
 Major design goals are:
 
 1. Be sure nothing is deleted or lost accidentally
