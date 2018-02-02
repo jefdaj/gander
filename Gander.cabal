@@ -29,7 +29,7 @@ executable gander
                        Gander.Lib.Git,
                        Gander.Lib.Hash,
                        Gander.Lib.HashTree,
-                       Gander.Lib.Diff,
+                       Gander.Lib.Delta,
                        Gander.Lib.DupeMap
   build-depends:       base,
                        bytestring,
