@@ -11,6 +11,9 @@ module Gander.Lib.HashTree
   , deserializeTree
   , hashContents
   , parseHashes
+  , treeContainsPath
+  , treeContainsHash
+  , addSubTree
   )
   where
 
@@ -20,9 +23,14 @@ import Gander.Lib.Hash
 import qualified Data.ByteString.Char8 as B8
 import qualified Data.ByteString.Lazy.Char8 as BL
 -- import qualified Data.ByteString.Char8 as B
+
+import Gander.Lib.Git (pathComponents) -- TODO not actually git related
 import qualified System.Directory.Tree as DT
 
+import System.FilePath (joinPath)
+import Data.ByteString.Lazy.Char8 (pack)
 import Control.Monad        (forM)
+import Data.List            (partition, sortBy, find)
 import Data.Function        (on)
 import Data.List            (partition, sortBy)
 import Data.Either          (fromRight)
@@ -200,3 +208,66 @@ accTrees l@(t, h, indent, p) cs = case t of
                            (sum $ map (countFiles . snd) children)
          in siblings ++ [(indent, dir)]
   _ -> error $ "invalid line: '" ++ show l ++ "'" 
+
+readLine :: String -> (Hash, String, Int, FilePath)
+readLine line = (Hash h, t, i, takeFileName p)
+  where
+    [h, t]   = words tmp            -- first two words are hash and type
+    (tmp, p) = splitAt 70 line      -- rest of the line is the path
+    i        = length $ splitPath p -- get indent level from path
+
+-------------------
+-- search a tree --
+-------------------
+
+treeContainsPath :: HashTree -> FilePath -> Bool
+treeContainsPath (File f1 _     ) f2 = f1 == f2
+treeContainsPath (Dir  f1 _ cs _) f2
+  | f1 == f2 = True
+  | length (pathComponents f2) == 1 = False
+  | otherwise = let n   = head $ pathComponents f2
+                    f2' = joinPath $ tail $ pathComponents f2
+                in case find (\c -> name c == n) cs of
+                  Nothing -> False
+                  Just c  -> treeContainsPath c f2'
+
+treeContainsHash :: HashTree -> Hash -> Bool
+treeContainsHash (File _ h1     ) h2 = h1 == h2
+treeContainsHash (Dir  _ h1 cs _) h2
+  | h1 == h2 = True
+  | otherwise = any (\c -> treeContainsHash c h2) cs
+
+-------------------
+-- add a subtree --
+-------------------
+
+wrapInEmptyDir :: FilePath -> HashTree -> HashTree
+wrapInEmptyDir n t = Dir { name = n, hash = h, contents = cs, nFiles = nFiles t }
+  where
+    cs = [t]
+    h = hashContents cs
+
+wrapInEmptyDirs :: FilePath -> HashTree -> HashTree
+wrapInEmptyDirs p t = case pathComponents p of
+  []     -> error "wrapInEmptyDirs needs at least one dir"
+  (n:[]) -> wrapInEmptyDir n t
+  (n:ns) -> wrapInEmptyDir n $ wrapInEmptyDirs (joinPath ns) t
+
+addSubTree :: HashTree -> HashTree -> FilePath -> HashTree
+addSubTree (File _ _) _ _ = error $ "attempt to insert tree into a file"
+addSubTree _ _ path | null (pathComponents path) = error "can't insert tree at null path"
+addSubTree main sub path = main { hash = h', contents = cs', nFiles = n' }
+  where
+    comps  = pathComponents path
+    p1     = head comps
+    path'  = joinPath $ tail comps
+    h'     = hashContents cs'
+    cs'    = sortBy (compare `on` name) $ filter (\c -> name c /= p1) (contents main) ++ [newSub]
+    n'     = nFiles main + nFiles newSub - case oldSub of { Nothing -> 0; Just s -> nFiles s; }
+    sub'   = sub { name = last comps }
+    oldSub = find (\c -> name c == p1) (contents main)
+    newSub = if length comps == 1
+               then sub'
+               else case oldSub of
+                 Nothing -> wrapInEmptyDirs path sub'
+                 Just d  -> addSubTree d sub' path'
