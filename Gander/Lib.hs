@@ -14,7 +14,7 @@ module Gander.Lib
   , printHashes
 
   -- diff
-  , Diff(..)
+  , Delta(..)
   , diff
   , prettyDiff
   , printDiffs
@@ -42,6 +42,6 @@ module Gander.Lib
 
 import Gander.Lib.Hash
 import Gander.Lib.HashTree
-import Gander.Lib.Diff
+import Gander.Lib.Delta
 import Gander.Lib.DupeMap
 import Gander.Lib.Git
