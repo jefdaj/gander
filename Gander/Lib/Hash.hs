@@ -5,8 +5,8 @@
 
 module Gander.Lib.Hash
   ( Hash(..)
+  , hashBytes
   , hashFile
-  , hashHashes
   )
   where
 
@@ -14,7 +14,6 @@ import qualified Data.ByteString.Lazy as LB
 
 import Control.Monad              (when)
 import Crypto.Hash                (Digest, SHA256, hashlazy)
-import Data.ByteString.Lazy.Char8 (pack)
 import Data.List                  (isInfixOf)
 import System.FilePath            (takeBaseName)
 import System.Posix.Files         (getFileStatus, isSymbolicLink, readSymbolicLink)
@@ -53,11 +52,3 @@ hashFile verbose path = do
       !sha256sum <- fmap hashBytes $ LB.readFile path
       when verbose (putStrLn $ sha256sum ++ " " ++ path)
       return $ Hash sha256sum
-
--- TODO should the hashes include filenames? ie are two dirs with a different name different?
--- the "dir:" part prevents empty files and dirs from matching
--- TODO is there a more elegant way?
-hashHashes :: [Hash] -> Hash
-hashHashes hs = Hash $ hashBytes $ pack txt
-  where
-    txt = show $ map (\(Hash h) -> h) hs

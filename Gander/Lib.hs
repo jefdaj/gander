@@ -1,6 +1,8 @@
 module Gander.Lib
   -- hash
   ( Hash
+  , hashBytes
+  , hashFile
 
   -- hashtree
   , HashTree(..)
@@ -10,7 +12,7 @@ module Gander.Lib
   , flattenTree
   , serializeTree
   , deserializeTree
-  , hashHashes
+  , hashContents
   , printHashes
 
   -- diff

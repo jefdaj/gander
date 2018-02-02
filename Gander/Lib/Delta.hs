@@ -26,7 +26,7 @@ prettyDiff :: Delta -> String
 prettyDiff (Add f (Hash h)) = "added '"   ++ f ++ "' (" ++ take 8 h ++ ")"
 prettyDiff (Rm  f (Hash h)) = "removed '" ++ f ++ "' (" ++ take 8 h ++ ")"
 prettyDiff (Mv f1 f2 (Hash h))
-  = "moved '" ++ f1 ++ "' (" ++ take 8 h ++ ") -> '" ++ f2 ++ "'"
+  = "moved '" ++ f1 ++ "' -> '" ++ f2 ++ "' (" ++ take 8 h ++ ")"
 prettyDiff (Edit f (Hash h1) (Hash h2))
   = "changed '" ++ f ++ "' (" ++ take 8 h1 ++ " -> " ++ take 8 h2 ++ ")"
 
@@ -36,9 +36,13 @@ printDiffs = mapM_ (putStrLn . prettyDiff)
 diff :: HashTree -> HashTree -> [Delta]
 diff = diff' ""
 
+-- TODO need to make hashes take filenames into account too before this will work!
 diff' :: FilePath -> HashTree -> HashTree -> [Delta]
-diff' _ old new | old == new = []
-diff' r (File _ h1    ) (File _ h2    ) = [Edit r h1 h2]
+diff' r t1@(File f1 h1) t2@(File f2 h2)
+  | f1 == f2 && h1 == h2 = []
+  | f1 /= f2 && h1 == h2 = [Mv (r </> f1) (r </> f2) h1]
+  | f1 == f2 && h1 /= h2 = [Edit (r </> f1) h1 h2]
+  | otherwise = error $ "error in diff': " ++ show t1 ++ " " ++ show t2
 diff' r (File _ h1    ) (Dir  d h2 _ _) = [Rm r h1, Add (r </> d) h2]
 diff' r (Dir  d h1 _ _) (File _ h2    ) = [Rm (r </> d) h1, Add r h2]
 diff' r (Dir _ h1 os _) (Dir _ h2 ns _)
@@ -64,8 +68,8 @@ findMv _ _ = False
 fixMoves :: [Delta] -> [Delta]
 fixMoves [] = []
 fixMoves (d1@(Rm f1 h):ds) = case find (findMv d1) ds of
-  Just d2@(Rm f2 _) -> (Mv f1 f2 h) : let ds' = filter (/= d2) ds in fixMoves ds'
-  Just d2 -> error $ "findMv returned a non-rm: " ++ show d2
+  Just d2@(Add f2 _) -> (Mv f1 f2 h) : let ds' = filter (/= d2) ds in fixMoves ds'
+  Just d2 -> error $ "findMv returned a non-add: " ++ show d2
   Nothing -> d1 : fixMoves ds
 fixMoves (d:ds) = d : fixMoves ds
 
