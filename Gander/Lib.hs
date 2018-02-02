@@ -15,12 +15,18 @@ module Gander.Lib
   , hashContents
   , renameRoot
   , printHashes
+  , treeContainsPath
+  , treeContainsHash
+  , addSubTree
 
-  -- diff
+  -- delta
   , Delta(..)
   , diff
   , prettyDiff
   , printDiffs
+  , runDelta
+  , runDeltas
+  , safe
 
   -- dupemap
   , DupeList
