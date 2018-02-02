@@ -3,7 +3,7 @@ module Gander.Cmd.Update where
 -- TODO move most of this to Lib once it works
 
 import Gander.Config (Config(..))
-import Gander.Lib (HashTree(..), readTree, printHashes, hashHashes, pathComponents)
+import Gander.Lib (HashTree(..), readTree, printHashes, hashContents, pathComponents)
 import System.FilePath (joinPath)
 import Data.List (find, sortBy)
 import Data.Function (on)
@@ -19,7 +19,7 @@ wrapInEmptyDir :: FilePath -> HashTree -> HashTree
 wrapInEmptyDir n t = Dir { name = n, hash = h, contents = cs, nFiles = nFiles t }
   where
     cs = [t]
-    h = hashHashes [hash t]
+    h = hashContents cs
 
 wrapInEmptyDirs :: FilePath -> HashTree -> HashTree
 wrapInEmptyDirs p t = case pathComponents p of
@@ -35,7 +35,7 @@ insertTreeInDir main sub path = main { hash = h', contents = cs', nFiles = n' }
     comps  = pathComponents path
     p1     = head comps
     path'  = joinPath $ tail comps
-    h'     = hashHashes $ map hash cs'
+    h'     = hashContents cs'
     cs'    = sortBy (compare `on` name) $ filter (\c -> name c /= p1) (contents main) ++ [newSub]
     n'     = nFiles main + nFiles newSub - case oldSub of { Nothing -> 0; Just s -> nFiles s; }
     sub'   = sub { name = last comps }

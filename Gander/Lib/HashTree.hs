@@ -8,12 +8,14 @@ module Gander.Lib.HashTree
   , serializeTree
   , flattenTree
   , deserializeTree
+  , hashContents
   )
   where
 
 import Gander.Lib.Hash
 import qualified System.Directory.Tree as DT
 
+import Data.ByteString.Lazy.Char8 (pack)
 import Control.Monad        (forM)
 import Data.List            (partition, sortBy)
 import Data.Function        (on)
@@ -77,9 +79,17 @@ buildTree' v (a DT.:/ (DT.Dir n cs)) = do
   return Dir
     { name     = n
     , contents = cs'
-    , hash     = hashHashes $ map hash cs'
+    , hash     = hashContents cs'
     , nFiles   = sum $ map countFiles cs'
     }
+
+-- TODO this should hash the same text you would get from serializing the tree
+--      (looks like sha256sum output but with file/dir parts added)
+hashContents :: [HashTree] -> Hash
+hashContents ts = Hash $ hashBytes $ pack txt
+  where
+    ls  = map serializeTree ts
+    txt = unlines ls
 
 -- If passed a file this assumes it contains hashes and builds a tree of them;
 -- If passed a dir it will scan it first and then build the tree.
@@ -93,7 +103,7 @@ readOrBuildTree verbose exclude path = do
 
 -- TODO use serialize for this
 printHashes :: HashTree -> IO ()
-printHashes tree = mapM_ (putStrLn . prettyHashLine) (flattenTree tree)
+printHashes = putStr . serializeTree
 
 -------------------------------------
 -- serialize and deserializeTree trees --
@@ -101,7 +111,7 @@ printHashes tree = mapM_ (putStrLn . prettyHashLine) (flattenTree tree)
 
 -- TODO can Foldable or Traversable simplify these?
 serializeTree :: HashTree -> String
-serializeTree = unlines . map prettyHashLine . flattenTree' ""
+serializeTree = unlines . map prettyHashLine . flattenTree
 
 flattenTree :: HashTree -> [HashLine]
 flattenTree = flattenTree' ""
