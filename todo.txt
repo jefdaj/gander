@@ -10,25 +10,17 @@ better interface:
 
 asciinema demos:
   fork from master or dedup-1-compiles-but-broken?
-
-  make a pile of duplicated files/folders
-    download free music
-    randomly list 2 folders in it
-    copy the first into the second
-    then do files into folders too?
-
-  both demos:
-    init repo with empty hashes
-    add some files
-    hash + list dupes separately
-    dedup them
-
   first demo because this works already:
     want manual control to work gander into an existing workflow
     do the operations separately
     manage hash files yourself
     mix freely with git operations
-
   second demo that will be more for brian:
     want to use the repo specifically for deduping as simply as possible
     add a gander init command to create repo, annex init, create empty hashes.txt
+
+everything as edits:
+  make an Edit datatype... or Delta? that describes change in a hashtree
+  it can start as the same one used for Diff now
+  but should include everything needed to say beforehand whether a given list of changes is safe too
+  later you can test that for any edit the precalculated delta == actual scan at the end
