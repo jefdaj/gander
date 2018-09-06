@@ -9,7 +9,8 @@ module Gander.Config
  -}
 -- TODO remove from non-Cmd modules
 data Config = Config
-  { verbose :: Bool
+  { annex   :: Maybe FilePath
+  , verbose :: Bool
   , force   :: Bool
   , exclude :: [String]
   }
@@ -17,7 +18,8 @@ data Config = Config
 
 defaultConfig :: Config
 defaultConfig = Config
-  { verbose = True
-  , force = False
+  { annex   = Nothing
+  , verbose = True
+  , force   = False
   , exclude = [".git*"]
   }

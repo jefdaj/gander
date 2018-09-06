@@ -9,7 +9,7 @@ module Main where
 import Gander.Cmd
 import Gander.Config         (Config(..))
 import System.Console.Docopt (docoptFile, parseArgsOrExit,
-                              getArgOrExitWith, isPresent, longOption,
+                              getArgOrExitWith, isPresent, getArg,
                               shortOption, command, argument)
 import System.Environment    (getArgs)
 
@@ -17,19 +17,21 @@ main :: IO ()
 main = do
   let ptns = [docoptFile|usage.txt|]
   args <- parseArgsOrExit ptns =<< getArgs
-  let cmd    n = isPresent args $ command n
-      arg    n = getArgOrExitWith ptns args $ argument n
-      short  n = getArgOrExitWith ptns args $ shortOption n
-      flag s l = isPresent args (shortOption s)
-              || isPresent args (longOption  l)
-  eList <- if (flag 'e' "exclude")
+  let cmd   n = isPresent args $ command n
+      arg   n = getArgOrExitWith ptns args $ argument n
+      short n = getArgOrExitWith ptns args $ shortOption n
+      flag  n = isPresent args $ shortOption n
+  eList <- if (flag 'e')
              then short 'e' >>= readFile >>= return . lines
              else return [".git*"]
   let cfg = Config
-        { verbose = flag 'v' "verbose"
-        , force   = flag 'f' "force"
+        { annex   = getArg args $ argument "annex"
+        , verbose = flag 'v'
+        , force   = flag 'f'
         , exclude = eList
         }
+  print cfg
+  -- if annex mode, check `git status` and read config here
   if cmd "hash" then do
     path <- arg "path"
     cmdHash cfg path
