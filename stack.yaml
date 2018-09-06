@@ -2,5 +2,5 @@ resolver: lts-11.8
 packages:
 - '.'
 nix:
-  enable: true
+  enable: false # works, but not everyone needs it
   pure: false
