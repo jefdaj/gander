@@ -1,6 +1,7 @@
 The "Git ANnex DEdupeR" deduplicates files and folders using git-annex.
 
 Usage:
+  gander <annex> [-v]  hash   <path> [-e <exclude>]
   gander [-v]  hash   <path> [-e <exclude>]
   gander [-v]  dupes  <hashes>
   gander [-v]  fsck   <hashes> [<dir>...]
@@ -13,6 +14,7 @@ Usage:
   gander [-v]  dedup  <hashes> <path>
 
 Options:
+  <annex>        Operate on the given git-annex repository.
   -f, --force    Change existing files without requiring confirmation.
   -v, --verbose  Explain each step as it runs.
   -e <exclude>   Read a list of globs and exclude any files matching it.
