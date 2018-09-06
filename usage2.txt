@@ -1,0 +1,34 @@
+New usage is split into annex and standalone (no-annex) modes.
+No-annex ones are roughly unix-style.
+Annex ones are interactive and make the user confirm everything.
+You can hash annexed files in standalone non-annex style too.
+None of the standalone ones are destructive.
+For now, only the annex-style rm and update change anything (move later).
+Update is replaced by re-running hash when the hashes already exist.
+Delete is renamed to rm.
+Annex is renamed add and the src/dst are flipped so it works with src in the annex too.
+Backup (save?) will make a timestamped copy of the annex hashes file.
+For simplicity, all repeatable args removed from annex style for now?
+Should the annex commands all take a (Maybe FilePath) for the annex? Or use cfg?
+
+First step is to make all the annex-mode ones confirm what they're going to do.
+... err, very first step is to get docopt to read the new usage.
+
+annex:
+  gander <annex> [-vf] hash  [<path>] [-e <exclude>]
+  gander <annex> [-v ] fsck  [<path>]
+  gander <annex> [-v ] dupes [<path>]
+  gander <annex> [-v ] dedup [<path>]
+  gander <annex> [-vf] add    <path>  [-s <src>]
+  gander <annex> [-vf] rm     <path>
+  gander <annex> [-v ] save
+
+standalone:
+  gander [-v] hash  <path>... [-e <exclude>]
+  gander [-v] diff  <old> <new>
+  gander [-v] fsck  <hashes> [<path>...]
+  gander [-v] dupes <hashes> [<path>...]
+  gander [-v] dedup <hashes> [<path>...]
+
+test:
+  gander [-v] test <path>
