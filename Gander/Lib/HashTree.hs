@@ -141,7 +141,7 @@ printHashes :: HashTree -> IO ()
 printHashes = putStr . serializeTree
 
 -------------------------------------
--- serialize and deserializeTree trees --
+-- serialize and deserialize trees --
 -------------------------------------
 
 -- TODO can Foldable or Traversable simplify these?
@@ -204,6 +204,7 @@ parseHashes = fromRight [] . parseOnly linesP . B8.pack
 -- TODO error on null string/lines?
 -- TODO wtf why is reverse needed? remove that to save RAM
 -- TODO refactor so there's a proper buildTree function and this uses it
+-- TODO what about files with newlines in them? might need to split at \n(file|dir)
 deserializeTree :: String -> HashTree
 deserializeTree = snd . head . foldr accTrees [] . reverse . parseHashes
 
