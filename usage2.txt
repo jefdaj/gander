@@ -10,6 +10,8 @@ Annex is renamed add and the src/dst are flipped so it works with src in the ann
 Backup (save?) will make a timestamped copy of the annex hashes file.
 For simplicity, all repeatable args removed from annex style for now?
 Should the annex commands all take a (Maybe FilePath) for the annex? Or use cfg?
+Can exclude be removed from annex-style hash to a config file? Would make simpler.
+That config could also say where to put the hashes file(s), and set verbosity.
 
 First step is to make all the annex-mode ones confirm what they're going to do.
 ... err, very first step is to get docopt to read the new usage.
