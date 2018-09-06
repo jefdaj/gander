@@ -16,46 +16,52 @@ import System.Environment    (getArgs)
 
 main :: IO ()
 main = do
-  -- parse usage patterns, then use them to parse cli args
   let ptns = [docoptFile|usage.txt|]
   args <- parseArgsOrExit ptns =<< getArgs
-  let cmd  n = isPresent args $ command n
-      path n = getArgOrExitWith ptns args $ argument n
-      short n = getArgOrExitWith ptns args $ shortOption n
-      flag s l  = isPresent args (shortOption s)
-               || isPresent args (longOption  l)
-  excludeList <- if (flag 'e' "exclude")
-                   then short 'e' >>= readFile >>= return . lines
-                   else return [".git*"]
+  let cmd    n = isPresent args $ command n
+      arg    n = getArgOrExitWith ptns args $ argument n
+      short  n = getArgOrExitWith ptns args $ shortOption n
+      flag s l = isPresent args (shortOption s)
+              || isPresent args (longOption  l)
+  eList <- if (flag 'e' "exclude")
+             then short 'e' >>= readFile >>= return . lines
+             else return [".git*"]
   let cfg = Config
         { verbose = flag 'v' "verbose"
         , force   = flag 'f' "force"
-        , exclude = excludeList
+        , exclude = eList
         }
-  -- dispatch on command
-  if      cmd "hash"  then path "path"   >>= cmdHash  cfg
+  if cmd "hash" then do
+    path <- arg "path"
+    cmdHash cfg path
   else if cmd "diff" then do
-    old <- path "old"
-    new <- path "new"
+    old <- arg "old"
+    new <- arg "new"
     cmdDiff cfg old new
-  else if cmd "dupes" then path "hashes" >>= cmdDupes cfg
-  else if cmd "test"  then path "path"   >>= cmdTest  cfg
+  else if cmd "dupes" then do
+    hashes <- arg "hashes"
+    cmdDupes cfg hashes
+  else if cmd "test"  then do
+    path <- arg "path"
+    cmdTest cfg path
   else if cmd "update" then do
-    mainTree <- path "main"
-    subTree  <- path "sub"
-    subPath  <- path "path"
+    mainTree <- arg "main"
+    subTree  <- arg "sub"
+    subPath  <- arg "path"
     cmdUpdate cfg mainTree subTree subPath
   else if cmd "annex" then do
-    src  <- path "src"
-    dest <- path "dest"
+    src  <- arg "src"
+    dest <- arg "dest"
     cmdAnnex cfg src dest
   else if cmd "delete" then do
-    hashes    <- path "root"
-    delhashes <- path "sub"
-    delpath   <- path "path"
+    hashes    <- arg "root"
+    delhashes <- arg "sub"
+    delpath   <- arg "path"
     cmdRm cfg hashes delhashes delpath
   else if cmd "dedup" then do
-    hashes <- path "hashes"
-    dpath  <- path "path"
+    hashes <- arg "hashes"
+    dpath  <- arg "path"
     cmdDedup cfg hashes dpath
-  else print args >> print cfg
+  else do
+    print args
+    print cfg
