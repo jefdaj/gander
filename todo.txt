@@ -2,8 +2,43 @@ bug: dir hashes need to be recalculated after changing contents (including rm)
 
 also add hashes to the dupes output (harder than it seems though)
 
+much faster to finish if....
+  only need to rigorously test the `git rm` command
+  that way you can:
+    do one big scan
+    rm something
+    update the hashes file just to remove other duplicates it mentions without re-scanning
+
+still want a basic ask-remove-update interface at least though
+delete commandn needs to: check all are dupes, confirm, then update hashes (and needs a hashes arg)
+
+simplify the interface:
+  most commands take a file listing hashes first thing
+  would exclude test
+  would exclude hash too? nah might as well do it for consistency
+    but should warn if the file already exists
+    and should warn if files to be hashed aren't within the same file tree/repo
+      maybe explicitly set the repo? not sure if needed
+
+separate modes for just hashing/fscking vs working with an annex:
+  annex has a <repo> (<annex>?) path
+  when not using repo, require a --no-repo flag to be explicit?
+    then can print to stdout like current
+    or just do it anyway, that wouldn't hurt anything
+  when using repo:
+    require git status to be clean first
+    store the hashes in the git repo too? or put them in .git/gander/hashes.txt?
+
+add a backup flag that makes a backup of the main hashes file before changing it
+
 would it help to break up HashTree.hs further?
 put dir/file before hash and split on that to handle newlines in filenames
+
+have to prevent "too many levels of symbolic links" when hashing system folders?
+  /usr/bin/X11 seems to trigger it
+  just want to hash the destination path instead of following it
+
+have to handle "permission denied" errors? maybe just abort and make user have sudo
 
 when listing dupes, sort paths by n components then alphabet
 
