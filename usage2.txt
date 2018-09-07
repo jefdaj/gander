@@ -12,18 +12,19 @@ For simplicity, all repeatable args removed from annex style for now?
 Should the annex commands all take a (Maybe FilePath) for the annex? Or use cfg?
 Can exclude be removed from annex-style hash to a config file? Would make simpler.
 That config could also say where to put the hashes file(s), and set verbosity.
+Add a -c option to anything that edits the repo, to check that actual edited hashes == expected.
 
 First step is to make all the annex-mode ones confirm what they're going to do.
 ... err, very first step is to get docopt to read the new usage.
 
 annex:
-  gander <annex> [-vf] hash  [<path>] [-e <exclude>]
-  gander <annex> [-v ] fsck  [<path>]
-  gander <annex> [-v ] dupes [<path>]
-  gander <annex> [-v ] dedup [<path>]
-  gander <annex> [-vf] add    <path>  [-s <src>]
-  gander <annex> [-vf] rm     <path>
-  gander <annex> [-v ] save
+  gander <annex> [-vf ] hash  [<path>] [-e <exclude>]
+  gander <annex> [-v  ] fsck  [<path>]
+  gander <annex> [-v  ] dupes [<path>]
+  gander <annex> [-vcf] dedup [<path>]
+  gander <annex> [-vcf] add    <path>  [-s <src>]
+  gander <annex> [-vcf] rm     <path>
+  gander <annex> [-v  ] save
 
 standalone:
   gander [-v] hash  <path>... [-e <exclude>]
