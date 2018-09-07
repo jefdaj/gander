@@ -3,6 +3,7 @@ module Gander.Lib.HashTree
   , readTree
   , buildTree
   , readOrBuildTree
+  , renameRoot
   , printHashes
   , prettyHashLine
   , serializeTree
@@ -100,6 +101,10 @@ readOrBuildTree verbose exclude path = do
   if      isFile then readTree path
   else if isDir then buildTree verbose exclude path
   else error $ "No such file: '" ++ path ++ "'"
+
+-- for comparing two trees without getting hung up on different overall names
+renameRoot :: String -> HashTree -> HashTree
+renameRoot newName tree = tree { name = newName }
 
 -- TODO use serialize for this
 printHashes :: HashTree -> IO ()

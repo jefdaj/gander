@@ -13,6 +13,7 @@ module Gander.Lib
   , serializeTree
   , deserializeTree
   , hashContents
+  , renameRoot
   , printHashes
 
   -- diff
