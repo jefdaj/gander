@@ -1,8 +1,8 @@
 New usage is split into annex and standalone (no-annex) modes.
 No-annex ones are roughly unix-style.
-Annex ones are interactive and make the user confirm everything.
+Annex ones are interactive and make the user confirm everything unless -f.
 You can hash annexed files in standalone non-annex style too.
-None of the standalone ones are destructive.
+None of the standalone ones are destructive, except dedup.
 For now, only the annex-style rm and update change anything (move later).
 Update is replaced by re-running hash when the hashes already exist.
 Delete is renamed to rm.
@@ -12,26 +12,27 @@ For simplicity, all repeatable args removed from annex style for now?
 Should the annex commands all take a (Maybe FilePath) for the annex? Or use cfg?
 Can exclude be removed from annex-style hash to a config file? Would make simpler.
 That config could also say where to put the hashes file(s), and set verbosity.
-Add a -c option to anything that edits the repo, to check that actual edited hashes == expected.
+Add a -h option to anything that edits the repo, to check that actual edited hashes == expected. (remove later?)
+Is verbose mode ever actually used? Maybe remove it.
+Shit, need to add -e to all the standalone ones? And put it in a config file for the annex ones?
+Target can always be either a direct file/dir or a set of hashes?
 
 First step is to make all the annex-mode ones confirm what they're going to do.
 ... err, very first step is to get docopt to read the new usage.
 
-annex:
-  gander <annex> [-vf ] hash  [<path>] [-e <exclude>]
-  gander <annex> [-v  ] fsck  [<path>]
-  gander <annex> [-v  ] dupes [<path>]
-  gander <annex> [-vcf] dedup [<path>]
-  gander <annex> [-vcf] add    <path>  [-s <src>]
-  gander <annex> [-vcf] rm     <path>
-  gander <annex> [-v  ] save
-
 standalone:
-  gander [-v] hash  <path>... [-e <exclude>]
-  gander [-v] diff  <old> <new>
-  gander [-v] fsck  <hashes> [<path>...]
-  gander [-v] dupes <hashes> [<path>...]
-  gander [-v] dedup <hashes> [<path>...]
+  gander hash  <target>    [-e <exclude>]
+  gander dupes <target>    [-e <exclude>]
+  gander dedup <target>    [-e <exclude>] [-fh]
+  gander diff  <old> <new> [-e <exclude>]
+
+annex:
+  gander <annex> hash  [<target>] [-f]
+  gander <annex> dupes [<target>]
+  gander <annex> dedup [<target>] [-fh]
+  gander <annex> add    <target>  [-s <src>] [-fh]
+  gander <annex> rm     <target>  [-fh]
+  gander <annex> save
 
 test:
-  gander [-v] test <path>
+  gander test <path>
