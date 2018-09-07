@@ -28,7 +28,7 @@ prettyDiff (Rm  f (Hash h)) = "removed '" ++ f ++ "' (" ++ take 8 h ++ ")"
 prettyDiff (Mv f1 f2 (Hash h))
   = "moved '" ++ f1 ++ "' -> '" ++ f2 ++ "' (" ++ take 8 h ++ ")"
 prettyDiff (Edit f (Hash h1) (Hash h2))
-  = "changed '" ++ f ++ "' (" ++ take 8 h1 ++ " -> " ++ take 8 h2 ++ ")"
+  = "edited '" ++ f ++ "' (" ++ take 8 h1 ++ " -> " ++ take 8 h2 ++ ")"
 
 printDiffs :: [Delta] -> IO ()
 printDiffs = mapM_ (putStrLn . prettyDiff)
@@ -41,7 +41,7 @@ diff' :: FilePath -> HashTree -> HashTree -> [Delta]
 diff' r t1@(File f1 h1) t2@(File f2 h2)
   | f1 == f2 && h1 == h2 = []
   | f1 /= f2 && h1 == h2 = [Mv (r </> f1) (r </> f2) h1]
-  | f1 == f2 && h1 /= h2 = [Edit (r </> f1) h1 h2]
+  | f1 == f2 && h1 /= h2 = [Edit (if r == f1 then f1 else r </> f1) h1 h2]
   | otherwise = error $ "error in diff': " ++ show t1 ++ " " ++ show t2
 diff' r (File _ h1    ) (Dir  d h2 _ _) = [Rm r h1, Add (r </> d) h2]
 diff' r (Dir  d h1 _ _) (File _ h2    ) = [Rm (r </> d) h1, Add r h2]

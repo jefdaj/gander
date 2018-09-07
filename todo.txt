@@ -24,3 +24,7 @@ everything as edits:
   it can start as the same one used for Diff now
   but should include everything needed to say beforehand whether a given list of changes is safe too
   later you can test that for any edit the precalculated delta == actual scan at the end
+
+does diff actually work enough for testing already?
+  only important to go from delta -> new hashes, not new hashes -> delta so much
+  because can do the git operation and re-hash everything to test that!

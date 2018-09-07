@@ -89,7 +89,7 @@ hashContents :: [HashTree] -> Hash
 hashContents ts = Hash $ hashBytes $ pack txt
   where
     ls  = map serializeTree ts
-    txt = unlines ls
+    txt = concat ls -- TODO why is this important vs unlines?
 
 -- If passed a file this assumes it contains hashes and builds a tree of them;
 -- If passed a dir it will scan it first and then build the tree.
