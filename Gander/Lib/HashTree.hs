@@ -67,6 +67,7 @@ buildTree beVerbose excludes path = do
   tree <- DT.readDirectoryWithL return path
   buildTree' beVerbose $ excludeGlobs excludes tree
 
+-- TODO oh no, does AnchoredDirTree fail on cyclic symlinks?
 buildTree' :: Bool -> DT.AnchoredDirTree FilePath -> IO HashTree
 buildTree' _ (a DT.:/ (DT.Failed n e )) = error $ (a </> n) ++ ": " ++ show e
 buildTree' v (_ DT.:/ (DT.File n f)) = do
