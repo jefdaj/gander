@@ -95,7 +95,7 @@ Individual file hashes are the same as reported by `sha256sum`.
 Everything works similarly with directories and binary files,
 except that the directory hashes don't follow an external standard.
 
-Either folder can be replaced by a file listing the corresponding hashes.
+Either folder can be replaced by a file listing the corresponding hashes, so you don't have to re-scan.
 For example:
 
 ```
@@ -108,8 +108,8 @@ Find dupes within a folder
 
 What if you have a more complicated mess of files to deduplicate?
 Say we made a couple more copies of the `backup` demo folder "just in case", then forgot about it.
-(Also in [demo.sh][4])
-`gander` will group all the identical folders and sort them by total duplicate files:
+Continuing with [demo.sh][4],
+`gander` can group all the identical files/folders and sort them by total duplicate files:
 
 ```
 $ gander dupes demo
@@ -152,18 +152,18 @@ Much better! Even extremely large, messy folders can be simplified after a few r
 Annex-aware mode
 ----------------
 
-This is what `gander` was really designed for. Major goals are:
+`gander` was really designed to automate the above "find dupes -> delete dupes -> rescan" loop
+while keeping track of what was deleted in git. Major goals are:
 
 1. Be sure nothing is deleted or lost accidentally
-2. Be clear about what it will do before running commands
+2. Be clear about what it will do at each step for non-programmers
 3. Be reasonably fast, given the limitations of git
-4. Be reasonably friendly for use by non-programmers
 
-Please note that those are only goals! It was written for a specific project
-consisting of around 10 million files, and has not been tested much beyond
-that. However, that project included several complete Mac filesystems and a ton
-of really horrendous filenames with emojis, newlines, unicode glyphs and
-whatever else you can think of. So it made a decent stress test.
+It was written for a specific project consisting of around 10 million files,
+and has not been tested much beyond that. However, that project included
+several complete Mac filesystems and a ton of really horrendous filenames with
+emojis, newlines, unicode glyphs and whatever else you can think of. So it made
+a decent stress test.
 
 There are two parts to the overall strategy in this mode:
 
