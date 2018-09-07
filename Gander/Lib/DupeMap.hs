@@ -57,10 +57,10 @@ dupesByNFiles :: DupeMap -> [DupeList]
 dupesByNFiles = sortDescLength . filter hasDupes . toList
 
 {- Assumes a pre-sorted list as provided by dupesByNFiles.
- - Removes lists whose elements are all subfolders of the first list.
+ - Removes lists whose elements are all inside elements of the first list.
  - For example if the first is dir1, dir2, dir3
  - and the next is dir1/file.txt, dir2/file.txt, dir3/file.txt
- - ... then the second set is redundant and confusing.
+ - ... then the second set is redundant and confusing to show.
  -}
 simplifyDupes :: [DupeList] -> [DupeList]
 simplifyDupes [] = []
