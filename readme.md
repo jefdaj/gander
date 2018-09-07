@@ -171,6 +171,7 @@ This is what `gander` was really designed for. Major goals are:
 1. Be sure nothing is deleted or lost accidentally
 2. Be clear about what it will do before running commands
 3. Be reasonably fast, given the limitations of git
+4. Be reasonably friendly for use by non-programmers
 
 Please note that those are only goals! It was written for a specific project
 consisting of around 10 million files, and has not been tested much beyond
