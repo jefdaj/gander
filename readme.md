@@ -1,58 +1,124 @@
 gander
 ======
 
-The "Git ANnex DedupER" deduplicates large numbers of files with git-annex.
+The "Git ANnex DedupER" deduplicates files, optionally using [git-annex][1] to track changes.
+It's especially suited for very large numbers of files that cause raw git operations to be slow.
 
-See the demo:
+There are two modes: simple for when you want to do a one-off operation like diff two folders,
+and annex-aware for when you have a huge mess you want to clean up carefully.
 
-[![asciicast](https://asciinema.org/a/s2zlclVKqAlqgUBgZlZfqcSqH.png)](https://asciinema.org/a/s2zlclVKqAlqgUBgZlZfqcSqH)
+Please send suggestions, pull requests, and/or report whether it worked for you!
+Open to new use cases or syntax.
 
-Major design goals are:
+
+Install
+-------
+
+The project can be built with either [Stack][2] or [Nix][3]:
+
+```
+git clone https://github.com/jefdaj/gander.git
+cd gander
+
+# either one works. if unsure, use stack
+stack build
+nix-build
+```
+
+If anyone shows interest I will also distribute precompiled versions. Email me or open an issue.
+
+
+Save hashes
+-----------
+
+`gander` recursively hashes folders and uses the hashes for later comparison.
+
+```
+$ gander hash backup > backup-hashes.txt
+$ cat backup-hashes.txt
+e80d8ed374517e280f5923057046010b5786251e65dac402bf87b1a07f48780b file backup/file1.txt
+cfc9494ec1483b639a5d07dcbfafb9b27048800d5ad6c1e320a36272c2e42880 file backup/folder1/file3.txt
+8c0899afa99e1ea386150e72bd6b72e8e7ac78f5c0e984b97a0a10aa2982039b file backup/folder1/folder2/file2.txt
+59563d46dcacd72056fc2f753929e54f6839d40f62f6ea82db42e556d5de2021 dir  backup/folder1/folder2
+2e3f25ea48d7371a328d1356628f838bbb32352837cb3c26427eca4bab3e8060 dir  backup/folder1
+711d2d4e20a5a30a6a52cdd7fc7c48f6805c5201cea860a8c1bcf72c9bb4398e dir  backup
+```
+
+Using the hash command by itself is mainly useful when the files to hash are large and/or on an external drive.
+
+
+Diff folders
+------------
+
+The advantage over `diff -r` is that you can use saved hashes to avoid re-scanning everything.
+Detection of changes is also nicer, as shown in [demo.sh](demo.sh):
+
+```
+creating some demo files...
+backing them up...
+continuing to edit the originals...
+ok, they look like:
+
+demo
+├── backup
+│   ├── file1.txt
+│   └── folder1
+│       ├── file3.txt
+│       └── folder2
+│           └── file2.txt
+└── current
+    ├── file1.txt
+    ├── file3.txt
+    └── folder1
+        └── folder2
+            ├── file2.txt
+            └── file3.txt
+
+6 directories, 7 files
+
+this is what `diff -r` says about them:
+Only in current: file3.txt
+Only in backup/folder1: file3.txt
+diff -r backup/folder1/folder2/file2.txt current/folder1/folder2/file2.txt
+1a2
+> edit the 2nd file
+Only in current/folder1/folder2: file3.txt
+
+and this is what `gander diff` says:
+added 'file3.txt' (03c6a1ef)
+moved 'folder1/file3.txt' -> 'folder1/folder2/file3.txt' (cfc9494e)
+edited 'folder1/folder2/file2.txt/file2.txt' (8c0899af -> a86b253f)
+```
+
+The hex codes in parentheses are the first 8 characters of the relevant hashes.
+Individual file hashes are the same as reported by `sha256sum`.
+Everything works similarly with directories and binary files,
+except that the directory hashes don't follow an external standard.
+
+Either folder can be replaced by a file listing the corresponding hashes.
+For example:
+
+```
+gander diff backup-hashes.txt current
+```
+
+
+Annex-aware mode
+----------------
+
+This is what `gander` was really designed for. Major goals are:
 
 1. Be sure nothing is deleted or lost accidentally
 2. Be clear about what it will do before running commands
 3. Be reasonably fast, given the limitations of git
 
 Please note that those are only goals! It was written for a specific project
-consisting of around 10 million files, and has not been tested beyond that.
-There are no guarantees. Please send suggestions, pull requests, and/or report
-whether it worked for you! Open to new use cases or syntax or whatever.
+consisting of around 10 million files, and has not been tested much beyond
+that. However, that project included several complete Mac filesystems and a ton
+of really horrendous filenames with emojis, newlines, unicode glyphs and
+whatever else you can think of. So it made a decent stress test.
 
-Examples
---------
-
-Make a list of duplicate files in the repo itself.
-
-```.bash
-gander scan . > hashes.txt
-head hashes.txt 
-# 1a57975bd02fa70a39456759dddbd8aba500abc43419274757c1427ff6cdca44 file ./result/share/x86_64-linux-ghc-8.0.2/gander-0.1.0.0/usage.txt
-# 0f2cf166f251d30db4766b9365e0a7aaef4598c6acf5599be8684161a9ec4cb1 dir  ./result/share/x86_64-linux-ghc-8.0.2/gander-0.1.0.0
-# 202ad729f04ce319d7a717b3af88c3923f8fc90b98acb6cdd6eed61fda68a85f dir  ./result/share/x86_64-linux-ghc-8.0.2
-# cde7f101bfbee08b37a693d9acd1450d0407ce605a69e36a77002163c912ec92 dir  ./result/share
-# 97edf9c0f2a859bd105081ec832c35ae90af80a159e31ca96c3fde42b0011ca2 file ./result/bin/gander
-# 71a3a3e4fedfa4c115fd85cffb6fbb5662c52166fdec2a15a0db6d86fb1f69b4 dir  ./result/bin
-# 21371b2aa82ef0b50b76c8a9526486bd124fcf1276bf0eb6d7b5d40f25cebcd2 dir  ./result
-# be6c8d4fb3493962dd201bf7238f15493ee18f1dd1c20bfde982f1fc8229145d file ./.stack-work/dist/x86_64-linux-nix/Cabal-1.24.2.0/stack-cabal-mod
-# d4f45d26030dd68c566c44b69438e31f31b08b61500172dc4759a574408c5dd2 file ./.stack-work/dist/x86_64-linux-nix/Cabal-1.24.2.0/stack-config-cache
-# f9645271ea7213b8203ef6686fb9af08ed33baa044a9c41c2f69a569184596c5 file ./.stack-work/dist/x86_64-linux-nix/Cabal-1.24.2.0/build/autogen/Paths_gander.hs
-
-gander dupes hashes.txt > dupes.txt
-head dupes.txt
-# 3 duplicates:
-# ./.stack-work/install/x86_64-linux-nix/lts-9.3/8.0.2/share/x86_64-linux-ghc-8.0.2/gander-0.1.0.0/usage.txt
-# ./result/share/x86_64-linux-ghc-8.0.2/gander-0.1.0.0/usage.txt
-# ./usage.txt
-#
-# 2 duplicates:
-# ./.stack-work/install/x86_64-linux-nix/lts-9.3/8.0.2/share/x86_64-linux-ghc-8.0.2/gander-0.1.0.0
-# ./result/share/x86_64-linux-ghc-8.0.2/gander-0.1.0.0
-```
-
-TODO
-----
-
-Think through the interface a bit more. Should it be like [hashdeep][2]?
 
 [1]: https://git-annex.branchable.com
-[2]: https://github.com/jessek/hashdeep
+[2]: https://docs.haskellstack.org/en/stable/README/
+[3]: https://nixos.org/nix
