@@ -26,6 +26,7 @@ module Gander.Lib
   , DupeList
   , DupeMap
   , dupesByNFiles
+  , simplifyDupes
   , printDupes
   , pathsByHash
   , allDupes

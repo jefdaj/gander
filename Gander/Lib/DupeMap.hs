@@ -5,6 +5,7 @@ module Gander.Lib.DupeMap
   , mergeDupeLists
   , sortDescLength
   , dupesByNFiles
+  , simplifyDupes
   , hasDupes
   , printDupes
   , allDupes
@@ -17,11 +18,11 @@ import Gander.Lib.HashTree
 
 import Control.Arrow   ((&&&))
 import Data.Foldable   (toList)
-import Data.List       (sort, sortBy)
+import Data.List       (sort, sortBy, isPrefixOf)
 import Data.Map        (Map)
 import Data.Map        (fromListWith, keys, lookup)
 import Data.Ord        (comparing)
-import System.FilePath ((</>))
+import System.FilePath ((</>), splitDirectories)
 
 -- TODO can Foldable or Traversable simplify these?
 
@@ -54,6 +55,19 @@ sortDescLength = map snd
 
 dupesByNFiles :: DupeMap -> [DupeList]
 dupesByNFiles = sortDescLength . filter hasDupes . toList
+
+{- Assumes a pre-sorted list as provided by dupesByNFiles.
+ - Removes lists whose elements are all subfolders of the first list.
+ - For example if the first is dir1, dir2, dir3
+ - and the next is dir1/file.txt, dir2/file.txt, dir3/file.txt
+ - ... then the second set is redundant and confusing.
+ -}
+simplifyDupes :: [DupeList] -> [DupeList]
+simplifyDupes [] = []
+simplifyDupes (d:ds) = d : filter (not . redundantList) ds
+  where
+    redundantList ds' = all redundantElem $ snd ds'
+    redundantElem e'  = any id [(splitDirectories e) `isPrefixOf` (splitDirectories e') | e <- snd d]
 
 hasDupes :: DupeList -> Bool
 hasDupes (nfiles, paths) = length paths > 1 && nfiles > 0

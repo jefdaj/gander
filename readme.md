@@ -118,11 +118,6 @@ demo/backup
 demo/current/old-backup-1
 demo/current/old-backup-2
 
-# 3 duplicate dirs with 2 files each (6 total)
-demo/backup/folder1
-demo/current/old-backup-1/folder1
-demo/current/old-backup-2/folder1
-
 # 4 duplicate files
 demo/backup/folder1/file3.txt
 demo/current/folder1/folder2/file3.txt
@@ -134,19 +129,10 @@ demo/backup/file1.txt
 demo/current/file1.txt
 demo/current/old-backup-1/file1.txt
 demo/current/old-backup-2/file1.txt
-
-# 3 duplicate files
-demo/backup/folder1/folder2
-demo/current/old-backup-1/folder1/folder2
-demo/current/old-backup-2/folder1/folder2
-
-# 3 duplicate files
-demo/backup/folder1/folder2/file2.txt
-demo/current/old-backup-1/folder1/folder2/file2.txt
-demo/current/old-backup-2/folder1/folder2/file2.txt
 ```
 
-It still looks messy, but if we focus on the top group we can see that it correctly picked out the overall problem.
+It still looks a little messy because some of the duplicate sets overlap,
+but if we just look at the top group we can see that it correctly picked out the overall problem.
 So we delete `current/old-backup-1` and `current/old-backup-2` and re-run it:
 
 ```

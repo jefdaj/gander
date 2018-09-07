@@ -1,5 +1,4 @@
-hey, it should be relatively easy to remove subfolders from the dupes list! try that next
-also add hashes to the output
+also add hashes to the dupes output (harder than it seems though)
 
 would it help to break up HashTree.hs further?
 put dir/file before hash and split on that to handle newlines in filenames
