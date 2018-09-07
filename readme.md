@@ -303,19 +303,6 @@ before continuing! `gander` assumes that file matches the current repository
 state, and will give nonsensical results or possibly remove the last copy of
 something if not.
 
-There are two parts to the overall strategy in this mode:
-
-1. Copy all the duplicate files to a cental [git-annex][1] repository and let
-   git-annex deduplicate the file contents immediately by symlinking duplicate
-   files to the same store path. That leaves a large number of directories +
-   duplicate symlinks.
-
-2. Use `gander` to iteratively deduplicate the directories and symlinks, committing after each step.
-   If you mess up a step, the full history is still available in git.
-
-Once satisfied that everything went according to plan you can either keep your
-files in git-annex or `git annex unannex` them.
-
 
 [1]: https://git-annex.branchable.com
 [2]: https://docs.haskellstack.org/en/stable/README/
