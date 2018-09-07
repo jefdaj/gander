@@ -2,12 +2,15 @@ gander
 ======
 
 The "Git ANnex DedupER" deduplicates files, optionally using [git-annex][1] to track changes.
-It's especially suited for very large numbers of files that cause raw git operations to be slow.
 
-There are two modes: simple for when you want to do a one-off operation like diff two folders,
-and annex-aware for when you have a huge mess you want to clean up carefully.
+It's especially suited for cases where you have so many files that git-annex
+alone slows to a crawl trying to index them all (several million +), where they
+are too large to fit on your computer at once, or where you want to be really
+sure not to delete anything important in the process.
 
-Please send suggestions, pull requests, and/or report whether it worked for you!
+Of course, it also handles small and medium-sized dedup jobs quickly.
+
+Please send suggestions, pull requests, and/or report whether it worked for you.
 Open to new use cases or syntax.
 
 
@@ -25,7 +28,7 @@ stack build
 nix-build
 ```
 
-If anyone shows interest I will also distribute precompiled versions. Email me or open an issue.
+Email me or open an issue if you would like a precompiled binary release added.
 
 
 Hash a folder
@@ -152,8 +155,8 @@ Much better! Even extremely large, messy folders can be simplified after a few r
 Annex-aware mode
 ----------------
 
-`gander` was really designed to automate the above "find dupes -> delete dupes -> rescan" loop
-while keeping track of what was deleted in git. Major goals are:
+`gander` was really designed to automate the above "find loops -> delete dupes
+-> update hashes" loop. Major goals are:
 
 1. Be sure nothing is deleted or lost accidentally
 2. Be clear about what it will do at each step for non-programmers
@@ -161,22 +164,27 @@ while keeping track of what was deleted in git. Major goals are:
 
 It was written for a specific project consisting of around 10 million files,
 and has not been tested much beyond that. However, that project included
-several complete Mac filesystems and a ton of really horrendous filenames with
-emojis, newlines, unicode glyphs and whatever else you can think of. So it made
-a decent stress test.
+complete Mac filesystems and a ton of really horrendous filenames with emojis,
+newlines, unicode glyphs and whatever else you can think of. So it made a
+decent stress test.
 
-There are two parts to the overall strategy in this mode:
+There are two parts to the overall strategy:
 
-1. Copy all the duplicate files to a cental [git-annex][1] repository and let
-   git-annex deduplicate the file contents immediately by symlinking duplicate
-   files to the same store path. That leaves a large number of directories +
-   duplicate symlinks.
+1. Add everything to a cental [git-annex][1] repository and let git-annex
+   deduplicate the file contents immediately by symlinking duplicate files to the
+   same store path. That leaves a large number of directories + duplicate
+   symlinks, but takes up minimal disk space.
 
 2. Use `gander` to iteratively deduplicate the directories and symlinks, committing after each step.
-   If you mess up a step, the full history is still available in git.
+   If you make a mistake, the full history is still available in git.
+   By reading `sha256sum`s from the git-annex symlinks we avoid re-hashing everything.
 
 Once satisfied that everything went according to plan you can either keep your
-files in git-annex or `git annex unannex` them.
+deduplicated files in git-annex or `git annex unannex` them.
+
+To be extra careful, you can also re-hash external folders later to confirm
+that everything from them made it into the annex. Or re-hash the annex itself
+to check file integrity with `git annex fsck`.
 
 
 [1]: https://git-annex.branchable.com
