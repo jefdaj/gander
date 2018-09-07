@@ -16,6 +16,7 @@ Add a -h option to anything that edits the repo, to check that actual edited has
 Is verbose mode ever actually used? Maybe remove it.
 Shit, need to add -e to all the standalone ones? And put it in a config file for the annex ones?
 Target can always be either a direct file/dir or a set of hashes?
+Do people need to be prevented from using standalone dedup when they wanted the annex version? Maybe a warning.
 
 First step is to make all the annex-mode ones confirm what they're going to do.
 ... err, very first step is to get docopt to read the new usage.
