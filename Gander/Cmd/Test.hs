@@ -14,7 +14,7 @@ cmdTest cfg path = do
 
 testSerialization :: Config -> FilePath -> IO HashTree
 testSerialization cfg path = do
-  tree1 <- buildTree (verbose cfg) (exclude cfg) path
+  tree1 <- readOrBuildTree (verbose cfg) (exclude cfg) path
   putStrLn "making hashtree:"; pPrint tree1
   putStrLn ""
   let str1  = serializeTree tree1
