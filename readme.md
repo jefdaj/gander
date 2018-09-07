@@ -47,11 +47,11 @@ cfc9494ec1483b639a5d07dcbfafb9b27048800d5ad6c1e320a36272c2e42880 file backup/fol
 Using the hash command by itself is mainly useful when the files to hash are large and/or on an external drive.
 
 
-Diff folders
-------------
+Diff
+----
 
 The advantage over `diff -r` is that you can use saved hashes to avoid re-scanning everything.
-Detection of changes is also nicer, as shown in [demo.sh](demo.sh):
+Detection of changes is also nicer, as shown in [demo.sh][4]:
 
 ```
 creating some demo files...
@@ -103,6 +103,66 @@ gander diff backup-hashes.txt current
 ```
 
 
+Dedup
+-----
+
+What if you have a more complicated mess of files to deduplicate?
+Say we made a couple more copies of the `backup` demo folder "just in case", then forgot about it.
+(Also in [demo.sh][4])
+`gander` will group all the identical folders and sort them by total duplicate files:
+
+```
+$ gander dupes demo
+# 3 duplicate dirs with 3 files each (9 total)
+demo/backup
+demo/current/old-backup-1
+demo/current/old-backup-2
+
+# 3 duplicate dirs with 2 files each (6 total)
+demo/backup/folder1
+demo/current/old-backup-1/folder1
+demo/current/old-backup-2/folder1
+
+# 4 duplicate files
+demo/backup/folder1/file3.txt
+demo/current/folder1/folder2/file3.txt
+demo/current/old-backup-1/folder1/file3.txt
+demo/current/old-backup-2/folder1/file3.txt
+
+# 4 duplicate files
+demo/backup/file1.txt
+demo/current/file1.txt
+demo/current/old-backup-1/file1.txt
+demo/current/old-backup-2/file1.txt
+
+# 3 duplicate files
+demo/backup/folder1/folder2
+demo/current/old-backup-1/folder1/folder2
+demo/current/old-backup-2/folder1/folder2
+
+# 3 duplicate files
+demo/backup/folder1/folder2/file2.txt
+demo/current/old-backup-1/folder1/folder2/file2.txt
+demo/current/old-backup-2/folder1/folder2/file2.txt
+```
+
+It still looks messy, but if we focus on the top group we can see that it correctly picked out the overall problem.
+So we delete `current/old-backup-1` and `current/old-backup-2` and re-run it:
+
+```
+$ gander dupes demo
+# 2 duplicate files
+demo/backup/folder1/file3.txt
+demo/current/folder1/folder2/file3.txt
+
+# 2 duplicate files
+demo/backup/file1.txt
+demo/current/file1.txt
+```
+
+Much better! Even extremely large, messy sets of files can be deduplicated one group at a time.
+
+
 Annex-aware mode
 ----------------
 
@@ -122,3 +182,4 @@ whatever else you can think of. So it made a decent stress test.
 [1]: https://git-annex.branchable.com
 [2]: https://docs.haskellstack.org/en/stable/README/
 [3]: https://nixos.org/nix
+[4]: demo.sh

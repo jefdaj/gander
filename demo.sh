@@ -29,3 +29,19 @@ echo
 
 echo "and this is what \`gander diff\` says:"
 gander diff backup current
+echo
+
+echo "duplicating the backup folder twice more..."
+cp -r backup current/old-backup-1
+cp -r backup current/old-backup-2
+echo
+
+echo "list all duplicates with \`gander dupes\`:"
+cd ..
+gander dupes demo
+echo
+
+echo "delete those two old-backup folders, then re-run:"
+rm -rf demo/current/old-backup-*
+gander dupes demo
+echo
