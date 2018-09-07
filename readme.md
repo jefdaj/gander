@@ -28,8 +28,8 @@ nix-build
 If anyone shows interest I will also distribute precompiled versions. Email me or open an issue.
 
 
-Save hashes
------------
+Hash a folder
+-------------
 
 `gander` recursively hashes folders and uses the hashes for later comparison.
 
@@ -47,8 +47,8 @@ cfc9494ec1483b639a5d07dcbfafb9b27048800d5ad6c1e320a36272c2e42880 file backup/fol
 Using the hash command by itself is mainly useful when the files to hash are large and/or on an external drive.
 
 
-Diff
-----
+Diff two folders
+----------------
 
 The advantage over `diff -r` is that you can use saved hashes to avoid re-scanning everything.
 Detection of changes is also nicer, as shown in [demo.sh][4]:
@@ -103,8 +103,8 @@ gander diff backup-hashes.txt current
 ```
 
 
-Dedup
------
+Find dupes within a folder
+--------------------------
 
 What if you have a more complicated mess of files to deduplicate?
 Say we made a couple more copies of the `backup` demo folder "just in case", then forgot about it.
@@ -132,7 +132,7 @@ demo/current/old-backup-2/file1.txt
 ```
 
 It still looks a little messy because some of the duplicate sets overlap,
-but if we just look at the top group we can see that it correctly picked out the overall problem.
+but if we just look at the top set we can see that it correctly picked out the overall problem.
 So we delete `current/old-backup-1` and `current/old-backup-2` and re-run it:
 
 ```
@@ -146,7 +146,7 @@ demo/backup/file1.txt
 demo/current/file1.txt
 ```
 
-Much better! Even extremely large, messy sets of files can be deduplicated one group at a time.
+Much better! Even extremely large, messy folders can be simplified after a few rounds.
 
 
 Annex-aware mode
