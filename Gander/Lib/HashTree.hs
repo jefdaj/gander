@@ -15,10 +15,13 @@ module Gander.Lib.HashTree
   , treeContainsPath
   , treeContainsHash
   , addSubTree
+  , rmSubTree
   )
   where
 
 -- TODO would be better to adapt AnchoredDirTree with a custom node type than re-implement stuff
+
+-- import Debug.Trace
 
 import Gander.Lib.Hash
 
@@ -288,20 +291,6 @@ addSubTree main sub path = main { hash = h', contents = cs', nFiles = n' }
 -- remove a subtree --
 ----------------------
 
--- based on:
--- http://hackage.haskell.org/package/directory-tree-0.12.1/docs/src/System-Directory-Tree.html
-
--- transformDir :: (HashTree -> HashTree) -> HashTree -> HashTree
--- transformDir fn tree = case fn tree of
---   d@(Dir _ _ cs _) -> d { contents = map fn cs }
---   f                -> f
--- 
--- filterDir :: (HashTree -> Bool) -> HashTree -> HashTree
--- filterDir fn = transformDir filterD
---   where
---     filterD d@(Dir _ _ cs _) = d { contents = filter fn cs }
---     filterD f                = f
-
 {- This one gets a little complicated because if the subtree exists
  - then after removing it we have to adjust parent nFiles back up to the root.
  - Also edits have to be done on the parent tree (so no File branch).
@@ -314,6 +303,6 @@ rmSubTree d@(Dir _ _ cs n) p = case dropTo d p of
   Nothing -> Nothing
   Just t -> Just $ if t `elem` cs
     then d { contents = delete t cs, nFiles = n - countFiles t }
-    else d { contents = map (\c -> fromMaybe c $ rmSubTree c $ snd $ splitFileName p) cs
+    else d { contents = map (\c -> fromMaybe c $ rmSubTree c $ joinPath $ tail $ splitPath p) cs
            , nFiles = n - countFiles t
            }

@@ -28,7 +28,7 @@ Commands:
           Prompts to confirm unless `--force`d. <target> is the hashes file or dir to hash,
           <rootpath> is where to read hash paths from, and <rmpath> is the one to delete.
   update  Updates <main> hashes with new ones from <sub>, inserted at <path>.
-  test    Build a hash tree and round-trip it to check serialization.
+  test    Run tests on a given directory.
   dedup   Prompt to delete groups of duplicates, starting with the largest dirs.
           <hashes> is a file listing all hashes in the repo, and <path> is the
           system path to the repo.
