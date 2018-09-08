@@ -25,14 +25,14 @@ data Delta
 -- list changes after the fact --
 ---------------------------------
 
-prettyHash :: Hash -> String
-prettyHash (Hash txt) = take 8 txt
+prettyHash :: HashTree -> String
+prettyHash = take 8 . unHash . hash
 
 prettyDiff :: Delta -> String
-prettyDiff (Add f (Hash h)) = "added '"   ++ f ++ "' (" ++ take 8 h ++ ")"
-prettyDiff (Rm  f (Hash h)) = "removed '" ++ f ++ "' (" ++ take 8 h ++ ")"
-prettyDiff (Mv f1 f2 (Hash h)) = "moved '" ++ f1 ++ "' -> '" ++ f2 ++ "' (" ++ take 8 h ++ ")"
-prettyDiff (Edit f (Hash h1) (Hash h2)) = "edited '" ++ f ++ "' (" ++ take 8 h1 ++ " -> " ++ take 8 h2 ++ ")"
+prettyDiff (Add  f     t    ) = "added '"   ++ f  ++ "' (" ++ prettyHash t ++ ")"
+prettyDiff (Rm   f     t    ) = "removed '" ++ f  ++ "' (" ++ prettyHash t ++ ")"
+prettyDiff (Edit f     t1 t2) = "edited '"  ++ f  ++ "' (" ++ prettyHash t1 ++ " -> " ++ prettyHash t2 ++ ")"
+prettyDiff (Mv   f1 f2 t    ) = "moved '"   ++ f1 ++ "' -> '" ++ f2 ++ "' (" ++ prettyHash t ++ ")"
 
 printDiffs :: [Delta] -> IO ()
 printDiffs = mapM_ (putStrLn . prettyDiff)
@@ -44,12 +44,12 @@ diff = diff' ""
 diff' :: FilePath -> HashTree -> HashTree -> [Delta]
 diff' r t1@(File f1 h1) t2@(File f2 h2)
   | f1 == f2 && h1 == h2 = []
-  | f1 /= f2 && h1 == h2 = [Mv (r </> f1) (r </> f2) h1]
-  | f1 == f2 && h1 /= h2 = [Edit (if r == f1 then f1 else r </> f1) h1 h2]
+  | f1 /= f2 && h1 == h2 = [Mv (r </> f1) (r </> f2) t1]
+  | f1 == f2 && h1 /= h2 = [Edit (if r == f1 then f1 else r </> f1) t1 t2]
   | otherwise = error $ "error in diff': " ++ show t1 ++ " " ++ show t2
 diff' r t1@(File _ _) t2@(Dir  d _ _ _) = [Rm r t1, Add (r </> d) t2]
 -- TODO wait is this a Mv?
-diff' r t1@(Dir  d h1 _ _) t2@(File _ h2    ) = [Rm (r </> d) t1, Add (r </> d) t2]
+diff' r t1@(Dir  d _ _ _) t2@(File _ _) = [Rm (r </> d) t1, Add (r </> d) t2]
 diff' r (Dir _ h1 os _) (Dir _ h2 ns _)
   | h1 == h2 = []
   | otherwise = fixMoves $ rms ++ adds ++ edits

@@ -24,7 +24,7 @@ import System.Posix.Files (getSymbolicLinkStatus, isSymbolicLink, readSymbolicLi
  - TODO would storing it in a more efficient way help?
  - TODO would adding timestamps or number of files help?
  -}
-newtype Hash = Hash String
+newtype Hash = Hash { unHash :: String }
   deriving (Eq, Read, Show, Ord)
 
 hashBytes :: LB.ByteString -> String
@@ -38,7 +38,7 @@ hashSymlink path = do
     then return Nothing
     else do
       link <- readSymbolicLink path
-      return $ Just $ Hash$ if ".git/annex/objects/" `isInfixOf` link
+      return $ Just $ Hash $ if ".git/annex/objects/" `isInfixOf` link
         then drop 20 $ takeBaseName link
         else hashBytes $ (LB.pack . map (fromIntegral . ord)) link
 
