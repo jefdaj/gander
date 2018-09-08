@@ -9,6 +9,8 @@ module Gander.Lib.DupeMap
   , hasDupes
   , printDupes
   , allDupes
+
+  , listAllFiles
   )
   where
 
@@ -26,6 +28,7 @@ import System.FilePath ((</>), splitDirectories)
 
 -- TODO can Foldable or Traversable simplify these?
 
+-- TODO add the hash here too?
 type DupeList = (Int, [FilePath])
 
 {- A map from file/dir hash to a list of duplicate file paths.
@@ -84,6 +87,15 @@ printDupes groups = mapM_ printGroup groups
                           $ [explain n (length paths)]
                           ++ sort paths ++ [""]
 
+-----------------------------
+-- info about copy numbers --
+-----------------------------
+
+listAllFiles :: FilePath -> HashTree -> [(Hash, FilePath)]
+listAllFiles anchor (File n h      ) = [(h, anchor </> n)]
+listAllFiles anchor (Dir  n h cs fs) = concatMap (listAllFiles $ anchor </> n) cs
+
+
 -- helper for allDupes
 -- TODO how to make the lookups safe?
 anotherCopy :: Hash -> DupeMap -> DupeMap -> Bool
@@ -98,3 +110,7 @@ allDupes mainTree subTree = all safeToRmHash $ keys subDupes
     mainDupes = pathsByHash mainTree
     subDupes  = pathsByHash subTree
     safeToRmHash h = anotherCopy h mainDupes subDupes
+
+-- for warning the user when their action will delete the last copy of a file
+listLostFiles :: HashTree -> HashTree -> [(Hash, FilePath)]
+listLostFiles before after = undefined

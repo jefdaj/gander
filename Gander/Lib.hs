@@ -6,6 +6,7 @@ module Gander.Lib
 
   -- hashtree
   , HashTree(..)
+  , TreeType(..)
   , readTree
   , buildTree
   , readOrBuildTree
@@ -20,6 +21,8 @@ module Gander.Lib
   , treeContainsHash
   , addSubTree
   , rmSubTree
+
+  , listAllFiles
 
   -- delta
   , Delta(..)

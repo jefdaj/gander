@@ -1,5 +1,6 @@
 module Gander.Lib.HashTree
   ( HashTree(..)
+  , TreeType(..)
   , readTree
   , buildTree
   , readOrBuildTree
@@ -41,23 +42,26 @@ import Data.List            (partition, sortBy)
 import Data.Either          (fromRight)
 import Data.Ord             (compare)
 import System.Directory     (doesFileExist, doesDirectoryExist)
-import System.FilePath      ((</>), takeFileName, splitPath, joinPath, splitFileName)
+import System.FilePath      ((</>), takeFileName, splitPath, joinPath)
 import System.FilePath.Glob (compile, match)
 import System.IO.Unsafe     (unsafeInterleaveIO)
 
 import Prelude hiding (take)
-import Data.Attoparsec.ByteString.Char8 hiding (match)
+import Data.Attoparsec.ByteString.Char8 hiding (match, D)
 import Data.Attoparsec.Combinator
 
 -- import Text.Regex.Do.Split  (split)
 -- import Text.Regex.Do.TypeDo (Body(..), Pattern(..))
 
-type HashLine = (Char, Hash, FilePath)
+-- for distinguishing beween files and dirs
+data TreeType = F | D deriving (Eq, Read, Show)
+
+type HashLine = (TreeType, Hash, FilePath)
 
 -- TODO actual Pretty instance
 -- TODO need to handle unicode here?
 prettyHashLine :: HashLine -> String
-prettyHashLine (t, Hash h, p) = unwords [[t], h, p]
+prettyHashLine (t, Hash h, p) = unwords [show t, h, p]
 
 {- A tree of file names matching (a subdirectory of) the annex,
  - where each dir and file node contains a hash of its contents.
@@ -153,14 +157,16 @@ flattenTree = flattenTree' ""
 
 -- TODO need to handle unicode here?
 flattenTree' :: FilePath -> HashTree -> [HashLine]
-flattenTree' dir (File n h     ) = [('F', h, dir </> n)]
+flattenTree' dir (File n h     ) = [(F, h, dir </> n)]
 flattenTree' dir (Dir  n h cs _) = subtrees ++ [wholeDir]
   where
     subtrees = concatMap (flattenTree' $ dir </> n) cs
-    wholeDir = ('D', h, dir </> n)
+    wholeDir = (D, h, dir </> n)
 
-typeP :: Parser Char
-typeP = choice [char 'D', char 'F'] <* char ' '
+typeP :: Parser TreeType
+typeP = do
+  t <- choice [char 'D', char 'F'] <* char ' '
+  return $ read [t]
 
 hashP :: Parser Hash
 hashP = do
@@ -176,7 +182,7 @@ breakP = endOfLine >> typeP >> return ()
 pathP :: Parser FilePath
 pathP = manyTill anyChar $ lookAhead $ choice [breakP, endOfLine >> endOfInput]
 
-lineP :: Parser (Char, Hash, Int, FilePath)
+lineP :: Parser (TreeType, Hash, Int, FilePath)
 lineP = do
   t <- typeP
   h <- hashP
@@ -184,12 +190,12 @@ lineP = do
   let i = length $ splitPath p -- TODO this is ok with the linebreaks?
   return (t, h, i, takeFileName p)
 
-linesP :: Parser [(Char, Hash, Int, FilePath)]
+linesP :: Parser [(TreeType, Hash, Int, FilePath)]
 linesP = sepBy' lineP endOfLine
 
 -- TODO use bytestring the whole time rather than converting
 -- TODO should this propogate the Either?
-parseHashes :: String -> [(Char, Hash, Int, FilePath)]
+parseHashes :: String -> [(TreeType, Hash, Int, FilePath)]
 parseHashes = fromRight [] . parseOnly linesP . B8.pack
 
 -- TODO error on null string/lines?
@@ -206,14 +212,13 @@ countFiles (Dir  _ _ _ n) = n
  - levels, and when it comes across a dir it uses the indents to determine
  - which files are children to put inside it vs which are siblings.
  -}
-accTrees :: (Char, Hash, Int, FilePath) -> [(Int, HashTree)] -> [(Int, HashTree)]
-accTrees l@(t, h, indent, p) cs = case t of
-  'F' -> cs ++ [(indent, File p h)]
-  'D' -> let (children, siblings) = partition (\(i, _) -> i > indent) cs
-             dir = Dir p h (map snd children)
-                           (sum $ map (countFiles . snd) children)
-         in siblings ++ [(indent, dir)]
-  _ -> error $ "invalid line: '" ++ show l ++ "'" 
+accTrees :: (TreeType, Hash, Int, FilePath) -> [(Int, HashTree)] -> [(Int, HashTree)]
+accTrees (t, h, indent, p) cs = case t of
+  F -> cs ++ [(indent, File p h)]
+  D -> let (children, siblings) = partition (\(i, _) -> i > indent) cs
+           dir = Dir p h (map snd children)
+                         (sum $ map (countFiles . snd) children)
+       in siblings ++ [(indent, dir)]
 
 -------------------
 -- search a tree --
