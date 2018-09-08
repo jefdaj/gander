@@ -19,6 +19,7 @@ module Gander.Lib
   , treeContainsPath
   , treeContainsHash
   , addSubTree
+  , rmSubTree
 
   -- delta
   , Delta(..)
