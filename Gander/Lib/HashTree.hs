@@ -27,12 +27,12 @@ import System.FilePath.Glob (compile, match)
 import System.IO.Unsafe     (unsafeInterleaveIO)
 import System.Directory     (doesFileExist, doesDirectoryExist)
 
-type HashLine = (Hash, String, FilePath)
+type HashLine = (String, Hash, FilePath)
 
 -- TODO actual Pretty instance
 -- TODO need to handle unicode here?
 prettyHashLine :: HashLine -> String
-prettyHashLine (Hash h, t, p) = unwords [h, t, p]
+prettyHashLine (t, Hash h, p) = unwords [t, h, p]
 
 {- A tree of file names matching (a subdirectory of) the annex,
  - where each dir and file node contains a hash of its contents.
@@ -126,12 +126,12 @@ flattenTree :: HashTree -> [HashLine]
 flattenTree = flattenTree' ""
 
 -- TODO need to handle unicode here?
-flattenTree' :: FilePath -> HashTree -> [(Hash, String, FilePath)]
-flattenTree' dir (File n h     ) = [(h, "file", dir </> n)]
+flattenTree' :: FilePath -> HashTree -> [HashLine]
+flattenTree' dir (File n h     ) = [("F", h, dir </> n)]
 flattenTree' dir (Dir  n h cs _) = subtrees ++ [wholeDir]
   where
     subtrees = concatMap (flattenTree' $ dir </> n) cs
-    wholeDir = (h, "dir ", dir </> n)
+    wholeDir = ("D", h, dir </> n)
 
 -- TODO error on null string/lines?
 -- TODO wtf why is reverse needed? remove that to save RAM
@@ -147,18 +147,18 @@ countFiles (Dir  _ _ _ n) = n
  - levels, and when it comes across a dir it uses the indents to determine
  - which files are children to put inside it vs which are siblings.
  -}
-accTrees :: (Hash, String, Int, FilePath) -> [(Int, HashTree)] -> [(Int, HashTree)]
-accTrees l@(h, t, indent, p) cs = case t of
-  "file" -> cs ++ [(indent, File p h)]
-  "dir"  -> let (children, siblings) = partition (\(i, _) -> i > indent) cs
-                dir = Dir p h (map snd children)
-                              (sum $ map (countFiles . snd) children)
-            in siblings ++ [(indent, dir)]
+accTrees :: (String, Hash, Int, FilePath) -> [(Int, HashTree)] -> [(Int, HashTree)]
+accTrees l@(t, h, indent, p) cs = case t of
+  "F" -> cs ++ [(indent, File p h)]
+  "D" -> let (children, siblings) = partition (\(i, _) -> i > indent) cs
+             dir = Dir p h (map snd children)
+                           (sum $ map (countFiles . snd) children)
+         in siblings ++ [(indent, dir)]
   _ -> error $ "invalid line: '" ++ show l ++ "'" 
 
-readHashLine :: String -> (Hash, String, Int, FilePath)
-readHashLine line = (Hash h, t, i, takeFileName p)
+readHashLine :: String -> (String, Hash, Int, FilePath)
+readHashLine line = (t, Hash h, i, takeFileName p)
   where
-    [h, t]   = words tmp            -- first two words are hash and type
-    (tmp, p) = splitAt 70 line      -- rest of the line is the path
+    [t, h]   = words tmp            -- first two words are hash and type
+    (tmp, p) = splitAt 67 line      -- rest of the line is the path
     i        = length $ splitPath p -- get indent level from path
