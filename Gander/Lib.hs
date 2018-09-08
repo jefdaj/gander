@@ -15,7 +15,7 @@ module Gander.Lib
   , hashContents
   , renameRoot
   , printHashes
-  , getSubTree
+  , dropTo
   , treeContainsPath
   , treeContainsHash
   , addSubTree

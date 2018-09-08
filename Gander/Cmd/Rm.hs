@@ -2,7 +2,7 @@ module Gander.Cmd.Rm where
 
 import Text.Pretty.Simple (pPrint)
 import Gander.Config (Config(..))
-import Gander.Lib    (readOrBuildTree, treeContainsPath, getSubTree, gitRm, allDupes, userSaysYes)
+import Gander.Lib    (readOrBuildTree, treeContainsPath, dropTo, gitRm, allDupes, userSaysYes)
 
 -- TODO list files with no duplicates when confirming
 -- TODO aha! ok to be missing folder hashes, just not files
@@ -35,6 +35,6 @@ safeToRm cfg target rmPath = do
       -- TODO this should be extracted from the target hashes right?
       -- tree2 <- readOrBuildTree True (exclude cfg) rmPath
       putStrLn $ "target: '" ++ target ++ "' rmPath: '" ++ rmPath ++ "'"
-      return $ case getSubTree tree1 rmPath of
+      return $ case dropTo tree1 rmPath of
         Nothing -> False
         Just t2 -> allDupes tree1 t2
