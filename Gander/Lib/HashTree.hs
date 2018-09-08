@@ -57,11 +57,11 @@ prettyHashLine (t, Hash h, p) = unwords [[t], h, p]
 data HashTree
   = File { name :: FilePath, hash :: Hash }
   | Dir  { name :: FilePath, hash :: Hash, contents :: [HashTree], nFiles :: Int }
-  deriving (Read, Show, Eq, Ord) -- TODO switch to hash-based equality after testing
+  deriving (Read, Show, Ord) -- TODO switch to hash-based equality after testing
 
 -- TODO disable this while testing to ensure deep equality?
--- instance Eq HashTree where
-  -- t1 == t2 = hash t1 == hash t2
+instance Eq HashTree where
+  t1 == t2 = hash t1 == hash t2
 
 excludeGlobs :: [String]
              -> (DT.AnchoredDirTree FilePath -> DT.AnchoredDirTree FilePath)
