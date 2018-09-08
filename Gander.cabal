@@ -45,5 +45,6 @@ executable gander
                        process,
                        ansi-terminal,
                        MissingH,
-                       attoparsec
+                       attoparsec,
+                       split
   default-language:    Haskell2010

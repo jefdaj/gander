@@ -16,6 +16,7 @@ import qualified Data.ByteString.Lazy as LB
 import Crypto.Hash        (Digest, SHA256, hashlazy)
 import Data.Char          (ord)
 import Data.List          (isInfixOf)
+import Data.List.Split    (splitOn)
 import System.FilePath    (takeBaseName)
 import System.Posix.Files (getSymbolicLinkStatus, isSymbolicLink, readSymbolicLink)
 
@@ -39,7 +40,7 @@ hashSymlink path = do
     else do
       link <- readSymbolicLink path
       return $ Just $ Hash $ if ".git/annex/objects/" `isInfixOf` link
-        then drop 20 $ takeBaseName link
+        then last $ splitOn "--" $ takeBaseName link
         else hashBytes $ (LB.pack . map (fromIntegral . ord)) link
 
 -- see: https://stackoverflow.com/a/30537010

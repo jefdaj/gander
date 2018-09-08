@@ -115,6 +115,7 @@ hashContents ts = Hash $ hashBytes $ BL.pack txt
 
 -- If passed a file this assumes it contains hashes and builds a tree of them;
 -- If passed a dir it will scan it first and then build the tree.
+-- TODO don't assume??
 readOrBuildTree :: Bool -> [String] -> FilePath -> IO HashTree
 readOrBuildTree verbose exclude path = do
   isDir  <- doesDirectoryExist path
@@ -227,6 +228,8 @@ treeContainsHash (File _ h1     ) h2 = h1 == h2
 treeContainsHash (Dir  _ h1 cs _) h2
   | h1 == h2 = True
   | otherwise = any (\c -> treeContainsHash c h2) cs
+
+-- TODO if tree contains path, be able to extract it! need for rm
 
 -------------------
 -- add a subtree --
