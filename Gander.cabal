@@ -46,5 +46,4 @@ executable gander
                        ansi-terminal,
                        MissingH,
                        attoparsec
-                       -- attosplit
   default-language:    Haskell2010
