@@ -14,9 +14,10 @@ module Gander.Lib.HashTree
   where
 
 import Gander.Lib.Hash
+
+import qualified Data.ByteString.Lazy.Char8 as BL
 import qualified System.Directory.Tree as DT
 
-import Data.ByteString.Lazy.Char8 (pack)
 import Control.Monad        (forM)
 import Data.List            (partition, sortBy)
 import Data.Function        (on)
@@ -29,6 +30,7 @@ import System.Directory     (doesFileExist, doesDirectoryExist)
 type HashLine = (Hash, String, FilePath)
 
 -- TODO actual Pretty instance
+-- TODO need to handle unicode here?
 prettyHashLine :: HashLine -> String
 prettyHashLine (Hash h, t, p) = unwords [h, t, p]
 
@@ -88,7 +90,7 @@ buildTree' v (a DT.:/ (DT.Dir n cs)) = do
 -- TODO this should hash the same text you would get from serializing the tree
 --      (looks like sha256sum output but with file/dir parts added)
 hashContents :: [HashTree] -> Hash
-hashContents ts = Hash $ hashBytes $ pack txt
+hashContents ts = Hash $ hashBytes $ BL.pack txt
   where
     ls  = map serializeTree ts
     txt = concat ls -- TODO why is this important vs unlines?
@@ -116,12 +118,14 @@ printHashes = putStr . serializeTree
 -------------------------------------
 
 -- TODO can Foldable or Traversable simplify these?
+-- TODO need to handle unicode here?
 serializeTree :: HashTree -> String
 serializeTree = unlines . map prettyHashLine . flattenTree
 
 flattenTree :: HashTree -> [HashLine]
 flattenTree = flattenTree' ""
 
+-- TODO need to handle unicode here?
 flattenTree' :: FilePath -> HashTree -> [(Hash, String, FilePath)]
 flattenTree' dir (File n h     ) = [(h, "file", dir </> n)]
 flattenTree' dir (Dir  n h cs _) = subtrees ++ [wholeDir]
@@ -133,7 +137,7 @@ flattenTree' dir (Dir  n h cs _) = subtrees ++ [wholeDir]
 -- TODO wtf why is reverse needed? remove that to save RAM
 -- TODO refactor so there's a proper buildTree function and this uses it
 deserializeTree :: String -> HashTree
-deserializeTree = snd . head . foldr accTrees [] . map readLine . reverse . lines
+deserializeTree = snd . head . foldr accTrees [] . map readHashLine . reverse . lines
 
 countFiles :: HashTree -> Int
 countFiles (File _ _    ) = 1
@@ -152,8 +156,8 @@ accTrees l@(h, t, indent, p) cs = case t of
             in siblings ++ [(indent, dir)]
   _ -> error $ "invalid line: '" ++ show l ++ "'" 
 
-readLine :: String -> (Hash, String, Int, FilePath)
-readLine line = (Hash h, t, i, takeFileName p)
+readHashLine :: String -> (Hash, String, Int, FilePath)
+readHashLine line = (Hash h, t, i, takeFileName p)
   where
     [h, t]   = words tmp            -- first two words are hash and type
     (tmp, p) = splitAt 70 line      -- rest of the line is the path

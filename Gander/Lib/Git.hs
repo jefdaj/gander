@@ -13,13 +13,13 @@ import System.Path.NameManip (guess_dotdot, absolute_path)
 import System.Process        (readProcess)
 import System.IO (hFlush, stdout)
 
-pathComponents :: FilePath -> [String]
+pathComponents :: FilePath -> [FilePath]
 pathComponents f = filter (not . null)
                  $ map (filter (/= pathSeparator))
                  $ splitPath f
 
 -- from schoolofhaskell.com/user/dshevchenko/cookbook
-absolutize :: String -> IO String
+absolutize :: FilePath -> IO FilePath
 absolutize aPath 
     | "~" `isPrefixOf` aPath = do
         homePath <- getHomeDirectory
