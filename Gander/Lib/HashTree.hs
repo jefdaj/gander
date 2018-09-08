@@ -11,14 +11,14 @@ module Gander.Lib.HashTree
   , deserializeTree
   , hashContents
   , parseHashes
-  , getSubTree
+  , dropTo
   , treeContainsPath
   , treeContainsHash
   , addSubTree
   )
   where
 
-import Debug.Trace
+-- TODO would be better to adapt AnchoredDirTree with a custom node type than re-implement stuff
 
 import Gander.Lib.Hash
 
@@ -31,13 +31,14 @@ import Gander.Lib.Git (pathComponents) -- TODO not actually git related
 import qualified System.Directory.Tree as DT
 
 import Control.Monad        (forM, msum)
-import Data.List            (find)
+import Data.List            (find, delete)
+import Data.Maybe           (isJust, fromMaybe)
 import Data.Function        (on)
 import Data.List            (partition, sortBy)
 import Data.Either          (fromRight)
 import Data.Ord             (compare)
 import System.Directory     (doesFileExist, doesDirectoryExist)
-import System.FilePath      ((</>), takeFileName, splitPath, joinPath)
+import System.FilePath      ((</>), takeFileName, splitPath, joinPath, splitFileName)
 import System.FilePath.Glob (compile, match)
 import System.IO.Unsafe     (unsafeInterleaveIO)
 
@@ -215,28 +216,30 @@ accTrees l@(t, h, indent, p) cs = case t of
 -- search a tree --
 -------------------
 
-treeContainsPath :: HashTree -> FilePath -> Bool
-treeContainsPath (File f1 _     ) f2 = (trace ("traversing file: " ++ f1) f1) == f2
-treeContainsPath (Dir  f1 _ cs _) f2
-  | (trace ("traversing dir: " ++ f1) f1) == f2 = True
-  | length (pathComponents f2) < 2 = False
-  | otherwise = let n   = head $ pathComponents f2
-                    f2' = joinPath $ tail $ pathComponents f2
-                in if f1 /= n
-                  then False
-                  else any (\c -> treeContainsPath c f2') cs
+-- treeContainsPath :: HashTree -> FilePath -> Bool
+-- treeContainsPath (File f1 _     ) f2 = f1 == f2
+-- treeContainsPath (Dir  f1 _ cs _) f2
+--   | f1 == f2 = True
+--   | length (pathComponents f2) < 2 = False
+--   | otherwise = let n   = head $ pathComponents f2
+--                     f2' = joinPath $ tail $ pathComponents f2
+--                 in if f1 /= n
+--                   then False
+--                   else any (\c -> treeContainsPath c f2') cs
 
-getSubTree :: HashTree -> FilePath -> Maybe HashTree
-getSubTree t@(File f1 _     ) f2 = if (trace ("traversing file: " ++ f1) f1) == f2 then Just t else Nothing
-getSubTree t@(Dir  f1 _ cs _) f2
-  | (trace ("traversing dir: " ++ f1) f1) == f2 = Just t
+treeContainsPath :: HashTree -> FilePath -> Bool
+treeContainsPath tree path = isJust $ dropTo tree path
+
+dropTo :: HashTree -> FilePath -> Maybe HashTree
+dropTo t@(File f1 _     ) f2 = if f1 == f2 then Just t else Nothing
+dropTo t@(Dir  f1 _ cs _) f2
+  | f1 == f2 = Just t
   | length (pathComponents f2) < 2 = Nothing
   | otherwise = let n   = head $ pathComponents f2
                     f2' = joinPath $ tail $ pathComponents f2
                 in if f1 /= n
                   then Nothing
-                  else msum $ map (\c -> getSubTree c f2') cs
-
+                  else msum $ map (\c -> dropTo c f2') cs
 
 treeContainsHash :: HashTree -> Hash -> Bool
 treeContainsHash (File _ h1     ) h2 = h1 == h2
@@ -280,3 +283,37 @@ addSubTree main sub path = main { hash = h', contents = cs', nFiles = n' }
                else case oldSub of
                  Nothing -> wrapInEmptyDirs path sub'
                  Just d  -> addSubTree d sub' path'
+
+----------------------
+-- remove a subtree --
+----------------------
+
+-- based on:
+-- http://hackage.haskell.org/package/directory-tree-0.12.1/docs/src/System-Directory-Tree.html
+
+-- transformDir :: (HashTree -> HashTree) -> HashTree -> HashTree
+-- transformDir fn tree = case fn tree of
+--   d@(Dir _ _ cs _) -> d { contents = map fn cs }
+--   f                -> f
+-- 
+-- filterDir :: (HashTree -> Bool) -> HashTree -> HashTree
+-- filterDir fn = transformDir filterD
+--   where
+--     filterD d@(Dir _ _ cs _) = d { contents = filter fn cs }
+--     filterD f                = f
+
+{- This one gets a little complicated because if the subtree exists
+ - then after removing it we have to adjust parent nFiles back up to the root.
+ - Also edits have to be done on the parent tree (so no File branch).
+ - Buuuut for now can just ignore nFiles as it's not needed for the rm itself.
+ - TODO does this actually solve nFiles too?
+ -}
+rmSubTree :: HashTree -> FilePath -> Maybe HashTree
+rmSubTree (File _ _) _ = Nothing
+rmSubTree d@(Dir _ _ cs n) p = case dropTo d p of
+  Nothing -> Nothing
+  Just t -> Just $ if t `elem` cs
+    then d { contents = delete t cs, nFiles = n - countFiles t }
+    else d { contents = map (\c -> fromMaybe c $ rmSubTree c $ snd $ splitFileName p) cs
+           , nFiles = n - countFiles t
+           }
