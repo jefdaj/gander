@@ -33,7 +33,7 @@ import System.FilePath.Glob (compile, match)
 import System.IO.Unsafe     (unsafeInterleaveIO)
 
 import Prelude hiding (take)
-import Data.Attoparsec.Char8 hiding (match)
+import Data.Attoparsec.ByteString.Char8 hiding (match)
 import Data.Attoparsec.Combinator
 
 -- import Text.Regex.Do.Split  (split)
