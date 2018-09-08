@@ -1,6 +1,6 @@
 *.sw*
 .stack*
-demo
+demo*
 dist
 result
 test*
