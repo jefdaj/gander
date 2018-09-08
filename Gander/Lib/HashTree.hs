@@ -11,11 +11,14 @@ module Gander.Lib.HashTree
   , deserializeTree
   , hashContents
   , parseHashes
+  , getSubTree
   , treeContainsPath
   , treeContainsHash
   , addSubTree
   )
   where
+
+import Debug.Trace
 
 import Gander.Lib.Hash
 
@@ -27,7 +30,7 @@ import qualified Data.ByteString.Lazy.Char8 as BL
 import Gander.Lib.Git (pathComponents) -- TODO not actually git related
 import qualified System.Directory.Tree as DT
 
-import Control.Monad        (forM)
+import Control.Monad        (forM, msum)
 import Data.List            (find)
 import Data.Function        (on)
 import Data.List            (partition, sortBy)
@@ -213,15 +216,27 @@ accTrees l@(t, h, indent, p) cs = case t of
 -------------------
 
 treeContainsPath :: HashTree -> FilePath -> Bool
-treeContainsPath (File f1 _     ) f2 = f1 == f2
+treeContainsPath (File f1 _     ) f2 = (trace ("traversing file: " ++ f1) f1) == f2
 treeContainsPath (Dir  f1 _ cs _) f2
-  | f1 == f2 = True
-  | length (pathComponents f2) == 1 = False
+  | (trace ("traversing dir: " ++ f1) f1) == f2 = True
+  | length (pathComponents f2) < 2 = False
   | otherwise = let n   = head $ pathComponents f2
                     f2' = joinPath $ tail $ pathComponents f2
-                in case find (\c -> name c == n) cs of
-                  Nothing -> False
-                  Just c  -> treeContainsPath c f2'
+                in if f1 /= n
+                  then False
+                  else any (\c -> treeContainsPath c f2') cs
+
+getSubTree :: HashTree -> FilePath -> Maybe HashTree
+getSubTree t@(File f1 _     ) f2 = if (trace ("traversing file: " ++ f1) f1) == f2 then Just t else Nothing
+getSubTree t@(Dir  f1 _ cs _) f2
+  | (trace ("traversing dir: " ++ f1) f1) == f2 = Just t
+  | length (pathComponents f2) < 2 = Nothing
+  | otherwise = let n   = head $ pathComponents f2
+                    f2' = joinPath $ tail $ pathComponents f2
+                in if f1 /= n
+                  then Nothing
+                  else msum $ map (\c -> getSubTree c f2') cs
+
 
 treeContainsHash :: HashTree -> Hash -> Bool
 treeContainsHash (File _ h1     ) h2 = h1 == h2
