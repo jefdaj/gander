@@ -10,19 +10,14 @@ module Gander.Lib.HashTree
   , flattenTree
   , deserializeTree
   , hashContents
-
-  , hashBreakP
-  , hashLineP
-  , hashLineP2
-  , hashLinesP
+  , parseHashes
   )
   where
 
-import Debug.Trace
-
 import Gander.Lib.Hash
 
-import qualified Data.ByteString as B
+-- import qualified Data.ByteString as B
+import qualified Data.ByteString.Char8 as B8
 import qualified Data.ByteString.Lazy.Char8 as BL
 -- import qualified Data.ByteString.Char8 as B
 import qualified System.Directory.Tree as DT
@@ -30,6 +25,7 @@ import qualified System.Directory.Tree as DT
 import Control.Monad        (forM)
 import Data.Function        (on)
 import Data.List            (partition, sortBy)
+import Data.Either          (fromRight)
 import Data.Ord             (compare)
 import System.Directory     (doesFileExist, doesDirectoryExist)
 import System.FilePath      ((</>), takeFileName, splitPath)
@@ -43,12 +39,12 @@ import Data.Attoparsec.Combinator
 -- import Text.Regex.Do.Split  (split)
 -- import Text.Regex.Do.TypeDo (Body(..), Pattern(..))
 
-type HashLine = (String, Hash, FilePath)
+type HashLine = (Char, Hash, FilePath)
 
 -- TODO actual Pretty instance
 -- TODO need to handle unicode here?
 prettyHashLine :: HashLine -> String
-prettyHashLine (t, Hash h, p) = unwords [t, h, p]
+prettyHashLine (t, Hash h, p) = unwords [[t], h, p]
 
 {- A tree of file names matching (a subdirectory of) the annex,
  - where each dir and file node contains a hash of its contents.
@@ -143,44 +139,50 @@ flattenTree = flattenTree' ""
 
 -- TODO need to handle unicode here?
 flattenTree' :: FilePath -> HashTree -> [HashLine]
-flattenTree' dir (File n h     ) = [("F", h, dir </> n)]
+flattenTree' dir (File n h     ) = [('F', h, dir </> n)]
 flattenTree' dir (Dir  n h cs _) = subtrees ++ [wholeDir]
   where
     subtrees = concatMap (flattenTree' $ dir </> n) cs
-    wholeDir = ("D", h, dir </> n)
+    wholeDir = ('D', h, dir </> n)
+
+typeP :: Parser Char
+typeP = choice [char 'D', char 'F'] <* char ' '
+
+hashP :: Parser Hash
+hashP = do
+  h <- take 64 -- TODO any need to sanitize these?
+  _ <- char ' '
+  return $ Hash $ B8.unpack h
 
 -- line endOfLine, but make sure D/F comes next instead of the rest of a filename
-hashBreakP :: Parser ()
-hashBreakP = do
-  _ <- endOfLine
-  _ <- choice [char 'D', char 'F']
-  _ <- char ' '
-  return ()
+-- TODO uh, what if the filename contains "\n(D|F)\ "? pretty pathological
+breakP :: Parser ()
+breakP = endOfLine >> typeP >> return ()
 
-hashLineP :: Parser String
-hashLineP = manyTill anyChar $ lookAhead $ choice [hashBreakP, endOfLine >> endOfInput]
+pathP :: Parser FilePath
+pathP = manyTill anyChar $ lookAhead $ choice [breakP, endOfLine >> endOfInput]
 
-hashLineP2 :: Parser (String, Hash, Int, FilePath)
-hashLineP2 = undefined
+lineP :: Parser (Char, Hash, Int, FilePath)
+lineP = do
+  t <- typeP
+  h <- hashP
+  p <- pathP
+  let i = length $ splitPath p -- TODO this is ok with the linebreaks?
+  return (t, h, i, takeFileName p)
 
--- TODO this looks right, so why doesn't it work? ask on stackoverflow
-hashLinesP :: Parser [String]
-hashLinesP = sepBy' hashLineP endOfLine
+linesP :: Parser [(Char, Hash, Int, FilePath)]
+linesP = sepBy' lineP endOfLine
 
--- like `lines`, but works when the filenames themselves contain newlines
--- TODO use bytestrings
--- TODO why doesn't the pattern work?? fuck, "regex is treated as ordinary string" :(
-diabolicalLines :: String -> [String]
-diabolicalLines = undefined
--- diabolicalLines s = map B.unpack $ split (Pattern $ B.pack "\nF ") (Body $ B.pack s)
+-- TODO use bytestring the whole time rather than converting
+-- TODO should this propogate the Either?
+parseHashes :: String -> [(Char, Hash, Int, FilePath)]
+parseHashes = fromRight [] . parseOnly linesP . B8.pack
 
 -- TODO error on null string/lines?
 -- TODO wtf why is reverse needed? remove that to save RAM
 -- TODO refactor so there's a proper buildTree function and this uses it
 deserializeTree :: String -> HashTree
-deserializeTree = snd . head . foldr accTrees [] . map readHashLine . traceAll . diabolicalLines
-  where
-    traceAll ss = map (\s -> trace ("s: '" ++ s ++ "'") s) ss
+deserializeTree = snd . head . foldr accTrees [] . reverse . parseHashes
 
 countFiles :: HashTree -> Int
 countFiles (File _ _    ) = 1
@@ -190,19 +192,11 @@ countFiles (Dir  _ _ _ n) = n
  - levels, and when it comes across a dir it uses the indents to determine
  - which files are children to put inside it vs which are siblings.
  -}
-accTrees :: (String, Hash, Int, FilePath) -> [(Int, HashTree)] -> [(Int, HashTree)]
+accTrees :: (Char, Hash, Int, FilePath) -> [(Int, HashTree)] -> [(Int, HashTree)]
 accTrees l@(t, h, indent, p) cs = case t of
-  "F" -> cs ++ [(indent, File p h)]
-  "D" -> let (children, siblings) = partition (\(i, _) -> i > indent) cs
+  'F' -> cs ++ [(indent, File p h)]
+  'D' -> let (children, siblings) = partition (\(i, _) -> i > indent) cs
              dir = Dir p h (map snd children)
                            (sum $ map (countFiles . snd) children)
          in siblings ++ [(indent, dir)]
   _ -> error $ "invalid line: '" ++ show l ++ "'" 
-
--- note that the filename can occasionally contain a newline!
-readHashLine :: String -> (String, Hash, Int, FilePath)
-readHashLine line = (t, Hash h, i, takeFileName p)
-  where
-    [t, h]   = words tmp            -- first two words are hash and type
-    (tmp, p) = splitAt 67 line      -- rest of the line is the path
-    i        = length $ splitPath p -- get indent level from path
