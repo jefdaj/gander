@@ -27,16 +27,14 @@ import qualified Data.ByteString.Lazy.Char8 as BL
 import Gander.Lib.Git (pathComponents) -- TODO not actually git related
 import qualified System.Directory.Tree as DT
 
-import System.FilePath (joinPath)
-import Data.ByteString.Lazy.Char8 (pack)
 import Control.Monad        (forM)
-import Data.List            (partition, sortBy, find)
+import Data.List            (find)
 import Data.Function        (on)
 import Data.List            (partition, sortBy)
 import Data.Either          (fromRight)
 import Data.Ord             (compare)
 import System.Directory     (doesFileExist, doesDirectoryExist)
-import System.FilePath      ((</>), takeFileName, splitPath)
+import System.FilePath      ((</>), takeFileName, splitPath, joinPath)
 import System.FilePath.Glob (compile, match)
 import System.IO.Unsafe     (unsafeInterleaveIO)
 
@@ -208,13 +206,6 @@ accTrees l@(t, h, indent, p) cs = case t of
                            (sum $ map (countFiles . snd) children)
          in siblings ++ [(indent, dir)]
   _ -> error $ "invalid line: '" ++ show l ++ "'" 
-
-readLine :: String -> (Hash, String, Int, FilePath)
-readLine line = (Hash h, t, i, takeFileName p)
-  where
-    [h, t]   = words tmp            -- first two words are hash and type
-    (tmp, p) = splitAt 70 line      -- rest of the line is the path
-    i        = length $ splitPath p -- get indent level from path
 
 -------------------
 -- search a tree --
