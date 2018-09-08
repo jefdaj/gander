@@ -10,22 +10,38 @@ module Gander.Lib.HashTree
   , flattenTree
   , deserializeTree
   , hashContents
+
+  , hashBreakP
+  , hashLineP
+  , hashLineP2
+  , hashLinesP
   )
   where
 
+import Debug.Trace
+
 import Gander.Lib.Hash
 
+import qualified Data.ByteString as B
 import qualified Data.ByteString.Lazy.Char8 as BL
+-- import qualified Data.ByteString.Char8 as B
 import qualified System.Directory.Tree as DT
 
 import Control.Monad        (forM)
-import Data.List            (partition, sortBy)
 import Data.Function        (on)
+import Data.List            (partition, sortBy)
 import Data.Ord             (compare)
+import System.Directory     (doesFileExist, doesDirectoryExist)
 import System.FilePath      ((</>), takeFileName, splitPath)
 import System.FilePath.Glob (compile, match)
 import System.IO.Unsafe     (unsafeInterleaveIO)
-import System.Directory     (doesFileExist, doesDirectoryExist)
+
+import Prelude hiding (take)
+import Data.Attoparsec.Char8 hiding (match)
+import Data.Attoparsec.Combinator
+
+-- import Text.Regex.Do.Split  (split)
+-- import Text.Regex.Do.TypeDo (Body(..), Pattern(..))
 
 type HashLine = (String, Hash, FilePath)
 
@@ -133,11 +149,38 @@ flattenTree' dir (Dir  n h cs _) = subtrees ++ [wholeDir]
     subtrees = concatMap (flattenTree' $ dir </> n) cs
     wholeDir = ("D", h, dir </> n)
 
+-- line endOfLine, but make sure D/F comes next instead of the rest of a filename
+hashBreakP :: Parser ()
+hashBreakP = do
+  _ <- endOfLine
+  _ <- choice [char 'D', char 'F']
+  _ <- char ' '
+  return ()
+
+hashLineP :: Parser String
+hashLineP = manyTill anyChar $ lookAhead $ choice [hashBreakP, endOfLine >> endOfInput]
+
+hashLineP2 :: Parser (String, Hash, Int, FilePath)
+hashLineP2 = undefined
+
+-- TODO this looks right, so why doesn't it work? ask on stackoverflow
+hashLinesP :: Parser [String]
+hashLinesP = sepBy' hashLineP endOfLine
+
+-- like `lines`, but works when the filenames themselves contain newlines
+-- TODO use bytestrings
+-- TODO why doesn't the pattern work?? fuck, "regex is treated as ordinary string" :(
+diabolicalLines :: String -> [String]
+diabolicalLines = undefined
+-- diabolicalLines s = map B.unpack $ split (Pattern $ B.pack "\nF ") (Body $ B.pack s)
+
 -- TODO error on null string/lines?
 -- TODO wtf why is reverse needed? remove that to save RAM
 -- TODO refactor so there's a proper buildTree function and this uses it
 deserializeTree :: String -> HashTree
-deserializeTree = snd . head . foldr accTrees [] . map readHashLine . reverse . lines
+deserializeTree = snd . head . foldr accTrees [] . map readHashLine . traceAll . diabolicalLines
+  where
+    traceAll ss = map (\s -> trace ("s: '" ++ s ++ "'") s) ss
 
 countFiles :: HashTree -> Int
 countFiles (File _ _    ) = 1
@@ -156,6 +199,7 @@ accTrees l@(t, h, indent, p) cs = case t of
          in siblings ++ [(indent, dir)]
   _ -> error $ "invalid line: '" ++ show l ++ "'" 
 
+-- note that the filename can occasionally contain a newline!
 readHashLine :: String -> (String, Hash, Int, FilePath)
 readHashLine line = (t, Hash h, i, takeFileName p)
   where

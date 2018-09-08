@@ -1,6 +1,8 @@
 resolver: lts-11.8
 packages:
 - '.'
+#extra-deps:
+# - regex-do-1.5
 nix:
   enable: false # works, but not everyone needs it
   pure: false

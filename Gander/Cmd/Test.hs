@@ -3,7 +3,6 @@ module Gander.Cmd.Test where
 import Gander.Lib
 
 import Text.Pretty.Simple (pPrint)
-import Control.Monad      (when)
 import Gander.Config      (Config(..))
 
 cmdTest :: Config -> FilePath -> IO ()
@@ -21,11 +20,17 @@ testSerialization cfg path = do
       tree2 = deserializeTree str1
       str2  = serializeTree tree2
   let tests = [tree1 == tree2, show tree1 == show tree1, str1 == str2]
-  when (not $ all id tests) (error "failed to round-trip the tree!")
-  putStrLn "round-tripping hashtree to string:"
-  printHashes tree1
-  putStrLn ""
-  return tree1
+  if (all id tests) then do
+    putStrLn "round-tripped hashtree to string:"
+    printHashes tree1
+    putStrLn ""
+    return tree1
+  else do
+    putStrLn "failed to round-trip hashtree to string!"
+    print str1
+    print str2
+    putStrLn "failed to round-trip the tree!"
+    return tree1
 
 testDupes :: Config -> HashTree -> IO ()
 testDupes _ tree = do
