@@ -1,5 +1,6 @@
 module Gander.Lib.HashTree
   ( HashTree(..)
+  , TreeType(..)
   , readTree
   , buildTree
   , readOrBuildTree
@@ -11,8 +12,17 @@ module Gander.Lib.HashTree
   , deserializeTree
   , hashContents
   , parseHashes
+  , dropTo
+  , treeContainsPath
+  , treeContainsHash
+  , addSubTree
+  , rmSubTree
   )
   where
+
+-- TODO would be better to adapt AnchoredDirTree with a custom node type than re-implement stuff
+
+-- import Debug.Trace
 
 import Gander.Lib.Hash
 
@@ -20,31 +30,38 @@ import Gander.Lib.Hash
 import qualified Data.ByteString.Char8 as B8
 import qualified Data.ByteString.Lazy.Char8 as BL
 -- import qualified Data.ByteString.Char8 as B
+
+import Gander.Lib.Git (pathComponents) -- TODO not actually git related
 import qualified System.Directory.Tree as DT
 
-import Control.Monad        (forM)
+import Control.Monad        (forM, msum)
+import Data.List            (find, delete)
+import Data.Maybe           (isJust, fromMaybe)
 import Data.Function        (on)
 import Data.List            (partition, sortBy)
 import Data.Either          (fromRight)
 import Data.Ord             (compare)
 import System.Directory     (doesFileExist, doesDirectoryExist)
-import System.FilePath      ((</>), takeFileName, splitPath)
+import System.FilePath      ((</>), takeFileName, splitPath, joinPath)
 import System.FilePath.Glob (compile, match)
 import System.IO.Unsafe     (unsafeInterleaveIO)
 
 import Prelude hiding (take)
-import Data.Attoparsec.ByteString.Char8 hiding (match)
+import Data.Attoparsec.ByteString.Char8 hiding (match, D)
 import Data.Attoparsec.Combinator
 
 -- import Text.Regex.Do.Split  (split)
 -- import Text.Regex.Do.TypeDo (Body(..), Pattern(..))
 
-type HashLine = (Char, Hash, FilePath)
+-- for distinguishing beween files and dirs
+data TreeType = F | D deriving (Eq, Read, Show)
+
+type HashLine = (TreeType, Hash, FilePath)
 
 -- TODO actual Pretty instance
 -- TODO need to handle unicode here?
 prettyHashLine :: HashLine -> String
-prettyHashLine (t, Hash h, p) = unwords [[t], h, p]
+prettyHashLine (t, Hash h, p) = unwords [show t, h, p]
 
 {- A tree of file names matching (a subdirectory of) the annex,
  - where each dir and file node contains a hash of its contents.
@@ -109,6 +126,7 @@ hashContents ts = Hash $ hashBytes $ BL.pack txt
 
 -- If passed a file this assumes it contains hashes and builds a tree of them;
 -- If passed a dir it will scan it first and then build the tree.
+-- TODO don't assume??
 readOrBuildTree :: Bool -> [String] -> FilePath -> IO HashTree
 readOrBuildTree verbose exclude path = do
   isDir  <- doesDirectoryExist path
@@ -139,14 +157,16 @@ flattenTree = flattenTree' ""
 
 -- TODO need to handle unicode here?
 flattenTree' :: FilePath -> HashTree -> [HashLine]
-flattenTree' dir (File n h     ) = [('F', h, dir </> n)]
+flattenTree' dir (File n h     ) = [(F, h, dir </> n)]
 flattenTree' dir (Dir  n h cs _) = subtrees ++ [wholeDir]
   where
     subtrees = concatMap (flattenTree' $ dir </> n) cs
-    wholeDir = ('D', h, dir </> n)
+    wholeDir = (D, h, dir </> n)
 
-typeP :: Parser Char
-typeP = choice [char 'D', char 'F'] <* char ' '
+typeP :: Parser TreeType
+typeP = do
+  t <- choice [char 'D', char 'F'] <* char ' '
+  return $ read [t]
 
 hashP :: Parser Hash
 hashP = do
@@ -162,7 +182,7 @@ breakP = endOfLine >> typeP >> return ()
 pathP :: Parser FilePath
 pathP = manyTill anyChar $ lookAhead $ choice [breakP, endOfLine >> endOfInput]
 
-lineP :: Parser (Char, Hash, Int, FilePath)
+lineP :: Parser (TreeType, Hash, Int, FilePath)
 lineP = do
   t <- typeP
   h <- hashP
@@ -170,12 +190,12 @@ lineP = do
   let i = length $ splitPath p -- TODO this is ok with the linebreaks?
   return (t, h, i, takeFileName p)
 
-linesP :: Parser [(Char, Hash, Int, FilePath)]
+linesP :: Parser [(TreeType, Hash, Int, FilePath)]
 linesP = sepBy' lineP endOfLine
 
 -- TODO use bytestring the whole time rather than converting
 -- TODO should this propogate the Either?
-parseHashes :: String -> [(Char, Hash, Int, FilePath)]
+parseHashes :: String -> [(TreeType, Hash, Int, FilePath)]
 parseHashes = fromRight [] . parseOnly linesP . B8.pack
 
 -- TODO error on null string/lines?
@@ -192,11 +212,102 @@ countFiles (Dir  _ _ _ n) = n
  - levels, and when it comes across a dir it uses the indents to determine
  - which files are children to put inside it vs which are siblings.
  -}
-accTrees :: (Char, Hash, Int, FilePath) -> [(Int, HashTree)] -> [(Int, HashTree)]
-accTrees l@(t, h, indent, p) cs = case t of
-  'F' -> cs ++ [(indent, File p h)]
-  'D' -> let (children, siblings) = partition (\(i, _) -> i > indent) cs
-             dir = Dir p h (map snd children)
-                           (sum $ map (countFiles . snd) children)
-         in siblings ++ [(indent, dir)]
-  _ -> error $ "invalid line: '" ++ show l ++ "'" 
+accTrees :: (TreeType, Hash, Int, FilePath) -> [(Int, HashTree)] -> [(Int, HashTree)]
+accTrees (t, h, indent, p) cs = case t of
+  F -> cs ++ [(indent, File p h)]
+  D -> let (children, siblings) = partition (\(i, _) -> i > indent) cs
+           dir = Dir p h (map snd children)
+                         (sum $ map (countFiles . snd) children)
+       in siblings ++ [(indent, dir)]
+
+-------------------
+-- search a tree --
+-------------------
+
+-- treeContainsPath :: HashTree -> FilePath -> Bool
+-- treeContainsPath (File f1 _     ) f2 = f1 == f2
+-- treeContainsPath (Dir  f1 _ cs _) f2
+--   | f1 == f2 = True
+--   | length (pathComponents f2) < 2 = False
+--   | otherwise = let n   = head $ pathComponents f2
+--                     f2' = joinPath $ tail $ pathComponents f2
+--                 in if f1 /= n
+--                   then False
+--                   else any (\c -> treeContainsPath c f2') cs
+
+treeContainsPath :: HashTree -> FilePath -> Bool
+treeContainsPath tree path = isJust $ dropTo tree path
+
+dropTo :: HashTree -> FilePath -> Maybe HashTree
+dropTo t@(File f1 _     ) f2 = if f1 == f2 then Just t else Nothing
+dropTo t@(Dir  f1 _ cs _) f2
+  | f1 == f2 = Just t
+  | length (pathComponents f2) < 2 = Nothing
+  | otherwise = let n   = head $ pathComponents f2
+                    f2' = joinPath $ tail $ pathComponents f2
+                in if f1 /= n
+                  then Nothing
+                  else msum $ map (\c -> dropTo c f2') cs
+
+treeContainsHash :: HashTree -> Hash -> Bool
+treeContainsHash (File _ h1     ) h2 = h1 == h2
+treeContainsHash (Dir  _ h1 cs _) h2
+  | h1 == h2 = True
+  | otherwise = any (\c -> treeContainsHash c h2) cs
+
+-- TODO if tree contains path, be able to extract it! need for rm
+
+-------------------
+-- add a subtree --
+-------------------
+
+wrapInEmptyDir :: FilePath -> HashTree -> HashTree
+wrapInEmptyDir n t = Dir { name = n, hash = h, contents = cs, nFiles = nFiles t }
+  where
+    cs = [t]
+    h = hashContents cs
+
+wrapInEmptyDirs :: FilePath -> HashTree -> HashTree
+wrapInEmptyDirs p t = case pathComponents p of
+  []     -> error "wrapInEmptyDirs needs at least one dir"
+  (n:[]) -> wrapInEmptyDir n t
+  (n:ns) -> wrapInEmptyDir n $ wrapInEmptyDirs (joinPath ns) t
+
+addSubTree :: HashTree -> HashTree -> FilePath -> HashTree
+addSubTree (File _ _) _ _ = error $ "attempt to insert tree into a file"
+addSubTree _ _ path | null (pathComponents path) = error "can't insert tree at null path"
+addSubTree main sub path = main { hash = h', contents = cs', nFiles = n' }
+  where
+    comps  = pathComponents path
+    p1     = head comps
+    path'  = joinPath $ tail comps
+    h'     = hashContents cs'
+    cs'    = sortBy (compare `on` name) $ filter (\c -> name c /= p1) (contents main) ++ [newSub]
+    n'     = nFiles main + nFiles newSub - case oldSub of { Nothing -> 0; Just s -> nFiles s; }
+    sub'   = sub { name = last comps }
+    oldSub = find (\c -> name c == p1) (contents main)
+    newSub = if length comps == 1
+               then sub'
+               else case oldSub of
+                 Nothing -> wrapInEmptyDirs path sub'
+                 Just d  -> addSubTree d sub' path'
+
+----------------------
+-- remove a subtree --
+----------------------
+
+{- This one gets a little complicated because if the subtree exists
+ - then after removing it we have to adjust parent nFiles back up to the root.
+ - Also edits have to be done on the parent tree (so no File branch).
+ - Buuuut for now can just ignore nFiles as it's not needed for the rm itself.
+ - TODO does this actually solve nFiles too?
+ -}
+rmSubTree :: HashTree -> FilePath -> Maybe HashTree
+rmSubTree (File _ _) _ = Nothing
+rmSubTree d@(Dir _ _ cs n) p = case dropTo d p of
+  Nothing -> Nothing
+  Just t -> Just $ if t `elem` cs
+    then d { contents = delete t cs, nFiles = n - countFiles t }
+    else d { contents = map (\c -> fromMaybe c $ rmSubTree c $ joinPath $ tail $ splitPath p) cs
+           , nFiles = n - countFiles t
+           }

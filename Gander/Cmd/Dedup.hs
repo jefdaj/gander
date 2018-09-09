@@ -18,7 +18,7 @@ cmdDedup cfg hashes _ = do
 -- TODO check that dupes is longer than 2 (1?)
 -- TODO current code is wrong whenever picking a number besides 1!
 dedupGroup :: Config -> DupeList  -> Maybe FilePath -> IO ()
-dedupGroup cfg (_, dupes) dest = case dest of
+dedupGroup cfg (_, _, dupes) dest = case dest of
   Nothing -> return ()
   Just path -> withAnnex (verbose cfg) path $ \dir -> do
     when (path /= head dupes) $ do
@@ -34,7 +34,7 @@ dedupGroup cfg (_, dupes) dest = case dest of
 -- It could also be Nothing if they choose to skip the group.
 -- TODO have a default save dir for custom paths?
 userPicks :: DupeList -> IO (Maybe FilePath)
-userPicks (n, paths) = do
+userPicks (n, t, paths) = do
   clearScreen
   let nDupes = length paths :: Int
   putStrLn $ "These " ++ show nDupes ++ " are duplicates:"
@@ -52,7 +52,7 @@ userPicks (n, paths) = do
     confirm <- userSaysYes $ "Save to '" ++ answer ++ "'?"
     if confirm
       then return $ Just answer
-      else userPicks (n, paths)
+      else userPicks (n, t, paths)
  
 listDupes :: Int -> [FilePath] -> IO ()
 listDupes howMany paths = putStrLn $ unlines numbered

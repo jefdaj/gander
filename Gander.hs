@@ -53,11 +53,14 @@ main = do
     src  <- arg "src"
     dest <- arg "dest"
     cmdAnnex cfg src dest
-  else if cmd "delete" then do
-    hashes    <- arg "root"
-    delhashes <- arg "sub"
-    delpath   <- arg "path"
-    cmdRm cfg hashes delhashes delpath
+  else if cmd "rm" then do
+    target <- arg "target"
+    rPath  <- arg "rootpath"
+    dPath  <- arg "rmpath"
+    cmdRm cfg target rPath dPath
+  else if cmd "tmprm" then do
+    rmPath <- arg "rmpath"
+    cmdTmpRm cfg rmPath
   else if cmd "dedup" then do
     hashes <- arg "hashes"
     dpath  <- arg "path"
