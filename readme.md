@@ -47,14 +47,22 @@ cfc9494ec1483b639a5d07dcbfafb9b27048800d5ad6c1e320a36272c2e42880 file backup/fol
 711d2d4e20a5a30a6a52cdd7fc7c48f6805c5201cea860a8c1bcf72c9bb4398e dir  backup
 ```
 
-Using the hash command by itself is mainly useful when the files to hash are large and/or on an external drive.
+The standalone hash command is mainly useful when the files to hash are large or on an external drive.
 
 
 Diff two folders
 ----------------
 
-The advantage over `diff -r` is that you can use saved hashes to avoid re-scanning everything.
-Detection of changes is also nicer, as shown in [demo.sh][4]:
+You can compare two folders directly, or substitute the saved hashes.
+These do the same thing:
+
+```
+gander diff backup            current
+gander diff backup-hashes.txt current
+```
+
+Output is like `diff -r`, but simplified by assuming the first folder is older.
+[demo.sh][4] compares them:
 
 ```
 creating some demo files...
@@ -98,13 +106,6 @@ Individual file hashes are the same as reported by `sha256sum`.
 Everything works similarly with directories and binary files,
 except that the directory hashes don't follow an external standard.
 
-Either folder can be replaced by a file listing the corresponding hashes, so you don't have to re-scan.
-For example:
-
-```
-gander diff backup-hashes.txt current
-```
-
 
 Find dupes within a folder
 --------------------------
@@ -112,7 +113,7 @@ Find dupes within a folder
 What if you have a more complicated mess of files to deduplicate?
 Say we made a couple more copies of the `backup` demo folder "just in case", then forgot about it.
 Continuing with [demo.sh][4],
-`gander` can group all the identical files/folders and sort them by total duplicate files:
+`gander` can group all the identical files/folders and sort them by number of files:
 
 ```
 $ gander dupes demo
@@ -134,8 +135,9 @@ demo/current/old-backup-1/file1.txt
 demo/current/old-backup-2/file1.txt
 ```
 
-It still looks a little messy because some of the duplicate sets overlap,
-but if we just look at the top set we can see that it correctly picked out the overall problem.
+It still looks messy because some of the duplicate sets overlap,
+but if we focus on the top set we can see that it correctly picked out the overall problem.
+
 So we delete `current/old-backup-1` and `current/old-backup-2` and re-run it:
 
 ```
@@ -149,38 +151,38 @@ demo/backup/file1.txt
 demo/current/file1.txt
 ```
 
-Much better! Even extremely large, messy folders can be simplified after a few rounds.
+Much better! Even extremely large, messy drives can be simplified after several rounds.
 
 
 Annex-aware mode
 ----------------
 
-`gander` was really designed to automate the above "find loops -> delete dupes
--> update hashes" loop. Major goals are:
+`gander` was really designed to automate the above "find dupes -> delete dupes
+-> update hashes" loop for gradual deduplication of large messes. The goals are:
 
 1. Be sure nothing is deleted or lost accidentally
 2. Be clear about what it will do at each step for non-programmers
 3. Be reasonably fast, given the limitations of git
 
-It was written for a specific project consisting of around 10 million files,
-and has not been tested much beyond that. However, that project included
-complete Mac filesystems and a ton of really horrendous filenames with emojis,
-newlines, unicode glyphs and whatever else you can think of. So it made a
-decent stress test.
+It was written for a specific project consisting of around 10 million files.
+That project included complete Mac filesystems and some really horrendous
+filenames including emojis, newlines, and unicode glyphs. So it made a decent
+stress test.
 
-There are two parts to the overall strategy:
+There are two parts to the overall cleanup strategy:
 
 1. Add everything to a cental [git-annex][1] repository and let git-annex
    deduplicate the file contents immediately by symlinking duplicate files to the
    same store path. That leaves a large number of directories + duplicate
-   symlinks, but takes up minimal disk space.
+   symlinks, but takes up minimal disk space. It can be done without `gander`.
 
-2. Use `gander` to iteratively deduplicate the directories and symlinks, committing after each step.
-   If you make a mistake, the full history is still available in git.
-   By reading `sha256sum`s from the git-annex symlinks we avoid re-hashing everything.
+2. Use `gander` to iteratively deduplicate the directories and symlinks. It
+   double-checks that each step is safe (no unique files lost), and even if you
+   make a mistake the full history is still in git. It also avoids re-hashing
+   files by reading their `sha256sum`s from the git-annex symlinks.
 
-Once satisfied that everything went according to plan you can either keep your
-deduplicated files in git-annex or `git annex unannex` them.
+Once satisfied that the project went well you can either keep your deduplicated
+files in git-annex or `git annex unannex` them.
 
 To be extra careful, you can also re-hash external folders later to confirm
 that everything from them made it into the annex. Or re-hash the annex itself
