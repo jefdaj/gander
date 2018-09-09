@@ -1,3 +1,5 @@
+bug: dir hashes need to be recalculated after changing contents (including rm)
+
 also add hashes to the dupes output (harder than it seems though)
 
 would it help to break up HashTree.hs further?
