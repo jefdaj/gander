@@ -16,13 +16,14 @@ module Gander.Lib.DupeMap
   where
 
 import Prelude hiding (lookup)
+
 import Gander.Lib.Hash
 import Gander.Lib.HashTree
 
-import Data.Foldable   (toList)
+-- import Data.Foldable   (toList)
 import Data.List       (nub, sort, sortBy, isPrefixOf)
 import Data.Map        (Map, (\\))
-import Data.Map        (fromListWith, keys, lookup)
+import Data.Map        (toList, fromListWith, keys, lookup)
 import Data.Ord        (comparing)
 import System.FilePath ((</>), splitDirectories)
 
@@ -35,6 +36,8 @@ type DupeList = (Int, TreeType, [FilePath])
  - Could be rewritten to contain links to HashTrees if that helps.
  -}
 type DupeMap = Map Hash DupeList
+-- type DupeMap = Map Hash (Int, TreeType, [FilePath])
+-- toList that to get :: [(Hash, (Int, TreeType, [FilePath]))]
 
 pathsByHash :: HashTree -> DupeMap
 pathsByHash = fromListWith mergeDupeLists . pathsByHash' ""
@@ -51,13 +54,14 @@ pathsByHash' dir (Dir  n h cs fs) = cPaths ++ [(h, (fs, D, [dir </> n]))]
 -- TODO warning: so far it lists anything annexed as a dup
 
 -- see https://mail.haskell.org/pipermail/beginners/2009-June/001867.html
-sortDescLength :: [DupeList] -> [DupeList]
-sortDescLength = map snd
-               . sortBy (comparing $ negate . (\(n,_,_) -> n) . snd)
-               . map (\t@(n,_,_) -> (n, t))
-               -- . map (length &&& id)
+sortDescLength :: [(Hash, DupeList)] -> [(Hash, DupeList)]
+sortDescLength = map unDecorate . sortBy (comparing score) . map decorate
+  where
+    decorate (h, l@(n, _, _)) = (n, (h, l))
+    unDecorate (_, (h, l)) = (h, l)
+    score (n, _) = negate n -- sorts by descending number of files
 
-dupesByNFiles :: DupeMap -> [DupeList]
+dupesByNFiles :: DupeMap -> [(Hash, DupeList)]
 dupesByNFiles = sortDescLength . filter hasDupes . toList
 
 {- Assumes a pre-sorted list as provided by dupesByNFiles.
@@ -73,8 +77,8 @@ simplifyDupes (d@(_,_,fs):ds) = d : filter (not . redundantList) ds
     redundantList (_,_,fs') = all redundantElem fs'
     redundantElem e'  = any id [(splitDirectories e) `isPrefixOf` (splitDirectories e') | e <- fs]
 
-hasDupes :: DupeList -> Bool
-hasDupes (nfiles, _, paths) = length paths > 1 && nfiles > 0
+hasDupes :: (Hash, DupeList) -> Bool
+hasDupes (_, (nfiles, _, paths)) = length paths > 1 && nfiles > 0
 
 -- TODO use this as the basis for the dedup repl
 printDupes :: [DupeList] -> IO ()

@@ -6,4 +6,4 @@ import Gander.Lib (readOrBuildTree, pathsByHash, dupesByNFiles, simplifyDupes, p
 cmdDupes :: Config -> FilePath -> IO ()
 cmdDupes cfg path = do
   tree <- readOrBuildTree (verbose cfg) (exclude cfg) path
-  printDupes $ simplifyDupes $ dupesByNFiles $ pathsByHash tree
+  printDupes $ simplifyDupes $ map snd $ dupesByNFiles $ pathsByHash tree
