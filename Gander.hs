@@ -58,6 +58,9 @@ main = do
     rPath  <- arg "rootpath"
     dPath  <- arg "rmpath"
     cmdRm cfg target rPath dPath
+  else if cmd "tmprm" then do
+    rmPath <- arg "rmpath"
+    cmdTmpRm cfg rmPath
   else if cmd "dedup" then do
     hashes <- arg "hashes"
     dpath  <- arg "path"
