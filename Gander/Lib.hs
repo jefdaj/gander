@@ -6,6 +6,7 @@ module Gander.Lib
 
   -- hashtree
   , HashTree(..)
+  , TreeType(..)
   , readTree
   , buildTree
   , readOrBuildTree
@@ -15,12 +16,23 @@ module Gander.Lib
   , hashContents
   , renameRoot
   , printHashes
+  , dropTo
+  , treeContainsPath
+  , treeContainsHash
+  , addSubTree
+  , rmSubTree
 
-  -- diff
+  , listAllFiles
+  , listLostFiles
+
+  -- delta
   , Delta(..)
   , diff
   , prettyDiff
   , printDiffs
+  , runDelta
+  , runDeltas
+  , safe
 
   -- dupemap
   , DupeList

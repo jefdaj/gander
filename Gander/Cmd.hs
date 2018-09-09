@@ -6,6 +6,7 @@ module Gander.Cmd
   , cmdUpdate
   , cmdAnnex
   , cmdRm
+  , cmdTmpRm
   , cmdDedup
   )
   where

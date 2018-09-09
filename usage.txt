@@ -6,7 +6,8 @@ Usage:
   gander [-v]  fsck   <hashes> [<dir>...]
   gander [-v]  diff   <old> <new>
   gander [-vf] annex  <src> <dest>
-  gander [-vf] delete <root> <sub> <path>
+  gander [-vf] rm     <target> <rootpath> <rmpath>
+  gander [-vf] tmprm  <rmpath>
   gander [-vf] update <main> <sub> <path>
   gander [-v]  test   <path>
   gander [-v]  dedup  <hashes> <path>
@@ -24,10 +25,14 @@ Commands:
           <dir> limits it to one or more subdirectories.
   diff    Print changes in <new> relative to <old>. TODO take hashes here too!
   annex   Copies each <src> to <dest>, annexes <dest>, and checks that hashes match.
-  delete  `git rm` a path after checking that all files in it are duplicates.
-          Prompts to confirm unless `--force`d.
+  rm      `git rm` a path after checking that all files in it are duplicates.
+          Prompts to confirm unless `--force`d. <target> is the hashes file or dir to hash,
+          <rootpath> is where to read hash paths from, and <rmpath> is the one to delete.
+  tmprm   A temporary version of rm for testing. Assumes conventions which will be explicit
+          in annex mode: path to rm is inside annex, hashes are stored
+          in ANNEX_ROOT/.git/gander/hashes.txt.
   update  Updates <main> hashes with new ones from <sub>, inserted at <path>.
-  test    Build a hash tree and round-trip it to check serialization.
+  test    Run tests on a given directory.
   dedup   Prompt to delete groups of duplicates, starting with the largest dirs.
           <hashes> is a file listing all hashes in the repo, and <path> is the
           system path to the repo.

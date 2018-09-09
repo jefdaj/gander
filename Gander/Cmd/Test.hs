@@ -8,8 +8,10 @@ import Gander.Config      (Config(..))
 cmdTest :: Config -> FilePath -> IO ()
 cmdTest cfg path = do
   putStrLn "loading config: "; pPrint cfg; putStrLn ""
-  tree <- testSerialization cfg path
-  testDupes cfg tree
+  -- tree <- testSerialization cfg path
+  tree <- readOrBuildTree (verbose cfg) (exclude cfg) path
+  -- testDupes cfg tree
+  testRm cfg tree
 
 testSerialization :: Config -> FilePath -> IO HashTree
 testSerialization cfg path = do
@@ -39,3 +41,12 @@ testDupes _ tree = do
   putStrLn "making dupemap from hashtree:"   ; pPrint m
   putStrLn ""
   putStrLn "using dupemap to report duplicates:"; printDupes ds
+
+testRm :: Config -> HashTree -> IO ()
+testRm _ tree = case rmSubTree tree "./demo/backup" of
+  Just t -> do
+    putStrLn "before rmSubTree:"
+    printHashes tree
+    putStrLn "after rmSubTree:"
+    printHashes t
+  Nothing -> putStrLn "failed to rmSubTree"
