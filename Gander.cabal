@@ -1,5 +1,5 @@
 name:                Gander
-version:             0.1.0.0
+version:             0.1.1.0
 synopsis:            The "Git ANnex DEdupeR"
 description:         Deduplicates large numbers of files using git-annex
 license:             LGPL-3
