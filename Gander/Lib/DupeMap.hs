@@ -11,6 +11,7 @@ module Gander.Lib.DupeMap
   , allDupes
 
   , listAllFiles
+  , listLostFiles
   )
   where
 
@@ -18,10 +19,9 @@ import Prelude hiding (lookup)
 import Gander.Lib.Hash
 import Gander.Lib.HashTree
 
-import Control.Arrow   ((&&&))
 import Data.Foldable   (toList)
-import Data.List       (sort, sortBy, isPrefixOf)
-import Data.Map        (Map)
+import Data.List       (nub, sort, sortBy, isPrefixOf)
+import Data.Map        (Map, (\\))
 import Data.Map        (fromListWith, keys, lookup)
 import Data.Ord        (comparing)
 import System.FilePath ((</>), splitDirectories)
@@ -29,7 +29,7 @@ import System.FilePath ((</>), splitDirectories)
 -- TODO can Foldable or Traversable simplify these?
 
 -- TODO add the hash here too?
-type DupeList = (Int, [FilePath])
+type DupeList = (Int, TreeType, [FilePath])
 
 {- A map from file/dir hash to a list of duplicate file paths.
  - Could be rewritten to contain links to HashTrees if that helps.
@@ -40,11 +40,11 @@ pathsByHash :: HashTree -> DupeMap
 pathsByHash = fromListWith mergeDupeLists . pathsByHash' ""
 
 mergeDupeLists :: DupeList -> DupeList -> DupeList
-mergeDupeLists (n1, l1) (n2, l2) = (n1 + n2, l1 ++ l2)
+mergeDupeLists (n1, t, l1) (n2, _, l2) = (n1 + n2, t, l1 ++ l2)
 
 pathsByHash' :: FilePath -> HashTree -> [(Hash, DupeList)]
-pathsByHash' dir (File n h      ) = [(h, (1, [dir </> n]))]
-pathsByHash' dir (Dir  n h cs fs) = cPaths ++ [(h, (fs, [dir </> n]))]
+pathsByHash' dir (File n h      ) = [(h, (1, F, [dir </> n]))]
+pathsByHash' dir (Dir  n h cs fs) = cPaths ++ [(h, (fs, D, [dir </> n]))]
   where
     cPaths = concatMap (pathsByHash' $ dir </> n) cs
 
@@ -53,8 +53,9 @@ pathsByHash' dir (Dir  n h cs fs) = cPaths ++ [(h, (fs, [dir </> n]))]
 -- see https://mail.haskell.org/pipermail/beginners/2009-June/001867.html
 sortDescLength :: [DupeList] -> [DupeList]
 sortDescLength = map snd
-               . sortBy (comparing $ negate . fst . snd)
-               . map (length &&& id)
+               . sortBy (comparing $ negate . (\(n,_,_) -> n) . snd)
+               . map (\t@(n,_,_) -> (n, t))
+               -- . map (length &&& id)
 
 dupesByNFiles :: DupeMap -> [DupeList]
 dupesByNFiles = sortDescLength . filter hasDupes . toList
@@ -67,13 +68,13 @@ dupesByNFiles = sortDescLength . filter hasDupes . toList
  -}
 simplifyDupes :: [DupeList] -> [DupeList]
 simplifyDupes [] = []
-simplifyDupes (d:ds) = d : filter (not . redundantList) ds
+simplifyDupes (d@(_,_,fs):ds) = d : filter (not . redundantList) ds
   where
-    redundantList ds' = all redundantElem $ snd ds'
-    redundantElem e'  = any id [(splitDirectories e) `isPrefixOf` (splitDirectories e') | e <- snd d]
+    redundantList (_,_,fs') = all redundantElem fs'
+    redundantElem e'  = any id [(splitDirectories e) `isPrefixOf` (splitDirectories e') | e <- fs]
 
 hasDupes :: DupeList -> Bool
-hasDupes (nfiles, paths) = length paths > 1 && nfiles > 0
+hasDupes (nfiles, _, paths) = length paths > 1 && nfiles > 0
 
 -- TODO use this as the basis for the dedup repl
 printDupes :: [DupeList] -> IO ()
@@ -83,17 +84,18 @@ printDupes groups = mapM_ printGroup groups
       then "# " ++ show fs ++ " duplicate files"
       else "# " ++ show ds ++ " duplicate dirs with " ++ show (div fs ds)
                 ++ " files each (" ++ show fs ++ " total)"
-    printGroup (n, paths) = mapM_ putStrLn
-                          $ [explain n (length paths)]
-                          ++ sort paths ++ [""]
+    printGroup (n, _, paths) = mapM_ putStrLn
+                             $ [explain n (length paths)]
+                             ++ sort paths ++ [""]
 
 -----------------------------
 -- info about copy numbers --
 -----------------------------
 
+-- TODO is this actually helpful?
 listAllFiles :: FilePath -> HashTree -> [(Hash, FilePath)]
-listAllFiles anchor (File n h      ) = [(h, anchor </> n)]
-listAllFiles anchor (Dir  n h cs fs) = concatMap (listAllFiles $ anchor </> n) cs
+listAllFiles anchor (File n h     ) = [(h, anchor </> n)]
+listAllFiles anchor (Dir  n _ cs _) = concatMap (listAllFiles $ anchor </> n) cs
 
 
 -- helper for allDupes
@@ -101,8 +103,8 @@ listAllFiles anchor (Dir  n h cs fs) = concatMap (listAllFiles $ anchor </> n) c
 anotherCopy :: Hash -> DupeMap -> DupeMap -> Bool
 anotherCopy h mainMap subMap = nMain > nSub
   where
-    (Just nMain) = fmap fst $ lookup h mainMap
-    (Just nSub ) = fmap fst $ lookup h subMap
+    (Just nMain) = fmap (\(n,_,_) -> n) $ lookup h mainMap
+    (Just nSub ) = fmap (\(n,_,_) -> n) $ lookup h subMap
 
 allDupes :: HashTree -> HashTree -> Bool
 allDupes mainTree subTree = all safeToRmHash $ keys subDupes
@@ -112,5 +114,11 @@ allDupes mainTree subTree = all safeToRmHash $ keys subDupes
     safeToRmHash h = anotherCopy h mainDupes subDupes
 
 -- for warning the user when their action will delete the last copy of a file
-listLostFiles :: HashTree -> HashTree -> [(Hash, FilePath)]
-listLostFiles before after = undefined
+-- TODO also warn about directories, because sometimes they might care (Garageband files for example)
+listLostFiles :: HashTree -> HashTree -> [FilePath]
+listLostFiles before after = filesLost
+  where
+    hashesBefore = pathsByHash before
+    hashesAfter  = pathsByHash after
+    hashesLost   = hashesBefore \\ hashesAfter
+    filesLost    = nub $ sort $ concatMap (\(_,t,fs) -> if t == F then fs else []) hashesLost

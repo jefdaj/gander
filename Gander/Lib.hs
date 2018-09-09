@@ -23,6 +23,7 @@ module Gander.Lib
   , rmSubTree
 
   , listAllFiles
+  , listLostFiles
 
   -- delta
   , Delta(..)
