@@ -1,7 +1,6 @@
 The "Git ANnex DEdupeR" deduplicates files and folders using git-annex.
 
 Usage:
-  gander <annex> [-v]  hash   <path> [-e <exclude>]
   gander [-v]  hash   <path> [-e <exclude>]
   gander [-v]  diff   <old> <new>
   gander [-v]  dupes  <hashes>
@@ -11,6 +10,8 @@ Usage:
   gander [-vf] update <main> <sub> <path>
   gander [-v]  test   <path>
   gander [-v]  dedup  <hashes> <path>
+  gander <annex> init
+  gander <annex> hash
 
 Options:
   <annex>        Operate on the given git-annex repository.
@@ -19,7 +20,7 @@ Options:
   -e <exclude>   Read a list of globs and exclude any files matching it.
                  If none given, the list defaults to [".git*"]
 
-Commands:
+Standalone commands:
   hash    Reads files + folders and prints their hashes to stdout.
   dupes   List duplicate files + folders in <hashes>.
   diff    Print changes in <new> relative to <old>. TODO take hashes here too!
@@ -27,15 +28,21 @@ Commands:
   rm      `git rm` a path after checking that all files in it are duplicates.
           Prompts to confirm unless `--force`d. <target> is the hashes file or dir to hash,
           <rootpath> is where to read hash paths from, and <rmpath> is the one to delete.
-  tmprm   A temporary version of rm for testing. Assumes conventions which will be explicit
-          in annex mode: path to rm is inside annex, hashes are stored
-          in ANNEX_ROOT/.git/gander/hashes.txt.
   update  Updates <main> hashes with new ones from <sub>, inserted at <path>.
-  test    Run tests on a given directory.
   dedup   Prompt to delete groups of duplicates, starting with the largest dirs.
           <hashes> is a file listing all hashes in the repo, and <path> is the
           system path to the repo.
           TODO allow deduping only a subdirectory?
+
+Annex-based commands:
+  init    Sets up the <annex> repository for use with the other annex-based commands.
+  hash    Updates hashes.txt to reflect current annex content.
+
+Test commands:
+  test    Run tests on a given directory.
+  tmprm   A temporary version of rm for testing. Assumes conventions which will be explicit
+          in annex mode: path to rm is inside annex, hashes are stored
+          in ANNEX_ROOT/.git/gander/hashes.txt.
 
 Examples:
 

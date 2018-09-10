@@ -12,6 +12,7 @@ import System.Console.Docopt (docoptFile, parseArgsOrExit,
                               getArgOrExitWith, isPresent, getArg,
                               shortOption, command, argument)
 import System.Environment    (getArgs)
+import System.FilePath       ((</>))
 
 main :: IO ()
 main = do
@@ -30,42 +31,58 @@ main = do
         , force   = flag 'f'
         , exclude = eList
         }
-  print cfg
-  -- if annex mode, check `git status` and read config here
-  if cmd "hash" then do
-    path <- arg "path"
-    cmdHash cfg path
-  else if cmd "diff" then do
-    old <- arg "old"
-    new <- arg "new"
-    cmdDiff cfg old new
-  else if cmd "dupes" then do
-    hashes <- arg "hashes"
-    cmdDupes cfg hashes
-  else if cmd "test"  then do
-    path <- arg "path"
-    cmdTest cfg path
-  else if cmd "update" then do
-    mainTree <- arg "main"
-    subTree  <- arg "sub"
-    subPath  <- arg "path"
-    cmdUpdate cfg mainTree subTree subPath
-  else if cmd "annex" then do
-    src  <- arg "src"
-    dest <- arg "dest"
-    cmdAnnex cfg src dest
-  else if cmd "rm" then do
-    target <- arg "target"
-    rPath  <- arg "rootpath"
-    dPath  <- arg "rmpath"
-    cmdRm cfg target rPath dPath
-  else if cmd "tmprm" then do
-    rmPath <- arg "rmpath"
-    cmdTmpRm cfg rmPath
-  else if cmd "dedup" then do
-    hashes <- arg "hashes"
-    dpath  <- arg "path"
-    cmdDedup cfg hashes dpath
-  else do
-    print args
-    print cfg
+  -- print cfg
+  case annex cfg of
+
+    -- standalone mode (note: still works on annexed files)
+    Nothing -> do
+      if cmd "hash" then do
+        path <- arg "path"
+        cmdHash cfg Nothing path
+      else if cmd "diff" then do
+        old <- arg "old"
+        new <- arg "new"
+        cmdDiff cfg old new
+      else if cmd "dupes" then do
+        hashes <- arg "hashes"
+        cmdDupes cfg hashes
+      else if cmd "test"  then do
+        path <- arg "path"
+        cmdTest cfg path
+      else if cmd "update" then do
+        mainTree <- arg "main"
+        subTree  <- arg "sub"
+        subPath  <- arg "path"
+        cmdUpdate cfg mainTree subTree subPath
+      else if cmd "annex" then do
+        src  <- arg "src"
+        dest <- arg "dest"
+        cmdAnnex cfg src dest
+      else if cmd "rm" then do
+        target <- arg "target"
+        rPath  <- arg "rootpath"
+        dPath  <- arg "rmpath"
+        cmdRm cfg target rPath dPath
+      else if cmd "tmprm" then do
+        rmPath <- arg "rmpath"
+        cmdTmpRm cfg rmPath
+      else if cmd "dedup" then do
+        hashes <- arg "hashes"
+        dpath  <- arg "path"
+        cmdDedup cfg hashes dpath
+      else do
+        print args
+        print cfg
+
+    -- annex-aware mode
+    Just aPath -> do
+      putStrLn $ "using annex '" ++ aPath ++ "'"
+      if cmd "hash" then do
+        let hashPath = aPath </> "hashes.txt"
+            unsorted = aPath </> "unsorted"
+        putStr $ "updating '" ++ hashPath ++ "'..."
+        cmdHash cfg (Just hashPath) unsorted
+        putStrLn " done"
+      else do
+        print args
+        print cfg

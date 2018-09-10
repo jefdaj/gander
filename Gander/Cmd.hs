@@ -8,6 +8,7 @@ module Gander.Cmd
   , cmdRm
   , cmdTmpRm
   , cmdDedup
+  , cmdInit
   )
   where
 
@@ -19,3 +20,4 @@ import Gander.Cmd.Update
 import Gander.Cmd.Annex
 import Gander.Cmd.Rm
 import Gander.Cmd.Dedup
+import Gander.Cmd.Init
