@@ -1,17 +1,25 @@
 module Gander.Cmd.Hash where
 
-import Gander.Config (Config(..))
-import Gander.Lib (buildTree, printHashes, serializeTree)
+import Gander.Config    (Config(..))
+import Gander.Lib       (buildTree, printHashes, readTree, serializeTree, diff, printDiffs)
+import System.Directory (doesFileExist)
 
 cmdHash :: Config -> Maybe FilePath -> FilePath -> IO ()
 cmdHash cfg mHashes target = do
   -- TODO test that the target exists
-  -- TODO also test that the hashes file exists if in annex mode, and prompt for init if not
-  --      (this guard should go on all the annex commands)
   tree <- buildTree (verbose cfg) (exclude cfg) target
   case mHashes of
-    Nothing -> printHashes tree
-    Just h  -> writeFile h $ serializeTree tree
+    Nothing -> printHashes tree -- standalone command
+    Just h  -> do
+      exists <- doesFileExist h
+      if exists then do
+        putStrLn $ "updating '" ++ h ++ "'..."
+        before <- readTree h
+        printDiffs $ diff before tree
+      else do
+        putStrLn $ "creating '" ++ h ++ "'..."
+      writeFile h $ serializeTree tree
+      putStrLn "done"
 
 guardStatus :: Config -> FilePath -> IO ()
 guardStatus = undefined
