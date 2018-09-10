@@ -76,7 +76,7 @@ main = do
 
     -- annex-aware mode
     Just aPath -> do
-      putStrLn $ "using annex '" ++ aPath ++ "'"
+      putStrLn $ "found annex '" ++ aPath ++ "'"
       if cmd "hash" then do
         let hashPath = aPath </> "hashes.txt"
             unsorted = aPath </> "unsorted"
