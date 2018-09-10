@@ -30,6 +30,9 @@ stack build
 nix-build
 ```
 
+The stack install has been tested on Mac OSX and Linux machines.
+There are currently no plans for Windows support.
+
 Email me or open an issue if you would like a precompiled binary release added.
 
 
