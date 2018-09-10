@@ -1,4 +1,17 @@
-module Gander.Lib.Git where
+module Gander.Lib.Git
+  ( pathComponents
+  , findAnnex
+  , withAnnex
+  , gitRm
+  , rsync
+  , annexInit
+  , annexAdd
+  , noSlash
+  , inAnnex
+  , absolutize
+  , userSaysYes -- TODO not git related
+  )
+  where
 
 -- TODO rename Util? Files? System?
 -- TODO add git-annex, rsync to nix dependencies
@@ -8,7 +21,7 @@ import Data.List             (isPrefixOf)
 import Data.Maybe            (fromJust)
 import System.Directory      (getHomeDirectory, doesDirectoryExist)
 import System.FilePath       (addTrailingPathSeparator, normalise, takeDirectory, (</>))
-import System.FilePath       (pathSeparator, splitPath)
+import System.FilePath       (pathSeparator, splitPath, takeFileName)
 import System.Path.NameManip (guess_dotdot, absolute_path)
 import System.Process        (readProcess)
 import System.IO (hFlush, stdout)
@@ -59,6 +72,13 @@ withAnnex verbose path fn = do
     Just dir -> do
       when verbose $ putStrLn $ "using git-annex repo '" ++ dir ++ "'"
       fn dir
+
+-- TODO guards: git-annex on path
+-- TODO check after that exit code is 0
+annexInit :: Bool -> FilePath -> IO ()
+annexInit verbose aPath = withAnnex verbose aPath $ \dir -> do
+  out <- readProcess "git" ["-C", dir, "annex", "init", takeFileName aPath] ""
+  when verbose $ putStrLn out
 
 annexAdd :: Bool -> FilePath -> IO ()
 annexAdd verbose path = withAnnex verbose path $ \dir -> do
