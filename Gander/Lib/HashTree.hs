@@ -35,7 +35,7 @@ import Gander.Lib.Git (pathComponents) -- TODO not actually git related
 import qualified System.Directory.Tree as DT
 
 import Control.Monad        (forM, msum)
-import Data.List            (find, delete)
+import Data.List            (find, delete, sort)
 import Data.Maybe           (isJust, fromMaybe)
 import Data.Function        (on)
 import Data.List            (partition, sortBy)
@@ -118,13 +118,8 @@ buildTree' v (a DT.:/ (DT.Dir n cs)) = do
     , nFiles   = sum $ map countFiles cs'
     }
 
--- TODO this should hash the same text you would get from serializing the tree
---      (looks like sha256sum output but with file/dir parts added)
 hashContents :: [HashTree] -> Hash
-hashContents ts = Hash $ hashBytes $ BL.pack txt
-  where
-    ls  = map serializeTree ts
-    txt = concat ls -- TODO why is this important vs unlines?
+hashContents = Hash . hashBytes . BL.pack . sort . concatMap (unHash . hash)
 
 -- If passed a file this assumes it contains hashes and builds a tree of them;
 -- If passed a dir it will scan it first and then build the tree.
