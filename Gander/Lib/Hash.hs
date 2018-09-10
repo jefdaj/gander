@@ -7,11 +7,13 @@
 module Gander.Lib.Hash
   ( Hash(..)
   , hashBytes
+  , hashString
   , hashFile
   )
   where
 
 import qualified Data.ByteString.Lazy as LB
+import qualified Data.ByteString.Lazy.Char8 as B8
 
 import Crypto.Hash        (Digest, SHA256, hashlazy)
 import Data.Char          (ord)
@@ -30,6 +32,9 @@ newtype Hash = Hash { unHash :: String }
 
 hashBytes :: LB.ByteString -> String
 hashBytes = show . (hashlazy :: LB.ByteString -> Digest SHA256)
+
+hashString :: String -> String
+hashString = hashBytes . B8.pack
 
 -- TODO warn in the readme that the annex is assumed to use the sha256 backend?
 hashSymlink :: FilePath -> IO (Maybe Hash)
