@@ -10,14 +10,14 @@ cmdAnnexHash cfg hashes target = do
   new    <- buildTree (verbose cfg) (exclude cfg) target
   exists <- doesFileExist hashes
   if exists then do
-    putStrLn $ "updating '" ++ hashes ++ "'..."
+    putStrLn "updating hashes.txt"
     old <- readTree hashes
     printDiffs $ diff old new
   else do
-    putStrLn $ "creating '" ++ hashes ++ "'..."
+    putStrLn "creating hashes.txt"
   writeFile hashes $ serializeTree new
   -- TODO git add hashes.txt + git commit here
-  putStrLn "done"
+  -- putStrLn "done"
 
 guardStatus :: Config -> FilePath -> IO ()
 guardStatus = undefined
