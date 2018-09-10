@@ -35,17 +35,18 @@ Hash a folder
 -------------
 
 `gander` recursively hashes folders and uses the hashes for later comparison.
-File hashes match `sha256sum`, and the `F` or `D` distinguishes them from folders.
+File hashes are `sha256sum`s. The `F` or `D` and number before each one is for
+recreating the tree structure: "this is a file at indent level 1", etc.
 
 ```
 $ gander hash backup > backup-hashes.txt
 $ cat backup-hashes.txt
-F e80d8ed374517e280f5923057046010b5786251e65dac402bf87b1a07f48780b backup/file1.txt
-F cfc9494ec1483b639a5d07dcbfafb9b27048800d5ad6c1e320a36272c2e42880 backup/folder1/file3.txt
-F 8c0899afa99e1ea386150e72bd6b72e8e7ac78f5c0e984b97a0a10aa2982039b backup/folder1/folder2/file2.txt
-D d42c5753d7c61ab20b345ce8259a0966ad82f2eb6dbb25ca62d34a914de9f762 backup/folder1/folder2
-D 142697d53226ed4997a1e8fb63f95da6dd133ec4e48bc09a4b55c31ce61b6364 backup/folder1
-D 70848e3a97c816e0a630ba5d9c5db95b87a51480a37414270e7cffd7e67b03e3 backup
+F 1 e80d8ed374517e280f5923057046010b5786251e65dac402bf87b1a07f48780b file1.txt
+F 2 cfc9494ec1483b639a5d07dcbfafb9b27048800d5ad6c1e320a36272c2e42880 file3.txt
+F 3 8c0899afa99e1ea386150e72bd6b72e8e7ac78f5c0e984b97a0a10aa2982039b file2.txt
+D 2 58cf38d7b7f029c489e2f5abbff6098270758a4d91a785884d7c5400a1b1dafb folder2
+D 1 3081a6d2b5750111a1f7e411921327b356e15605a8e44515f05517f3e168f76d folder1
+D 0 0f81ad31a218bd14a34ac490651e1b785ea93096219d12eb23c3b77b9337784a backup
 ```
 
 The standalone hash command is mainly useful when the files to hash are large or on an external drive.
