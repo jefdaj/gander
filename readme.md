@@ -155,8 +155,8 @@ demo/current/file1.txt
 Much better! Even very large, messy drives can be simplified after several rounds.
 
 
-Annex-aware mode
-----------------
+Annex-aware sorting
+-------------------
 
 `gander` was really designed to automate the above "hash files -> find dupes ->
 delete dupes -> update hashes" loop for gradual deduplication of large messes.
@@ -190,7 +190,115 @@ To be extra careful, you can also re-hash external folders later to confirm
 that everything from them made it into the annex. Or re-hash the annex itself
 to check file integrity with `git annex fsck`.
 
-TODO: document interactive interface
+The whole process would look something like this, assuming you have two drives
+"thumbdrive" and "mybook" to deduplicate. First, start a repo.
+
+```
+$ gander myfirstrepo init
+$ tree myfirstrepo
+myfirstrepo/
+├── hashes.txt
+├── sorted
+└── unsorted
+
+2 directories, 1 file
+```
+
+Or use your own. It just needs to be a git-annex repo with `sorted` and
+`unsorted` folders and a file `hashes.txt`.
+
+Now add all your files. Each `add` command does a `git annex add`,
+updates `hashes.txt` to include the new files, and `git commit`s.
+
+```
+$ gander myfirstrepo add /media/jefdaj/thumbdrive thumbdrive
+$ gander myfirstrepo add /media/jefdaj/mybook     mybook
+$ tree myfirstrepo/ | cut -d'-' -f1
+myfirstrepo/
+├── hashes.txt
+├── sorted
+└── unsorted
+    ├── mybook
+    │   ├── file1.txt
+    │   ├── file2.txt
+    │   └── file3.txt
+    └── thumbdrive
+        ├── file1.txt
+        ├── file2.txt
+        └── file3.txt
+
+4 directories, 7 files
+```
+
+(The `cut` part hides messy symlinks from the output)
+
+Finally run `gander myfirstrepo sort` and follow the prompts. It will loop
+through all the duplicate groups, largest (most duplicates) first. It
+will ask where in `sorted` you want each one saved. It moves one copy there,
+removes the others, updates `hashes.txt` and commits after each step.
+
+In this simple case the first move will clean up everything.
+If you decide to name the sorted folder "files", it will look like:
+
+```
+$ gander myfirstrepo sort
+$ tree | cut -d'-' -f1
+myfirstrepo
+├── hashes.txt
+└── sorted
+    └── files
+        ├── file1.txt
+        ├── file2.txt
+        └── file3.txt
+
+2 directories, 4 files
+```
+
+Annex safety
+------------
+
+Before each git operation, `gander` checks that the set of file hashes won't
+change (aka no unique files will be lost), and that it isn't overwriting any
+existing files. If it violates those rules, first of all make a bug report!
+It's not supposed to. Then you can look in the `git log` and undo the offending
+change:
+
+```
+commit 4adde98206cda56d94400a3b32ca47478f7a2859
+Author: gander user <f@ke.email>
+Date:   Mon Sep 10 17:06:05 2018 +0000
+
+    gander sort: files
+
+commit 60bcffbb45570226c15c2d64a32a2af85de94320
+Author: gander user <f@ke.email>
+Date:   Mon Sep 10 17:05:38 2018 +0000
+
+    gander add mybook
+
+commit 7046c79e21d8717b368eb8c9c3d5f6b21f756010
+Author: gander user <f@ke.email>
+Date:   Mon Sep 10 17:05:19 2018 +0000
+
+    gander add thumbdrive
+
+commit 062c941373c9d90798f5c18a4d81b6b510a9653b
+Author: gander user <f@ke.email>
+Date:   Mon Sep 10 17:04:35 2018 +0000
+
+    gander init
+```
+
+When run on annexed files, `gander` never deletes the files themselves. Only
+symlinks. Later you can run `git annex unused` to delete files with no links
+pointing to them anymore. Until then, you can always get them back by
+rewinding the git history to restore the links.
+
+WARNING: If you `git mv`, `git annex add`, or `git rm` files ouside `gander`
+make sure to run `gander myfirstrepo hash` to update `hashes.txt` to match
+before continuing! `gander` assumes that file matches the current repository
+state, and will give nonsensical results or possibly remove the last copy of
+something if not.
 
 
 [1]: https://git-annex.branchable.com
