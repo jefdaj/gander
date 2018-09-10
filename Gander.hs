@@ -38,7 +38,7 @@ main = do
     Nothing -> do
       if cmd "hash" then do
         path <- arg "path"
-        cmdHash cfg Nothing path
+        cmdHash cfg path
       else if cmd "diff" then do
         old <- arg "old"
         new <- arg "new"
@@ -80,9 +80,9 @@ main = do
       if cmd "hash" then do
         let hashPath = aPath </> "hashes.txt"
             unsorted = aPath </> "unsorted"
-        putStr $ "updating '" ++ hashPath ++ "'..."
-        cmdHash cfg (Just hashPath) unsorted
-        putStrLn " done"
+        -- putStr $ "updating '" ++ hashPath ++ "'..."
+        cmdAnnexHash cfg hashPath unsorted
+        -- putStrLn " done"
       else do
         print args
         print cfg
