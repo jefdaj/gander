@@ -20,7 +20,7 @@ cmdInit cfg dir = do
   out3 <- runGit dir ["config", "user.email", "f@ke.email"]
   out4 <- runGit dir ["annex", "init", takeFileName dir]
   when (verbose cfg) $ putStr $ concat [out1, out2, out3, out4]
-  cmdHash cfg (dir </> "unsorted") -- TODO option to do this later?
+  cmdHash cfg dir -- TODO option to do this later?
 
 -- check that init has been run, or prompt user to do that first
 guardInit :: Config -> FilePath -> IO ()
