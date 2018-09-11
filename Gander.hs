@@ -76,13 +76,8 @@ main = do
 
     -- annex-aware mode
     Just aPath -> do
-      putStrLn $ "found annex '" ++ aPath ++ "'"
-      if cmd "hash" then do
-        let hashPath = aPath </> "hashes.txt"
-            unsorted = aPath </> "unsorted"
-        -- putStr $ "updating '" ++ hashPath ++ "'..."
-        cmdAnnexHash cfg hashPath unsorted
-        -- putStrLn " done"
-      else do
-        print args
-        print cfg
+      let hashPath = aPath </> "hashes.txt"
+          unsorted = aPath </> "unsorted"
+      if      cmd "init" then cmdInit      cfg aPath
+      else if cmd "hash" then cmdAnnexHash cfg hashPath unsorted
+      else    print args >> print cfg
