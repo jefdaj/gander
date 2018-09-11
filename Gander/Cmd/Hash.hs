@@ -7,8 +7,6 @@ import Gander.Lib       (buildTree, printHashes, readTree, serializeTree, diff, 
 import System.Directory (doesFileExist)
 import System.FilePath  ((</>))
 
--- TODO have buildTree accept a list of paths; should be doing unsorted + sorted at least
-
 log :: Config -> String -> IO ()
 log cfg msg = when (verbose cfg) (putStrLn msg)
 

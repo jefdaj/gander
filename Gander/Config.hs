@@ -16,10 +16,11 @@ data Config = Config
   }
   deriving (Read, Show)
 
+-- TODO separate defaults for annex and standalone?
 defaultConfig :: Config
 defaultConfig = Config
   { annex   = Nothing
   , verbose = True
   , force   = False
-  , exclude = [".git*"]
+  , exclude = ["hashes.txt", ".git*"]
   }

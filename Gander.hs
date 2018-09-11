@@ -12,7 +12,6 @@ import System.Console.Docopt (docoptFile, parseArgsOrExit,
                               getArgOrExitWith, isPresent, getArg,
                               shortOption, command, argument)
 import System.Environment    (getArgs)
-import System.FilePath       ((</>))
 
 main :: IO ()
 main = do
@@ -33,6 +32,13 @@ main = do
         }
   -- print cfg
   case annex cfg of
+
+    -- annex-aware mode
+    Just aPath -> do
+      if      cmd "init"  then cmdInit  cfg aPath
+      else if cmd "hash"  then cmdHash  cfg aPath
+      else if cmd "dupes" then cmdDupes cfg aPath
+      else    print args >> print cfg
 
     -- standalone mode (note: still works on annexed files)
     Nothing -> do
@@ -73,12 +79,3 @@ main = do
       else do
         print args
         print cfg
-
-    -- annex-aware mode
-    Just aPath -> do
-      let hashPath = aPath </> "hashes.txt"
-          unsorted = aPath </> "unsorted"
-      if      cmd "init"  then cmdInit  cfg aPath
-      else if cmd "hash"  then cmdHash  cfg unsorted -- TODO also sorted
-      else if cmd "dupes" then cmdDupes cfg hashPath -- TODO guard hashes.txt exists
-      else    print args >> print cfg
