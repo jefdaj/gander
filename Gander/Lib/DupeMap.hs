@@ -84,12 +84,13 @@ hasDupes (_, (nfiles, _, paths)) = length paths > 1 && nfiles > 0
 printDupes :: [DupeList] -> IO ()
 printDupes groups = mapM_ printGroup groups
   where
-    explain fs ds = if fs == ds
+    -- explain fs ds = if fs == ds
+    explain t fs ds = if t == F
       then "# " ++ show fs ++ " duplicate files"
       else "# " ++ show ds ++ " duplicate dirs with " ++ show (div fs ds)
                 ++ " files each (" ++ show fs ++ " total)"
-    printGroup (n, _, paths) = mapM_ putStrLn
-                             $ [explain n (length paths)]
+    printGroup (n, t, paths) = mapM_ putStrLn
+                             $ [explain t n (length paths)]
                              ++ sort paths ++ [""]
 
 -----------------------------
