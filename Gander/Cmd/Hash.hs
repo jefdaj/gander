@@ -1,7 +1,7 @@
 module Gander.Cmd.Hash where
 
 import Gander.Config (Config(..))
-import Gander.Lib    (buildTree, printHashes, serializeTree)
+import Gander.Lib    (buildTree, printHashes)
 
 -- standalone command prints hashes only
 cmdHash :: Config -> FilePath -> IO ()

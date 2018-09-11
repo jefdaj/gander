@@ -10,8 +10,8 @@ Usage:
   gander [-vf] update <main> <sub> <path>
   gander [-v]  test   <path>
   gander [-v]  dedup  <hashes> <path>
-  gander <annex> init
-  gander <annex> hash
+  gander <annex> init [-v]
+  gander <annex> hash [-v]
 
 Options:
   <annex>        Operate on the given git-annex repository.

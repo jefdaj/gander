@@ -50,6 +50,7 @@ module Gander.Lib
   , rsync
   , annexAdd
   , absolutize
+  , runGit
   , gitRm
   , withAnnex
   , userSaysYes
