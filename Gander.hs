@@ -78,7 +78,7 @@ main = do
     Just aPath -> do
       let hashPath = aPath </> "hashes.txt"
           unsorted = aPath </> "unsorted"
-      if      cmd "init"  then cmdInit       cfg aPath
-      else if cmd "hash"  then cmdAnnexHash  cfg hashPath unsorted -- TODO also sorted
-      else if cmd "dupes" then cmdDupes      cfg hashPath -- TODO guard hashes.txt exists
+      if      cmd "init"  then cmdInit  cfg aPath
+      else if cmd "hash"  then cmdHash  cfg unsorted -- TODO also sorted
+      else if cmd "dupes" then cmdDupes cfg hashPath -- TODO guard hashes.txt exists
       else    print args >> print cfg

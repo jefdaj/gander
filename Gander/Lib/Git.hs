@@ -78,6 +78,7 @@ runGit dir args = readCreateProcess (gitProc { cwd = Just dir }) ""
   where
     gitProc = proc "git" $ ["--git-dir=" ++ (dir </> ".git")] ++ args
 
+-- TODO handle exit 1 when git-annex not installed
 annexAdd :: Bool -> FilePath -> IO ()
 annexAdd verbose path = withAnnex verbose path $ \dir -> do
   out <- readProcess "git" ["-C", dir, "annex", "add",

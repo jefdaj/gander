@@ -4,8 +4,7 @@ module Gander.Cmd
   , cmdDupes
   , cmdTest
   , cmdUpdate
-  , cmdAnnex -- TODO cmdAnnexAdd?
-  , cmdAnnexHash
+  , cmdAnnex
   , cmdRm
   , cmdTmpRm
   , cmdDedup
@@ -14,7 +13,6 @@ module Gander.Cmd
   where
 
 import Gander.Cmd.Hash
-import Gander.Cmd.AnnexHash
 import Gander.Cmd.Diff
 import Gander.Cmd.Dupes
 import Gander.Cmd.Test
