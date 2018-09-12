@@ -32,7 +32,7 @@ updateAnnexHashes cfg new = do
       hashes = aPath </> "hashes.txt"
   log cfg "updating hashes.txt"
   exists <- doesFileExist hashes
-  when exists $ do
+  when exists $ do -- TODO only when verbose?
     old <- readTree hashes
     printDiffs $ diff old new -- just nice to verify this looks right
   writeFile hashes $ serializeTree new
