@@ -1,6 +1,7 @@
 *.sw*
 .stack*
 demo*/
+demo-hashes.txt
 dist
 result
 test*
