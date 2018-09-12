@@ -2,16 +2,14 @@ module Gander.Cmd.Hash where
 
 import Gander.Lib
 import Gander.Config (Config(..))
+import Gander.Util   (log)
 
 import Prelude hiding (log)
 
-import Data.Maybe       (fromJust)
 import Control.Monad    (when)
+import Data.Maybe       (fromJust)
 import System.Directory (doesFileExist)
 import System.FilePath  ((</>))
-
-log :: Config -> String -> IO ()
-log cfg msg = when (verbose cfg) (putStrLn msg)
 
 -- the maybe filepath controls standalone (print hashes)
 -- vs annex mode (write to the filepath)...

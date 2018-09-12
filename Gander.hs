@@ -7,7 +7,7 @@ module Main where
 -- TODO figure out how to read files + compute hashes in parallel
 
 import Gander.Cmd
-import Gander.Lib            (absolutize)
+import Gander.Util           (absolutize)
 import Gander.Config         (Config(..))
 import System.Console.Docopt (docoptFile, parseArgsOrExit,
                               getArgOrExitWith, isPresent, getArg,
@@ -78,13 +78,6 @@ main = do
         rPath  <- arg "rootpath"
         dPath  <- arg "rmpath"
         cmdRm cfg target rPath dPath
-      else if cmd "tmprm" then do
-        rmPath <- arg "rmpath"
-        cmdTmpRm cfg rmPath
-      -- else if cmd "dedup" then do
-        -- hashes <- arg "hashes"
-        -- dpath  <- arg "path"
-        -- cmdDedup cfg hashes dpath
       else do
         print args
         print cfg

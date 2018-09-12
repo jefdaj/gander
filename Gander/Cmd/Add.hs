@@ -3,7 +3,7 @@ module Gander.Cmd.Add where
 -- TODO add rsync to nix dependencies
 
 import Gander.Lib
-import Gander.Config (Config(..))
+import Gander.Config   (Config(..))
 import Gander.Cmd.Hash (updateAnnexHashes)
 
 import Control.Monad   (when)

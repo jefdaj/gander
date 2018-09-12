@@ -5,6 +5,7 @@ module Gander.Cmd.Dedup where
 
 import Gander.Lib
 import Gander.Cmd.Hash (updateAnnexHashes)
+import Gander.Util     (dropDir)
 
 import Control.Monad       (when)
 import Data.Foldable       (toList)
@@ -13,7 +14,7 @@ import Data.Maybe          (fromJust)
 import Gander.Config       (Config(..))
 import System.Console.ANSI (clearScreen)
 import System.Exit         (exitSuccess)
-import System.FilePath     ((</>), splitPath, joinPath)
+import System.FilePath     ((</>))
 import System.IO           (hFlush, stdout)
 
 cmdDedup :: Config -> IO ()
@@ -52,9 +53,6 @@ dedupLoop cfg path ignored tree = do
       gitCommit (verbose cfg) aPath msg
       tree' <- readTree $ aPath </> "hashes.txt" -- TODO calculate from current tree instead!
       dedupLoop cfg path ignored' tree'
-
-dropDir :: FilePath -> FilePath
-dropDir = joinPath . tail . splitPath
 
 -- TODO check that they share the same annex?
 -- TODO check that dupes is longer than 2 (1?)

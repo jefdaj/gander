@@ -1,25 +1,24 @@
 module Gander.Cmd
-  ( cmdHash
+  ( cmdAdd
+  , cmdDedup
   , cmdDiff
   , cmdDupes
-  , cmdTest
-  , cmdUpdate
-  , cmdAdd
-  , cmdRm
-  , cmdTmpRm
-  , cmdDedup
+  , cmdHash
   , cmdInit
   , cmdMv
+  , cmdRm
+  , cmdTest
+  , cmdUpdate
   )
   where
 
-import Gander.Cmd.Hash
+import Gander.Cmd.Add
+import Gander.Cmd.Dedup
 import Gander.Cmd.Diff
 import Gander.Cmd.Dupes
-import Gander.Cmd.Test
-import Gander.Cmd.Update
-import Gander.Cmd.Add
-import Gander.Cmd.Rm
-import Gander.Cmd.Dedup
+import Gander.Cmd.Hash
 import Gander.Cmd.Init
 import Gander.Cmd.Mv
+import Gander.Cmd.Rm
+import Gander.Cmd.Test
+import Gander.Cmd.Update

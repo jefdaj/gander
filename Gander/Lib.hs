@@ -7,23 +7,22 @@ module Gander.Lib
   -- hashtree
   , HashTree(..)
   , TreeType(..)
-  , readTree
-  , buildTree
-  , readOrBuildTree
-  , flattenTree
-  , serializeTree
-  , deserializeTree
-  , hashContents
-  , renameRoot
-  , printHashes
-  , dropTo
-  , treeContainsPath
-  , treeContainsHash
   , addSubTree
-  , rmSubTree
-
+  , buildTree
+  , deserializeTree
+  , dropTo
+  , flattenTree
+  , hashContents
   , listAllFiles
   , listLostFiles
+  , printHashes
+  , readOrBuildTree
+  , readTree
+  , renameRoot
+  , rmSubTree
+  , serializeTree
+  , treeContainsHash
+  , treeContainsPath
 
   -- delta
   , Delta(..)
@@ -37,32 +36,30 @@ module Gander.Lib
   -- dupemap
   , DupeList
   , DupeMap
-  , dupesByNFiles
-  , simplifyDupes
-  , printDupes
-  , pathsByHash
   , allDupes
+  , dupesByNFiles
+  , pathsByHash
+  , printDupes
+  , simplifyDupes
 
   -- git
-  , pathComponents -- TODO not really git related right?
-  , findAnnex
-  , inAnnex
-  , rsync
   , annexAdd
-  , absolutize
-  , runGit
-  , gitMv
-  , gitRm
+  , findAnnex
   , gitAdd
   , gitCommit
-  , withAnnex
-  , userSaysYes
+  , gitMv
+  , gitRm
+  , inAnnex
   , noSlash
+  , rsync
+  , runGit
+  , userSaysYes
+  , withAnnex
   )
   where
 
-import Gander.Lib.Hash
-import Gander.Lib.HashTree
 import Gander.Lib.Delta
 import Gander.Lib.DupeMap
 import Gander.Lib.Git
+import Gander.Lib.Hash
+import Gander.Lib.HashTree
