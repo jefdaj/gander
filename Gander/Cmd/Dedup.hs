@@ -50,7 +50,8 @@ dedupLoop cfg path ignored tree = do
       updateAnnexHashes cfg new
       let msg = unwords ["dedup", keep]
       gitCommit (verbose cfg) aPath msg
-      dedupLoop cfg path ignored' tree
+      tree' <- readTree $ aPath </> "hashes.txt" -- TODO calculate from current tree instead!
+      dedupLoop cfg path ignored' tree'
 
 dropDir :: FilePath -> FilePath
 dropDir = joinPath . tail . splitPath
@@ -77,18 +78,19 @@ dedupGroup cfg aPath dupes dest = do
 userPicks :: FilePath -> DupeList -> IO (Maybe FilePath)
 userPicks sorted (n, t, paths) = do
   clearScreen
-  let nDupes = length paths :: Int
+  let paths' = map dropDir paths
+      nDupes = length paths' :: Int
   putStrLn $ "These " ++ show nDupes ++ " are duplicates:"
-  listDupes 20 paths
+  listDupes 20 paths'
   listOptions
   putStr "What do you think? "
   hFlush stdout
   answer <- getLine
   if answer == "skip" then return Nothing
   else if answer == "quit" then exitSuccess
-  else if answer `elem` map show [1..length paths+1] then do
+  else if answer `elem` map show [1..length paths'+1] then do
     let index = read answer :: Int
-    return $ Just $ paths !! (index - 1)
+    return $ Just $ paths' !! (index - 1)
   -- TODO if user inputs a path, makedirs up to it before trying to move
   else do -- TODO this whole branch is an infinite loop somehow?
     -- let answer' = sorted </> answer -- TODO why does this cause <<loop>>??

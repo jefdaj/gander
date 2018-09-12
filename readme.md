@@ -161,6 +161,8 @@ Much better! Even very large, messy drives can be simplified after several round
 Annex-aware dedup
 -----------------
 
+To get a quick idea of how this works, run [demo-dedup.sh][5].
+
 `gander` was really designed to automate the above "hash files -> find dupes ->
 delete dupes -> update hashes" loop for gradual deduplication of large messes.
 The goals are:
@@ -308,3 +310,4 @@ something if not.
 [2]: https://docs.haskellstack.org/en/stable/README/
 [3]: https://nixos.org/nix
 [4]: demo.sh
+[5]: demo-dedup.sh
