@@ -3,7 +3,9 @@ module Gander.Lib.Git
   , findAnnex
   , withAnnex
   , runGit
+  , gitMv
   , gitRm
+  , gitCommit
   , rsync
   , annexAdd
   , noSlash
@@ -85,9 +87,20 @@ annexAdd verbose path = withAnnex verbose path $ \dir -> do
                             "--include-dotfiles", path] ""
   when verbose $ putStrLn out
 
-gitRm :: Bool -> FilePath -> IO ()
-gitRm verbose path = withAnnex verbose path $ \dir -> do
+-- TODO get annex path from config! or pass explicitly
+gitMv :: Bool -> FilePath -> FilePath -> FilePath -> IO ()
+gitMv verbose aPath src dst = withAnnex verbose aPath $ \dir -> do
+  out <- readProcess "git" ["-C", dir, "mv", src, dst] ""
+  when verbose $ putStrLn out
+
+gitRm :: Bool -> FilePath -> FilePath -> IO ()
+gitRm verbose aPath path = withAnnex verbose aPath $ \dir -> do
   out <- readProcess "git" ["-C", dir, "rm", "-rf", path] ""
+  when verbose $ putStrLn out
+
+gitCommit :: Bool -> FilePath -> String -> IO ()
+gitCommit verbose aPath msg = withAnnex verbose aPath $ \dir -> do
+  out <- readProcess "git" ["-C", dir, "commit", "-m", msg] ""
   when verbose $ putStrLn out
 
 userSaysYes :: String -> IO Bool

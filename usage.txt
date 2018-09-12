@@ -12,6 +12,7 @@ Usage:
   gander [-v]  dedup  <hashes> <path>
   gander <annex> init  [-v]
   gander <annex> add <dst> [<src>] [-v]
+  gander <annex> mv <src> <dst> [-v]
   gander <annex> hash  [-v]
   gander <annex> dupes [-v]
 

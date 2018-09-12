@@ -3,6 +3,7 @@ module Gander.Cmd.Rm where
 -- TODO next: fix relative paths thing, write a nice lost files warning, fix any last bugs... then good :D
 -- TODO oh, write a couple other messages if it would help brian. lost files should be mentioned even when 0!
 
+import Data.Maybe (fromJust)
 import Control.Monad (when)
 -- import Text.Pretty.Simple (pPrint)
 import Gander.Config (Config(..))
@@ -19,7 +20,7 @@ cmdRm cfg target _ rmPath = do -- TODO correct toRm path using root!
   tree <- readOrBuildTree True (exclude cfg) target
   ok <- okToRm cfg tree rmPath'
   let rm = do
-             gitRm (verbose cfg) rmPath'
+             gitRm (verbose cfg) (fromJust $ annex cfg) rmPath'
              let mTree = rmSubTree tree rmPath'
              case mTree of
                Nothing -> putStrLn "failed to rmSubTree"
@@ -64,7 +65,7 @@ cmdTmpRm cfg rmPath = withAnnex (verbose cfg) rmPath $ \dir -> do
   case after of
     Nothing -> error $ "failed to simulate removing '" ++ rmPath ++ "' (coding issue...)"
     Just a  -> do
-      gitRm True rmPath
+      gitRm True dir rmPath
       putStr $ "updating '" ++ hashPath ++ "'..."
       writeFile hashPath $ serializeTree a
       putStrLn " ok"

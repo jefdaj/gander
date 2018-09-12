@@ -42,6 +42,10 @@ main = do
         dst <- arg "dst"
         let src = getArg args $ argument "src"
         cmdAdd cfg dst src
+      else if cmd "mv" then do
+        src <- arg "src"
+        dst <- arg "dst"
+        cmdMv cfg src dst
       else do
         print args
         print cfg

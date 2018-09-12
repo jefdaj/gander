@@ -9,6 +9,7 @@ module Gander.Cmd
   , cmdTmpRm
   , cmdDedup
   , cmdInit
+  , cmdMv
   )
   where
 
@@ -21,3 +22,4 @@ import Gander.Cmd.Add
 import Gander.Cmd.Rm
 import Gander.Cmd.Dedup
 import Gander.Cmd.Init
+import Gander.Cmd.Mv

@@ -24,6 +24,7 @@ executable gander
                        Gander.Cmd.Update,
                        Gander.Cmd.Add,
                        Gander.Cmd.Rm,
+                       Gander.Cmd.Mv,
                        Gander.Cmd.Dedup,
                        Gander.Config,
                        Gander.Lib,

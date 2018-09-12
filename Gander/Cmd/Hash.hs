@@ -3,7 +3,7 @@ module Gander.Cmd.Hash where
 import Control.Monad    (when)
 import Prelude hiding   (log)
 import Gander.Config    (Config(..))
-import Gander.Lib       (buildTree, printHashes, readTree, serializeTree, diff, printDiffs, runGit)
+import Gander.Lib       (buildTree, printHashes, readTree, serializeTree, diff, printDiffs, runGit, gitCommit)
 import System.Directory (doesFileExist)
 import System.FilePath  ((</>))
 
@@ -26,9 +26,10 @@ cmdHash cfg target = do
         old <- readTree hashes
         printDiffs $ diff old new -- just nice to verify this looks right
       writeFile hashes $ serializeTree new
-      out1 <- runGit dir ["add", "hashes.txt"]
-      out2 <- runGit dir ["commit", "-m", "gander hash"]
-      log cfg $ concat [out1, out2] -- TODO add this to runGit
+      out <- runGit dir ["add", "hashes.txt"]
+      log cfg out
+      gitCommit (verbose cfg) dir "gander hash"
+      -- out2 <- runGit dir ["commit", "-m", "gander hash"]
 
 guardStatus :: Config -> FilePath -> IO ()
 guardStatus = undefined
