@@ -1,24 +1,25 @@
 The "Git ANnex DEdupeR" deduplicates files and folders using git-annex.
 
 Usage:
-  gander [-v]  hash   <path> [-e <exclude>]
-  gander [-v]  diff   <old> <new>
-  gander [-v]  dupes  <hashes>
-  gander [-vf] annex  <src> <dest>
-  gander [-vf] rm     <target> <rootpath> <rmpath>
-  gander [-vf] update <main> <sub> <path>
-  gander [-v]  test   <path>
-  gander <annex> init  [-v]
-  gander <annex> add <dst> [<src>] [-v]
-  gander <annex> mv  <src>  <dst>  [-v]
-  gander <annex> hash  [-v]
-  gander <annex> dupes [-v]
-  gander <annex> dedup [-v]
+  gander [-vc]  hash   <path> [-e <exclude>]
+  gander [-vc]  diff   <old> <new>
+  gander [-vc]  dupes  <hashes>
+  gander [-vfc] annex  <src> <dest>
+  gander [-vfc] rm     <target> <rootpath> <rmpath>
+  gander [-vfc] update <main> <sub> <path>
+  gander [-vc]  test   <path>
+  gander <annex> init  [-vc]
+  gander <annex> add <dst> [<src>] [-vc]
+  gander <annex> mv  <src>  <dst>  [-vc]
+  gander <annex> hash  [-vc]
+  gander <annex> dupes [-vc]
+  gander <annex> dedup [-vc]
 
 Options:
   <annex>        Operate on the given git-annex repository.
   -f, --force    Change existing files without requiring confirmation.
   -v, --verbose  Explain each step as it runs.
+  -c, --check    Afterwards, re-hash to check that all files are as expected.
   -e <exclude>   Read a list of globs and exclude any files matching it.
                  If none given, the list defaults to [".git*"]
 

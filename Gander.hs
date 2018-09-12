@@ -29,6 +29,7 @@ main = do
         { annex   = getArg args $ argument "annex"
         , verbose = flag 'v'
         , force   = flag 'f'
+        , check   = flag 'c'
         , exclude = eList
         }
   -- print cfg

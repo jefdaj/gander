@@ -1,5 +1,7 @@
 module Gander.Cmd.Init where
 
+-- TODO guess and check hashes
+
 import Gander.Lib
 import Gander.Cmd.Hash (updateAnnexHashes)
 import Gander.Util     (absolutize, log)
