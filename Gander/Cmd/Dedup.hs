@@ -1,17 +1,30 @@
 module Gander.Cmd.Dedup where
 
+-- TODO have a separate dedup command that only does the rm part without moving stuff?
+-- TODO need to start a new file ignore.txt or something for hashes to ignore
+-- TODO fix <<loop>> bug when answering wrong!
+
+import Gander.Lib
+
+import Data.Maybe (fromJust)
 import Data.Foldable (toList)
 import Control.Monad (when)
 import Gander.Config (Config(..))
-import Gander.Lib (Hash, HashTree(..), DupeList, readTree, userSaysYes, pathsByHash,
-                   dupesByNFiles, withAnnex, absolutize, noSlash)
 import System.IO (hFlush, stdout)
 import System.Console.ANSI (clearScreen)
 import System.Exit (exitSuccess)
-import System.Process        (readProcess)
+import System.FilePath ((</>), splitPath, joinPath)
+import Data.List (delete)
 
-cmdDedup :: Config -> FilePath -> FilePath -> IO ()
-cmdDedup cfg hashes path = readTree hashes >>= dedupLoop cfg path []
+import Debug.Trace
+
+cmdDedup :: Config -> IO ()
+cmdDedup cfg = do
+  let aPath    = fromJust $ annex cfg
+      hashes   = aPath </> "hashes.txt"
+      unsorted = aPath </> "unsorted"
+  tree <- readTree hashes
+  dedupLoop cfg unsorted [] tree
 
 -- cmdDedup cfg hashes _ = do
 --   tree  <- readTree hashes
@@ -23,46 +36,79 @@ cmdDedup cfg hashes path = readTree hashes >>= dedupLoop cfg path []
 -- TODO how to properly thread the changed tree through each step?
 dedupLoop :: Config -> FilePath -> [Hash] -> HashTree -> IO ()
 dedupLoop cfg path ignored tree = do
-  let dupes       = dupesByNFiles $ pathsByHash tree -- TODO toList here?
+  let aPath       = fromJust $ annex cfg
+      dupes       = dupesByNFiles $ pathsByHash tree -- TODO toList here?
       dupesToSort = filter (\(h,_) -> not $ h `elem` ignored) (toList dupes)
-      (h1, paths) = head dupesToSort
+      (h1, ds)    = head dupesToSort -- TODO should these be just the plain paths?
+      (_,_,paths) = ds
       ignored'    = h1:ignored
-  when (null dupes) (putStrLn "congrats! no more duplicates" >> exitSuccess)
-  copyToKeep <- userPicks paths
-  dedupGroup cfg paths copyToKeep
-  let tree' = tree -- TODO need to update tree to remove non-keepers!
-  dedupLoop  cfg path ignored' tree'
+      sorted      = sorted </> "sorted"
+  when (null dupes) (putStrLn "no duplicates. congrats!" >> exitSuccess)
+  copyToKeep <- userPicks sorted ds
+  case copyToKeep of
+    Nothing -> dedupLoop cfg path ignored' tree
+    Just keep -> do
+      let keep'  = dropDir keep
+          paths' = map dropDir paths
+      dedupGroup cfg aPath paths' keep' -- at this point everything is relative to annex
+      -- let tree' = tree -- TODO need to update tree to remove non-keepers!
+      -- TODO use filename as part of commit? have to shorten/sanitize
+      gitCommit (verbose cfg) aPath "gander mv" -- TODO check exit code
+      dedupLoop cfg path ignored' tree
+
+dropDir :: FilePath -> FilePath
+dropDir = joinPath . tail . splitPath
 
 -- TODO check that they share the same annex?
 -- TODO check that dupes is longer than 2 (1?)
 -- TODO current code is wrong whenever picking a number besides 1!
-dedupGroup :: Config -> DupeList  -> Maybe FilePath -> IO ()
-dedupGroup cfg (_, _, dupes) dest = case dest of
-  Nothing -> return ()
-  Just path -> do
-    path' <- fmap noSlash $ absolutize path
-    dupes' <- fmap (map noSlash) (mapM absolutize dupes)
-    let absDupes = filter (/= path') (tail dupes')
-    withAnnex (verbose cfg) path' $ \dir -> do
-      when (path' /= head dupes') $ do
-        -- TODO also capture exit code and don't clear screen if error
-        out <- readProcess "git" ["-C", dir, "mv", head dupes', path'] ""
-        when (verbose cfg) $ putStrLn out
-      outs <- mapM (\f -> readProcess "git" ["-C", dir, "rm", "-rf", f] "") absDupes
-      when (verbose cfg) $ mapM_ putStrLn outs
+dedupGroup :: Config -> FilePath -> [FilePath] -> FilePath -> IO ()
+dedupGroup cfg aPath dupes dest = do
+    -- TODO ok do the easier to think through way: two branches
+  if dest `elem` dupes
+    then mapM_ (gitRm (verbose cfg) aPath) (delete dest dupes)
+    else do
+      -- move the first one to dest, then delete the rest (always at least 2)
+      let src    = head dupes
+          dupes' = tail dupes
+      gitMv (verbose cfg) aPath src dest -- TODO or just dupes'?
+      mapM_ (gitRm (verbose cfg) aPath) dupes'
+
+
+--     let aPath   = fromJust $ annex cfg
+--         dupes'  = delete dest dupes
+-- 
+--     -- path' <- fmap noSlash $ absolutize path
+--     -- dupes' <- fmap (map noSlash) (mapM absolutize dupes)
+--     -- let absDupes = filter (/= path) (tail dupes')
+--     let aPath   = fromJust $ annex cfg
+--         -- path'   = aPath </> path
+--         -- dupes'  = map (aPath </>) dupes
+--         dupes' = filter (/= path) (tail dupes) -- TODO is this right?
+--     withAnnex (verbose cfg) aPath $ \dir -> do
+--       when (path /= head dupes) $ do
+--         -- TODO also capture exit code and don't clear screen if error
+--         -- out <- readProcess "git" ["-C", dir, "mv", head dupes', path'] ""
+--         -- when (verbose cfg) $ putStrLn out
+--         gitMv (verbose cfg) dir (head dupes') (dropDir path) -- TODO or just dupes'?
+--       -- outs <- mapM (\f -> readProcess "git" ["-C", dir, "rm", "-rf", f] "") absDupes
+--       mapM_ (gitRm (verbose cfg) dir) dupes'
+--       return ()
+--       -- when (verbose cfg) $ mapM_ putStrLn outs
+
 
 -- Prompt the user where to put the one duplicate from each group we want to keep.
 -- The choice could be one of the existing paths or a new one they enter.
 -- It could also be Nothing if they choose to skip the group.
 -- TODO have a default save dir for custom paths?
-userPicks :: DupeList -> IO (Maybe FilePath)
-userPicks (n, t, paths) = do
+userPicks :: FilePath -> DupeList -> IO (Maybe FilePath)
+userPicks sorted (n, t, paths) = do
   clearScreen
-  let nDupes = length paths :: Int
+  let nDupes = length (trace ("paths:" ++ show paths) paths) :: Int
   putStrLn $ "These " ++ show nDupes ++ " are duplicates:"
   listDupes 20 paths
   listOptions
-  putStr "What do you pick? "
+  putStr "What do you think? "
   hFlush stdout
   answer <- getLine
   if answer == "skip" then return Nothing
@@ -71,10 +117,11 @@ userPicks (n, t, paths) = do
     let index = read answer :: Int
     return $ Just $ paths !! (index - 1)
   else do
-    confirm <- userSaysYes $ "Save to '" ++ answer ++ "'?"
+    let answer' = sorted </> answer
+    confirm <- userSaysYes $ "Save to '" ++ answer' ++ "'?"
     if confirm
-      then return $ Just answer
-      else userPicks (n, t, paths)
+      then return $ Just answer'
+      else userPicks sorted (n, t, paths)
  
 listDupes :: Int -> [FilePath] -> IO ()
 listDupes howMany paths = putStrLn $ unlines numbered
@@ -87,8 +134,8 @@ listDupes howMany paths = putStrLn $ unlines numbered
 listOptions :: IO ()
 listOptions = putStrLn $ unlines
   [ "To dedup them you can:"
-  , "  type the number of one of the existing copies to keep, and delete the rest"
-  , "  type a new path to save the content, and delete all of these"
+  , "  type the number of one of the existing copies to keep, and remove the rest"
+  , "  type a new path to save the content, and remove all of these"
   , "\nYou can also type 'skip' to leave them alone for now, or 'quit' to quit"
   ]
 
