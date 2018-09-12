@@ -1,5 +1,7 @@
 module Gander.Cmd.Hash where
 
+-- TODO guess and check hashes
+
 import Gander.Lib
 import Gander.Config (Config(..))
 import Gander.Util   (log)

@@ -1,5 +1,7 @@
 module Gander.Cmd.Diff where
 
+-- TODO guess and check hashes
+
 import Gander.Config (Config(..))
 import Gander.Lib (readOrBuildTree, renameRoot, diff, printDiffs)
 

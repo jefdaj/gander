@@ -12,6 +12,7 @@ data Config = Config
   { annex   :: Maybe FilePath
   , verbose :: Bool
   , force   :: Bool
+  , check   :: Bool
   , exclude :: [String]
   }
   deriving (Read, Show)
@@ -22,5 +23,6 @@ defaultConfig = Config
   { annex   = Nothing
   , verbose = True
   , force   = False
+  , check   = True
   , exclude = ["hashes.txt", ".git*"]
   }

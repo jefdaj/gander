@@ -1,5 +1,6 @@
 module Gander.Cmd.Add where
 
+-- TODO guess and check hashes
 -- TODO add rsync to nix dependencies
 
 import Gander.Lib
