@@ -11,6 +11,8 @@ echo "and a third"         > current/folder1/file3.txt
 
 echo "backing them up..."
 cp -r current backup
+cp -r backup current/old-backup-1
+cp -r backup current/old-backup-2
 
 echo "continuing to edit the originals..."
 echo "edit the 2nd file"  >> current/folder1/folder2/file2.txt
@@ -37,8 +39,8 @@ echo "press ENTER to dedup the annexed files"; read dummyvar
 gander $PWD/myfirstdedup dedup
 echo
 
-echo "notice that gander left some files unsorted:"
+echo "notice that gander left the unique files where they were:"
 tree myfirstdedup | cut -d'-' -f1
 echo
 
-echo "you still have to look through the unique ones yourself"
+echo "you still have to sort those yourself"
