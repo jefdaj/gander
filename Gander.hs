@@ -46,6 +46,7 @@ main = do
         src <- arg "src"
         dst <- arg "dst"
         cmdMv cfg src dst
+      else if cmd "dedup" then cmdDedup cfg
       else do
         print args
         print cfg
@@ -78,10 +79,10 @@ main = do
       else if cmd "tmprm" then do
         rmPath <- arg "rmpath"
         cmdTmpRm cfg rmPath
-      else if cmd "dedup" then do
-        hashes <- arg "hashes"
-        dpath  <- arg "path"
-        cmdDedup cfg hashes dpath
+      -- else if cmd "dedup" then do
+        -- hashes <- arg "hashes"
+        -- dpath  <- arg "path"
+        -- cmdDedup cfg hashes dpath
       else do
         print args
         print cfg

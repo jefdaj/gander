@@ -9,12 +9,12 @@ Usage:
   gander [-vf] tmprm  <rmpath>
   gander [-vf] update <main> <sub> <path>
   gander [-v]  test   <path>
-  gander [-v]  dedup  <hashes> <path>
   gander <annex> init  [-v]
   gander <annex> add <dst> [<src>] [-v]
-  gander <annex> mv <src> <dst> [-v]
+  gander <annex> mv  <src>  <dst>  [-v]
   gander <annex> hash  [-v]
   gander <annex> dupes [-v]
+  gander <annex> dedup [-v]
 
 Options:
   <annex>        Operate on the given git-annex repository.
@@ -32,15 +32,14 @@ Standalone commands:
           Prompts to confirm unless `--force`d. <target> is the hashes file or dir to hash,
           <rootpath> is where to read hash paths from, and <rmpath> is the one to delete.
   update  Updates <main> hashes with new ones from <sub>, inserted at <path>.
-  dedup   Prompt to delete groups of duplicates, starting with the largest dirs.
-          <hashes> is a file listing all hashes in the repo, and <path> is the
-          system path to the repo.
-          TODO allow deduping only a subdirectory?
 
 Annex-based commands:
   init    Sets up the <annex> repository for use with the other annex-based commands.
   hash    Updates hashes.txt to reflect current annex content.
   dupes   List duplicate files + folders in <annex>/hashes.txt.
+  add     Given only <dst>, annex files. Given <src> too, copy them to <dst> first.
+  mv      Move <src> to <dst>.
+  dedup   Collapse duplicate groups by deleting duplicates and optionally moving the last copy.
 
 Test commands:
   test    Run tests on a given directory.
