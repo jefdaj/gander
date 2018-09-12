@@ -51,7 +51,9 @@ module Gander.Lib
   , annexAdd
   , absolutize
   , runGit
+  , gitMv
   , gitRm
+  , gitCommit
   , withAnnex
   , userSaysYes
   , noSlash
