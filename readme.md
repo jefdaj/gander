@@ -214,8 +214,8 @@ Now add all your files. Each `add` command does a `git annex add`,
 updates `hashes.txt` to include the new files, and `git commit`s.
 
 ```
-$ gander myfirstrepo add /media/jefdaj/thumbdrive thumbdrive
-$ gander myfirstrepo add /media/jefdaj/mybook     mybook
+$ gander myfirstrepo add thumbdrive /media/jefdaj/thumbdrive
+$ gander myfirstrepo add mybook     /media/jefdaj/WD\ My\ Book
 $ tree myfirstrepo/ | cut -d'-' -f1
 myfirstrepo/
 ├── hashes.txt

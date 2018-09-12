@@ -4,7 +4,7 @@ module Gander.Cmd
   , cmdDupes
   , cmdTest
   , cmdUpdate
-  , cmdAnnex
+  , cmdAdd
   , cmdRm
   , cmdTmpRm
   , cmdDedup
@@ -17,7 +17,7 @@ import Gander.Cmd.Diff
 import Gander.Cmd.Dupes
 import Gander.Cmd.Test
 import Gander.Cmd.Update
-import Gander.Cmd.Annex
+import Gander.Cmd.Add
 import Gander.Cmd.Rm
 import Gander.Cmd.Dedup
 import Gander.Cmd.Init
