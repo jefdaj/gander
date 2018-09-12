@@ -195,8 +195,9 @@ To be extra careful, you can also re-hash external folders later to confirm
 that everything from them made it into the annex. Or re-hash the annex itself
 to check file integrity with `git annex fsck`.
 
-The whole process would look something like this, assuming you have two drives
-"thumbdrive" and "mybook" to deduplicate. First, start a repo.
+Here is what the whole process might look like in a very simple case
+where you have three duplicate text files each in two drives, `thumbdrive` and `WD My Book`:
+First, start a repo:
 
 ```
 $ gander myfirstrepo init
@@ -235,15 +236,22 @@ myfirstrepo/
 4 directories, 7 files
 ```
 
-(The `cut` part hides messy symlinks from the output)
+The `cut` part just hides messy-looking symlinks from the `tree` output.
+
+Note that you put the destination first in the `add` command.
+That way the source (second path) can be omitted if you already
+moved or copied the files into the repo manually.
+
+You can also manually `git annex add` everything yourself,
+as long as you remember to update `hashes.txt` at the end with `gander myfirstrepo hash`.
 
 Finally run `gander myfirstrepo dedup` and follow the prompts. It will loop
 through all the duplicate groups, largest (most duplicates) first. It
 will ask where in `sorted` you want each one saved. It moves one copy there,
 removes the others, updates `hashes.txt` and commits after each step.
 
-In this simple case the first move will clean up everything.
-If you decide to name the sorted folder "files", it will look like:
+In this case the first move will clean up everything.
+If you decide to name the sorted folder "files", it will come out looking like:
 
 ```
 $ gander myfirstrepo dedup
