@@ -1,7 +1,7 @@
 module Gander.Cmd.Update where
 
 import Gander.Config (Config(..))
-import Gander.Lib (readOrBuildTree, addSubTree, printHashes)
+import Gander.Lib    (readOrBuildTree, addSubTree, printHashes)
 
 cmdUpdate :: Config -> FilePath -> FilePath -> FilePath -> IO ()
 cmdUpdate cfg root sub path = do

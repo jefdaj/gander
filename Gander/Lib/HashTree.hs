@@ -31,7 +31,7 @@ import qualified Data.ByteString.Char8 as B8
 import qualified Data.ByteString.Lazy.Char8 as BL
 -- import qualified Data.ByteString.Char8 as B
 
-import Gander.Lib.Git (pathComponents) -- TODO not actually git related
+import Gander.Util (pathComponents)
 import qualified System.Directory.Tree as DT
 
 import Control.Monad        (forM, msum)

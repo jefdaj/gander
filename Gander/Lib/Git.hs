@@ -1,49 +1,30 @@
 module Gander.Lib.Git
-  ( pathComponents
+  ( annexAdd
   , findAnnex
-  , withAnnex
-  , runGit
-  , gitMv
-  , gitRm
   , gitAdd
   , gitCommit
-  , rsync
-  , annexAdd
-  , noSlash
+  , gitMv
+  , gitRm
   , inAnnex
-  , absolutize
+  , noSlash
+  , rsync
+  , runGit
   , userSaysYes -- TODO not git related
+  , withAnnex
   )
   where
 
 -- TODO rename Util? Files? System?
 -- TODO add git-annex, rsync to nix dependencies
 
-import Control.Monad         (when)
-import Data.List             (isPrefixOf)
-import Data.Maybe            (fromJust)
-import System.Directory      (getHomeDirectory, doesDirectoryExist, createDirectoryIfMissing)
-import System.FilePath       (addTrailingPathSeparator, normalise, takeDirectory, (</>))
-import System.FilePath       (pathSeparator, splitPath, dropFileName)
-import System.Path.NameManip (guess_dotdot, absolute_path)
-import System.Process        (readProcess, readCreateProcess, CreateProcess(..), proc)
-import System.IO (hFlush, stdout)
+import Gander.Util (pathComponents, absolutize, noSlash)
 
-pathComponents :: FilePath -> [FilePath]
-pathComponents f = filter (not . null)
-                 $ map (filter (/= pathSeparator))
-                 $ splitPath f
-
--- from schoolofhaskell.com/user/dshevchenko/cookbook
-absolutize :: FilePath -> IO FilePath
-absolutize aPath 
-    | "~" `isPrefixOf` aPath = do
-        homePath <- getHomeDirectory
-        return $ normalise $ addTrailingPathSeparator homePath 
-                             ++ tail aPath
-    | otherwise = do
-        pathMaybeWithDots <- absolute_path aPath
-        return $ fromJust $ guess_dotdot pathMaybeWithDots
+import Control.Monad    (when)
+import System.Directory (doesDirectoryExist, createDirectoryIfMissing)
+import System.FilePath  (dropFileName)
+import System.FilePath  (takeDirectory, (</>))
+import System.IO        (hFlush, stdout)
+import System.Process   (readProcess, readCreateProcess, CreateProcess(..), proc)
 
 findAnnex :: FilePath -> IO (Maybe FilePath)
 findAnnex path = do
@@ -58,9 +39,6 @@ findAnnex path = do
 
 inAnnex :: FilePath -> IO Bool
 inAnnex = fmap (not . null) . findAnnex
-
-noSlash :: FilePath -> FilePath
-noSlash = reverse . dropWhile (== '/') . reverse
 
 rsync :: Bool -> FilePath -> FilePath -> IO ()
 rsync verbose src dest = do

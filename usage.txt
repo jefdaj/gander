@@ -6,7 +6,6 @@ Usage:
   gander [-v]  dupes  <hashes>
   gander [-vf] annex  <src> <dest>
   gander [-vf] rm     <target> <rootpath> <rmpath>
-  gander [-vf] tmprm  <rmpath>
   gander [-vf] update <main> <sub> <path>
   gander [-v]  test   <path>
   gander <annex> init  [-v]
@@ -43,9 +42,6 @@ Annex-based commands:
 
 Test commands:
   test    Run tests on a given directory.
-  tmprm   A temporary version of rm for testing. Assumes conventions which will be explicit
-          in annex mode: path to rm is inside annex, hashes are stored
-          in ANNEX_ROOT/.git/gander/hashes.txt.
 
 Examples:
 

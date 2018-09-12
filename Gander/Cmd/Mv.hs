@@ -3,13 +3,13 @@ module Gander.Cmd.Mv where
 -- TODO next: fix relative paths thing, write a nice lost files warning, fix any last bugs... then good :D
 -- TODO oh, write a couple other messages if it would help brian. lost files should be mentioned even when 0!
 
-import Data.Maybe (fromJust)
-import Control.Monad (when)
--- import Text.Pretty.Simple (pPrint)
+import Gander.Lib
 import Gander.Config (Config(..))
-import System.FilePath ((</>))
+
+import Control.Monad    (when)
+import Data.Maybe       (fromJust)
 import System.Directory (doesPathExist)
-import Gander.Lib   --  (HashTree, readOrBuildTree, treeContainsPath, dropTo, rmSubTree, printHashes, gitRm, allDupes, userSaysYes)
+import System.FilePath  ((</>))
 
 -- import qualified Data.ByteString as B
 
@@ -29,6 +29,7 @@ cmdMv cfg src dst = do -- TODO correct toRm path using root!
     gitMv     (verbose cfg) aPath src' dst' -- TODO check exit code
     gitCommit (verbose cfg) aPath "gander mv" -- TODO check exit code
 
+-- TODO should this go in HashTree.hs?
 okToInsert :: Config -> HashTree -> FilePath -> IO Bool
 okToInsert cfg tree path = do
   let path' = (fromJust $ annex cfg) </> path

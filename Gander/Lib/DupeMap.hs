@@ -1,17 +1,16 @@
 module Gander.Lib.DupeMap
   ( DupeList
   , DupeMap
-  , pathsByHash
-  , mergeDupeLists
-  , sortDescLength
-  , dupesByNFiles
-  , simplifyDupes
-  , hasDupes
-  , printDupes
   , allDupes
-
+  , dupesByNFiles
+  , hasDupes
   , listAllFiles
   , listLostFiles
+  , mergeDupeLists
+  , pathsByHash
+  , printDupes
+  , simplifyDupes
+  , sortDescLength
   )
   where
 

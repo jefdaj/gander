@@ -2,6 +2,7 @@ module Gander.Cmd.Init where
 
 import Gander.Lib
 import Gander.Cmd.Hash (updateAnnexHashes)
+import Gander.Util     (absolutize)
 
 import Control.Monad    (when)
 import System.FilePath  (takeFileName, (</>))

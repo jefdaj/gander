@@ -32,7 +32,8 @@ executable gander
                        Gander.Lib.Hash,
                        Gander.Lib.HashTree,
                        Gander.Lib.Delta,
-                       Gander.Lib.DupeMap
+                       Gander.Lib.DupeMap,
+                       Gander.Util
   build-depends:       base,
                        bytestring,
                        containers,

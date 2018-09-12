@@ -1,7 +1,6 @@
 module Gander.Cmd.Test where
 
 import Gander.Lib
-
 import Text.Pretty.Simple (pPrint)
 import Gander.Config      (Config(..))
 
