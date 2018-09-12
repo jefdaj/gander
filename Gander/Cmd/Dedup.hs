@@ -32,11 +32,11 @@ dedupLoop cfg path ignored tree = do
   let aPath       = fromJust $ annex cfg
       dupes       = dupesByNFiles $ pathsByHash tree -- TODO toList here?
       dupesToSort = filter (\(h,_) -> not $ h `elem` ignored) (toList dupes)
-      (h1, ds)    = head dupesToSort -- TODO should these be just the plain paths?
+  when (null dupesToSort) (clearScreen >> putStrLn "no duplicates. congrats!" >> exitSuccess)
+  let (h1, ds)    = head dupesToSort -- TODO should these be just the plain paths?
       (_,_,paths) = ds
       ignored'    = h1:ignored
       sorted      = aPath </> "sorted"
-  when (null dupes) (putStrLn "no duplicates. congrats!" >> exitSuccess)
   copyToKeep <- userPicks sorted ds
   case copyToKeep of
     Nothing -> dedupLoop cfg path ignored' tree

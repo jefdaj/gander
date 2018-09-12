@@ -7,6 +7,7 @@ module Main where
 -- TODO figure out how to read files + compute hashes in parallel
 
 import Gander.Cmd
+import Gander.Lib            (absolutize)
 import Gander.Config         (Config(..))
 import System.Console.Docopt (docoptFile, parseArgsOrExit,
                               getArgOrExitWith, isPresent, getArg,
@@ -34,7 +35,8 @@ main = do
   case annex cfg of
 
     -- annex-aware mode
-    Just aPath -> do
+    Just a -> do
+      aPath <- absolutize a
       if      cmd "init"  then cmdInit  cfg aPath
       else if cmd "hash"  then cmdHash  cfg aPath
       else if cmd "dupes" then cmdDupes cfg aPath
