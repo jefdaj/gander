@@ -158,8 +158,8 @@ demo/current/file1.txt
 Much better! Even very large, messy drives can be simplified after several rounds.
 
 
-Annex-aware sorting
--------------------
+Annex-aware dedup
+-----------------
 
 `gander` was really designed to automate the above "hash files -> find dupes ->
 delete dupes -> update hashes" loop for gradual deduplication of large messes.
@@ -235,7 +235,7 @@ myfirstrepo/
 
 (The `cut` part hides messy symlinks from the output)
 
-Finally run `gander myfirstrepo sort` and follow the prompts. It will loop
+Finally run `gander myfirstrepo dedup` and follow the prompts. It will loop
 through all the duplicate groups, largest (most duplicates) first. It
 will ask where in `sorted` you want each one saved. It moves one copy there,
 removes the others, updates `hashes.txt` and commits after each step.
@@ -244,7 +244,7 @@ In this simple case the first move will clean up everything.
 If you decide to name the sorted folder "files", it will look like:
 
 ```
-$ gander myfirstrepo sort
+$ gander myfirstrepo dedup
 $ tree | cut -d'-' -f1
 myfirstrepo
 ├── hashes.txt
