@@ -5,6 +5,7 @@ module Gander.Lib.Git
   , runGit
   , gitMv
   , gitRm
+  , gitAdd
   , gitCommit
   , rsync
   , annexAdd
@@ -92,6 +93,11 @@ gitMv :: Bool -> FilePath -> FilePath -> FilePath -> IO ()
 gitMv verbose aPath src dst = withAnnex verbose aPath $ \dir -> do
   createDirectoryIfMissing True $ dir </> dst
   out <- readProcess "git" ["-C", dir, "mv", src, dst] ""
+  when verbose $ putStrLn out
+
+gitAdd :: Bool -> FilePath -> [FilePath] -> IO ()
+gitAdd verbose aPath paths = withAnnex verbose aPath $ \dir -> do
+  out <- readProcess "git" (["-C", dir, "add"] ++ paths) ""
   when verbose $ putStrLn out
 
 gitRm :: Bool -> FilePath -> FilePath -> IO ()
