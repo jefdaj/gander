@@ -1,9 +1,12 @@
 module Gander.Cmd.Hash where
 
+import Gander.Lib
+import Gander.Config (Config(..))
+
+import Prelude hiding (log)
+
+import Data.Maybe       (fromJust)
 import Control.Monad    (when)
-import Prelude hiding   (log)
-import Gander.Config    (Config(..))
-import Gander.Lib       (buildTree, printHashes, readTree, serializeTree, diff, printDiffs, runGit, gitCommit)
 import System.Directory (doesFileExist)
 import System.FilePath  ((</>))
 
@@ -19,17 +22,22 @@ cmdHash cfg target = do
   case annex cfg of
     Nothing -> printHashes new
     Just dir -> do
-      let hashes = dir </> "hashes.txt"
-      log cfg "updating hashes.txt"
-      exists <- doesFileExist hashes
-      when exists $ do
-        old <- readTree hashes
-        printDiffs $ diff old new -- just nice to verify this looks right
-      writeFile hashes $ serializeTree new
-      out <- runGit dir ["add", "hashes.txt"]
-      log cfg out
+      updateAnnexHashes cfg new
       gitCommit (verbose cfg) dir "gander hash"
       -- out2 <- runGit dir ["commit", "-m", "gander hash"]
+
+updateAnnexHashes :: Config -> HashTree -> IO ()
+updateAnnexHashes cfg new = do
+  let aPath  = fromJust $ annex cfg
+      hashes = aPath </> "hashes.txt"
+  log cfg "updating hashes.txt"
+  exists <- doesFileExist hashes
+  when exists $ do
+    old <- readTree hashes
+    printDiffs $ diff old new -- just nice to verify this looks right
+  writeFile hashes $ serializeTree new
+  out <- runGit aPath ["add", "hashes.txt"]
+  log cfg out
 
 guardStatus :: Config -> FilePath -> IO ()
 guardStatus = undefined

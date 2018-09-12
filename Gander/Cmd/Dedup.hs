@@ -2,20 +2,19 @@ module Gander.Cmd.Dedup where
 
 -- TODO have a separate dedup command that only does the rm part without moving stuff?
 -- TODO need to start a new file ignore.txt or something for hashes to ignore
--- TODO fix <<loop>> bug when answering wrong!
 
 import Gander.Lib
-import Gander.Cmd.Hash (cmdHash)
+import Gander.Cmd.Hash (updateAnnexHashes)
 
-import Data.Maybe (fromJust)
-import Data.Foldable (toList)
-import Control.Monad (when)
-import Gander.Config (Config(..))
-import System.IO (hFlush, stdout)
+import Control.Monad       (when)
+import Data.Foldable       (toList)
+import Data.List           (delete)
+import Data.Maybe          (fromJust)
+import Gander.Config       (Config(..))
 import System.Console.ANSI (clearScreen)
-import System.Exit (exitSuccess)
-import System.FilePath ((</>), splitPath, joinPath)
-import Data.List (delete)
+import System.Exit         (exitSuccess)
+import System.FilePath     ((</>), splitPath, joinPath)
+import System.IO           (hFlush, stdout)
 
 cmdDedup :: Config -> IO ()
 cmdDedup cfg = do
@@ -25,14 +24,9 @@ cmdDedup cfg = do
   tree <- readTree hashes
   dedupLoop cfg unsorted [] tree
 
--- cmdDedup cfg hashes _ = do
---   tree  <- readTree hashes
---   let dupes = dupesByNFiles $ pathsByHash tree
---   -- TODO state monad or some kind of accumulator for tree here
---   -- TODO and then recalculate dupes after each step
---   mapM_ (\dl -> userPicks dl >>= dedupGroup cfg dl) dupes
-
 -- TODO how to properly thread the changed tree through each step?
+-- TODO check exit codes!
+-- TODO sanitize commit message
 dedupLoop :: Config -> FilePath -> [Hash] -> HashTree -> IO ()
 dedupLoop cfg path ignored tree = do
   let aPath       = fromJust $ annex cfg
@@ -52,8 +46,10 @@ dedupLoop cfg path ignored tree = do
       dedupGroup cfg aPath paths' keep -- at this point everything is relative to annex
       -- let tree' = tree -- TODO need to update tree to remove non-keepers!
       -- TODO use filename as part of commit? have to shorten/sanitize
-      cmdHash cfg aPath
-      gitCommit (verbose cfg) aPath "gander mv" -- TODO check exit code
+      new <- buildTree (verbose cfg) (exclude cfg) aPath
+      updateAnnexHashes cfg new
+      let msg = unwords ["dedup", keep]
+      gitCommit (verbose cfg) aPath msg
       dedupLoop cfg path ignored' tree
 
 dropDir :: FilePath -> FilePath
@@ -73,29 +69,6 @@ dedupGroup cfg aPath dupes dest = do
           dupes' = tail dupes
       gitMv (verbose cfg) aPath src dest -- TODO or just dupes'?
       mapM_ (gitRm (verbose cfg) aPath) dupes'
-
-
---     let aPath   = fromJust $ annex cfg
---         dupes'  = delete dest dupes
--- 
---     -- path' <- fmap noSlash $ absolutize path
---     -- dupes' <- fmap (map noSlash) (mapM absolutize dupes)
---     -- let absDupes = filter (/= path) (tail dupes')
---     let aPath   = fromJust $ annex cfg
---         -- path'   = aPath </> path
---         -- dupes'  = map (aPath </>) dupes
---         dupes' = filter (/= path) (tail dupes) -- TODO is this right?
---     withAnnex (verbose cfg) aPath $ \dir -> do
---       when (path /= head dupes) $ do
---         -- TODO also capture exit code and don't clear screen if error
---         -- out <- readProcess "git" ["-C", dir, "mv", head dupes', path'] ""
---         -- when (verbose cfg) $ putStrLn out
---         gitMv (verbose cfg) dir (head dupes') (dropDir path) -- TODO or just dupes'?
---       -- outs <- mapM (\f -> readProcess "git" ["-C", dir, "rm", "-rf", f] "") absDupes
---       mapM_ (gitRm (verbose cfg) dir) dupes'
---       return ()
---       -- when (verbose cfg) $ mapM_ putStrLn outs
-
 
 -- Prompt the user where to put the one duplicate from each group we want to keep.
 -- The choice could be one of the existing paths or a new one they enter.
@@ -140,26 +113,3 @@ listOptions = putStrLn $ unlines
   , "  type a new path to save the content, and remove all of these"
   , "\nYou can also type 'skip' to leave them alone for now, or 'quit' to quit"
   ]
-
--- TODO explain to user:
---   list (first N) duplicates
---   what would you like to do?
---     skip for now
---     skip always (ignore)
---     save one of them by number
---     save to a new path you enter
---     quit
--- TODO "collapse" fn:
---   rm all but the one picked, double-checking they all still have the same hash
---   (error if not)
---   move the one picked if not at final destination
-
--- TODO getSubTree :: HashTree -> FilePath -> HashTree
-
--- TODO cmdDedup :: Config -> FilePath -> Maybe FilePath -> IO ()
---      cmdDedup cfg root msub = do
---        tree <- buildTree (verbose cfg) (exclude cfg) root
---        let tree' = case msub of
---                      Nothing -> tree
---                      Just sub -> getSubTree tree sub
---        ...

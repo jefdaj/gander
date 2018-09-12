@@ -53,6 +53,7 @@ module Gander.Lib
   , runGit
   , gitMv
   , gitRm
+  , gitAdd
   , gitCommit
   , withAnnex
   , userSaysYes
