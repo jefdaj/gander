@@ -25,6 +25,7 @@ cmdMv cfg src dst = do -- TODO correct toRm path using root!
   before  <- readTree hashes
   seemsOk <- okToInsert cfg before dst'
   when (seemsOk || force cfg) $ do
+    -- TODO write new hashes.txt here!
     gitMv     (verbose cfg) aPath src' dst' -- TODO check exit code
     gitCommit (verbose cfg) aPath "gander mv" -- TODO check exit code
 
