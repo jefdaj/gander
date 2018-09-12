@@ -21,7 +21,7 @@ module Gander.Lib.Git
 import Control.Monad         (when)
 import Data.List             (isPrefixOf)
 import Data.Maybe            (fromJust)
-import System.Directory      (getHomeDirectory, doesDirectoryExist)
+import System.Directory      (getHomeDirectory, doesDirectoryExist, createDirectoryIfMissing)
 import System.FilePath       (addTrailingPathSeparator, normalise, takeDirectory, (</>))
 import System.FilePath       (pathSeparator, splitPath)
 import System.Path.NameManip (guess_dotdot, absolute_path)
@@ -90,6 +90,7 @@ annexAdd verbose path = withAnnex verbose path $ \dir -> do
 -- TODO get annex path from config! or pass explicitly
 gitMv :: Bool -> FilePath -> FilePath -> FilePath -> IO ()
 gitMv verbose aPath src dst = withAnnex verbose aPath $ \dir -> do
+  createDirectoryIfMissing True $ dir </> dst
   out <- readProcess "git" ["-C", dir, "mv", src, dst] ""
   when verbose $ putStrLn out
 

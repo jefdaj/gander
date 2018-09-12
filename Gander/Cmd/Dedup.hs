@@ -5,6 +5,7 @@ module Gander.Cmd.Dedup where
 -- TODO fix <<loop>> bug when answering wrong!
 
 import Gander.Lib
+import Gander.Cmd.Hash (cmdHash)
 
 import Data.Maybe (fromJust)
 import Data.Foldable (toList)
@@ -15,8 +16,6 @@ import System.Console.ANSI (clearScreen)
 import System.Exit (exitSuccess)
 import System.FilePath ((</>), splitPath, joinPath)
 import Data.List (delete)
-
-import Debug.Trace
 
 cmdDedup :: Config -> IO ()
 cmdDedup cfg = do
@@ -42,17 +41,18 @@ dedupLoop cfg path ignored tree = do
       (h1, ds)    = head dupesToSort -- TODO should these be just the plain paths?
       (_,_,paths) = ds
       ignored'    = h1:ignored
-      sorted      = sorted </> "sorted"
+      sorted      = aPath </> "sorted"
   when (null dupes) (putStrLn "no duplicates. congrats!" >> exitSuccess)
   copyToKeep <- userPicks sorted ds
   case copyToKeep of
     Nothing -> dedupLoop cfg path ignored' tree
     Just keep -> do
-      let keep'  = dropDir keep
-          paths' = map dropDir paths
-      dedupGroup cfg aPath paths' keep' -- at this point everything is relative to annex
+      -- let keep'  = dropDir keep
+      let paths' = map dropDir paths
+      dedupGroup cfg aPath paths' keep -- at this point everything is relative to annex
       -- let tree' = tree -- TODO need to update tree to remove non-keepers!
       -- TODO use filename as part of commit? have to shorten/sanitize
+      cmdHash cfg aPath
       gitCommit (verbose cfg) aPath "gander mv" -- TODO check exit code
       dedupLoop cfg path ignored' tree
 
@@ -104,7 +104,7 @@ dedupGroup cfg aPath dupes dest = do
 userPicks :: FilePath -> DupeList -> IO (Maybe FilePath)
 userPicks sorted (n, t, paths) = do
   clearScreen
-  let nDupes = length (trace ("paths:" ++ show paths) paths) :: Int
+  let nDupes = length paths :: Int
   putStrLn $ "These " ++ show nDupes ++ " are duplicates:"
   listDupes 20 paths
   listOptions
@@ -116,12 +116,14 @@ userPicks sorted (n, t, paths) = do
   else if answer `elem` map show [1..length paths+1] then do
     let index = read answer :: Int
     return $ Just $ paths !! (index - 1)
-  else do
-    let answer' = sorted </> answer
-    confirm <- userSaysYes $ "Save to '" ++ answer' ++ "'?"
+  -- TODO if user inputs a path, makedirs up to it before trying to move
+  else do -- TODO this whole branch is an infinite loop somehow?
+    -- let answer' = sorted </> answer -- TODO why does this cause <<loop>>??
+    confirm <- userSaysYes $ "Save to 'sorted/" ++ answer ++ "'?"
     if confirm
-      then return $ Just answer'
-      else userPicks sorted (n, t, paths)
+      then return $ Just $ "sorted" </> answer
+      else do
+        userPicks sorted (n, t, paths)
  
 listDupes :: Int -> [FilePath] -> IO ()
 listDupes howMany paths = putStrLn $ unlines numbered
