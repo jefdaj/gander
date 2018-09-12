@@ -38,7 +38,13 @@ main = do
       if      cmd "init"  then cmdInit  cfg aPath
       else if cmd "hash"  then cmdHash  cfg aPath
       else if cmd "dupes" then cmdDupes cfg aPath
-      else    print args >> print cfg
+      else if cmd "add" then do
+        dst <- arg "dst"
+        let src = getArg args $ argument "src"
+        cmdAdd cfg dst src
+      else do
+        print args
+        print cfg
 
     -- standalone mode (note: still works on annexed files)
     Nothing -> do
@@ -60,10 +66,6 @@ main = do
         subTree  <- arg "sub"
         subPath  <- arg "path"
         cmdUpdate cfg mainTree subTree subPath
-      else if cmd "annex" then do
-        src  <- arg "src"
-        dest <- arg "dest"
-        cmdAnnex cfg src dest
       else if cmd "rm" then do
         target <- arg "target"
         rPath  <- arg "rootpath"

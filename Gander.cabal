@@ -22,7 +22,7 @@ executable gander
                        Gander.Cmd.Dupes,
                        Gander.Cmd.Test,
                        Gander.Cmd.Update,
-                       Gander.Cmd.Annex,
+                       Gander.Cmd.Add,
                        Gander.Cmd.Rm,
                        Gander.Cmd.Dedup,
                        Gander.Config,
