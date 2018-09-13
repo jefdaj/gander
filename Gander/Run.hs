@@ -10,14 +10,17 @@ module Gander.Run
   , runRsync
   , runGit
   , withAnnex
+  , runDelta
+  , runDeltas
   )
   where
 
 -- TODO rename Util? Files? System?
 -- TODO add git-annex, rsync to nix dependencies
 
-import Gander.Util
 import Gander.Config
+import Gander.Lib
+import Gander.Util
 
 import Prelude hiding (log)
 
@@ -63,3 +66,18 @@ runGitCommit :: Config -> FilePath -> String -> IO ()
 runGitCommit cfg aPath msg = withAnnex cfg aPath $ \dir -> do
   out <- readProcess "git" ["-C", dir, "commit", "-m", msg] ""
   log cfg out
+
+-- Takes a starting HashTree and a Delta, and applies the delta.
+-- Useful for checking whether git operations will be safe,
+-- and that the calculated diffs match actual changes afterward.
+-- TODO move to Run.hs
+runDelta :: HashTree -> Delta -> HashTree
+runDelta t1 (Add  f t2) = addSubTree t1 t2 f
+runDelta _ (Rm   _ _  ) = undefined
+runDelta _ (Mv   _ _ _) = undefined
+runDelta _ (Edit _ _ _) = undefined
+
+-- TODO do I want foldl' here instead??
+-- TODO move to Run.hs
+runDeltas :: HashTree -> [Delta] -> HashTree
+runDeltas = foldl runDelta
