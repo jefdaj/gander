@@ -12,6 +12,7 @@ module Gander.Run
   , withAnnex -- TODO don't export?
   , runDelta
   , runDeltas
+  , safeRunDeltas
   )
   where
 
@@ -23,7 +24,8 @@ import Gander.Util
 
 import Prelude hiding (log)
 
-import Control.Monad    (mapM_)
+import Data.Maybe       (fromJust)
+import Control.Monad    (when, mapM_)
 import System.Directory (createDirectoryIfMissing)
 import System.FilePath  (dropFileName)
 import System.FilePath  ((</>))
@@ -39,12 +41,6 @@ runGit dir args = readCreateProcess (gitProc { cwd = Just dir }) ""
   where
     gitProc = proc "git" $ ["--git-dir=" ++ (dir </> ".git")] ++ args
 
--- TODO handle exit 1 when git-annex not installed
-runGitAnnexAdd :: Config -> FilePath -> IO ()
-runGitAnnexAdd cfg path = withAnnex cfg path $ \dir -> do
-  out <- readProcess "git" ["-C", dir, "annex", "add", "--include-dotfiles", path] ""
-  log cfg out
-
 -- TODO get annex path from config! or pass explicitly
 runGitMv :: Config -> FilePath -> FilePath -> FilePath -> IO ()
 runGitMv cfg aPath src dst = withAnnex cfg aPath $ \dir -> do
@@ -55,6 +51,13 @@ runGitMv cfg aPath src dst = withAnnex cfg aPath $ \dir -> do
 runGitAdd :: Config -> FilePath -> [FilePath] -> IO ()
 runGitAdd cfg aPath paths = withAnnex cfg aPath $ \dir -> do
   out <- readProcess "git" (["-C", dir, "add"] ++ paths) ""
+  log cfg out
+
+-- TODO handle exit 1 when git-annex not installed
+-- TODO take a list of paths?
+runGitAnnexAdd :: Config -> FilePath -> FilePath -> IO ()
+runGitAnnexAdd cfg aPath path = withAnnex cfg aPath $ \dir -> do
+  out <- readProcess "git" ["-C", dir, "annex", "add", "--include-dotfiles", path] ""
   log cfg out
 
 runGitRm :: Config -> FilePath -> FilePath -> IO ()
@@ -71,10 +74,27 @@ runGitCommit cfg aPath msg = withAnnex cfg aPath $ \dir -> do
 -- Useful for checking whether git operations will be safe,
 -- and that the calculated diffs match actual changes afterward.
 runDelta :: Config -> FilePath -> Delta -> IO ()
-runDelta c a   (Add p _  ) = runGitAdd c a [p]
-runDelta c a   (Rm  p    ) = runGitRm  c a p
-runDelta c a   (Mv  p1 p2) = runGitMv  c a p1 p2
-runDelta c a e@(Edit _ _ ) = runDelta  c a e -- TODO are separate edits really needed?
+runDelta c a   (Add p _  ) = runGitAnnexAdd c a p
+runDelta c a   (Rm  p    ) = runGitRm       c a p
+runDelta c a   (Mv  p1 p2) = runGitMv       c a p1 p2
+runDelta c a e@(Edit _ _ ) = runDelta       c a e -- TODO are separate edits really needed?
 
 runDeltas :: Config -> FilePath -> [Delta] -> IO ()
 runDeltas c a = mapM_ (runDelta c a)
+
+safeRunDeltas :: Config -> [Delta] -> String -> IO ()
+safeRunDeltas cfg deltas msg = do
+  let aPath  = fromJust $ annex cfg
+      hashes = aPath </> "hashes.txt"
+  before <- readTree hashes
+  case simDeltas before deltas of
+    Nothing -> undefined -- use Either and print error here
+    Just expected -> do
+      runDeltas cfg aPath deltas
+      when (check cfg) $ do
+        actual <- buildTree (verbose cfg) (exclude cfg) aPath
+        assertSameTrees aPath expected actual
+        writeFile hashes $ serializeTree expected
+      -- TODO should gitCommit be part of runDeltas?
+      -- TODO sanitize dst for commit message
+      runGitCommit cfg aPath msg

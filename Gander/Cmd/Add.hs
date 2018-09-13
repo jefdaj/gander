@@ -4,12 +4,9 @@ module Gander.Cmd.Add where
 -- TODO add rsync to nix dependencies
 
 import Gander.Lib
-import Gander.Config   (Config(..))
--- import Gander.Cmd.Hash (updateAnnexHashes)
-import Gander.Run      (runDeltas, runGitCommit, runRsync)
--- import Gander.Run      (runGitAnnexAdd, runGitCommit, runRsync)
+import Gander.Config (Config(..))
+import Gander.Run    (safeRunDeltas, runRsync)
 
-import Control.Monad   (when)
 import Data.Maybe      (fromJust)
 import System.FilePath ((</>))
 
@@ -49,25 +46,6 @@ cmdAdd cfg dst mSrc = do
   -- new <- buildTree (verbose cfg) (exclude cfg) aPath
   -- updateAnnexHashes cfg new
 
--- TODO move to Run.hs
--- TODO extend to run list of deltas
-safeRunDeltas :: Config -> [Delta] -> String -> IO ()
-safeRunDeltas cfg deltas msg = do
-  let aPath  = fromJust $ annex cfg
-      hashes = aPath </> "hashes.txt"
-  before <- readTree hashes
-  case simDeltas before deltas of
-    Nothing -> undefined -- use Either and print error here
-    Just expected -> do
-      runDeltas cfg aPath deltas
-      when (check cfg) $ do
-        actual <- buildTree (verbose cfg) (exclude cfg) aPath
-        assertSameTrees aPath expected actual
-        writeFile hashes $ serializeTree expected
-      -- TODO should gitCommit be part of runDeltas?
-      -- TODO sanitize dst for commit message
-      runGitCommit cfg aPath msg
-
 rsyncAndHash :: Config -> FilePath -> FilePath -> IO HashTree
 rsyncAndHash cfg s dst' = do
   _ <- runRsync cfg s dst' -- TODO control verbosity
@@ -75,11 +53,3 @@ rsyncAndHash cfg s dst' = do
   after  <- buildTree (verbose cfg) (exclude cfg) dst'
   assertSameTrees s before after
   return after
-
--- TODO move to HashTree.hs
-assertSameTrees :: FilePath -> HashTree -> HashTree -> IO ()
-assertSameTrees path before after = do
-  let missing = diff before after
-  when (not $ null missing) $ do
-    putStrLn $ "error! final files differ from '" ++ path ++ "':"
-    printDeltas missing

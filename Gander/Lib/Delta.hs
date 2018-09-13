@@ -7,6 +7,7 @@ module Gander.Lib.Delta
   , safeDeltas
   , simDelta
   , simDeltas
+  , assertSameTrees -- TODO rename to mention diff
   )
   where
 
@@ -25,7 +26,7 @@ import Gander.Lib.DupeMap  (listLostFiles)
 import System.FilePath     ((</>))
 import Data.List           (find)
 import Data.Maybe          (fromJust)
-import Control.Monad       (foldM)
+import Control.Monad       (when, foldM)
 -- import Data.Either         (fromRight)
 
 -- TODO should these have embedded hashtrees? seems unneccesary but needed for findMoves
@@ -129,3 +130,10 @@ simDeltas :: HashTree -> [Delta] -> Maybe HashTree
 simDeltas = foldM simDelta
 
 -- seems like what we really want is runDeltaIfSafe, which does simDelta, checks safety, then runDelta
+
+assertSameTrees :: FilePath -> HashTree -> HashTree -> IO ()
+assertSameTrees path before after = do
+  let missing = diff before after
+  when (not $ null missing) $ do
+    putStrLn $ "error! final files differ from '" ++ path ++ "':"
+    printDeltas missing
