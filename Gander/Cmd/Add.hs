@@ -6,7 +6,7 @@ module Gander.Cmd.Add where
 import Gander.Lib
 import Gander.Config   (Config(..))
 -- import Gander.Cmd.Hash (updateAnnexHashes)
-import Gander.Run      (runDelta, runGitCommit, runRsync)
+import Gander.Run      (runDeltas, runGitCommit, runRsync)
 -- import Gander.Run      (runGitAnnexAdd, runGitCommit, runRsync)
 
 import Control.Monad   (when)
@@ -22,13 +22,17 @@ import System.FilePath ((</>))
 
 cmdAdd :: Config -> FilePath -> Maybe FilePath -> IO ()
 cmdAdd cfg dst mSrc = do
-  let aPath  = fromJust $ annex cfg
-      hashes = aPath </> "hashes.txt"
-      dst'   = aPath </> "unsorted" </> dst
+  let aPath = fromJust $ annex cfg
+      dst'  = aPath </> "unsorted" </> dst
+  dstTree <- case mSrc of
+    Nothing -> buildTree (verbose cfg) (exclude cfg) dst
+    Just s  -> rsyncAndHash cfg s dst'
+  let ds  = [Add dst' dstTree]
+      msg = unwords ["add", dst]
+  safeRunDeltas cfg ds msg
 
   -- annexed <- inAnnex $ trace ("dst': " ++ dst') dst'
   -- when (not annexed) (error "destination should be in a git-annex repo") -- TODO remove?
-
   -- old version, which totally works but has to re-hash:
   -- msgDst <- case mSrc of
     -- Nothing -> return dst -- files should have been manually added to the annex
@@ -45,24 +49,24 @@ cmdAdd cfg dst mSrc = do
   -- new <- buildTree (verbose cfg) (exclude cfg) aPath
   -- updateAnnexHashes cfg new
 
-  -- new version which calculates hashes too:
-  dstTree <- case mSrc of
-    Nothing -> buildTree (verbose cfg) (exclude cfg) dst
-    Just s  -> rsyncAndHash cfg s dst'
+-- TODO move to Run.hs
+-- TODO extend to run list of deltas
+safeRunDeltas :: Config -> [Delta] -> String -> IO ()
+safeRunDeltas cfg deltas msg = do
+  let aPath  = fromJust $ annex cfg
+      hashes = aPath </> "hashes.txt"
   before <- readTree hashes
-  let delta    = Add dst' dstTree
-  case simDelta before delta of
+  case simDeltas before deltas of
     Nothing -> undefined -- use Either and print error here
     Just expected -> do
-      runDelta cfg aPath delta
+      runDeltas cfg aPath deltas
       when (check cfg) $ do
         actual <- buildTree (verbose cfg) (exclude cfg) aPath
         assertSameTrees aPath expected actual
         writeFile hashes $ serializeTree expected
-
       -- TODO should gitCommit be part of runDeltas?
       -- TODO sanitize dst for commit message
-      runGitCommit cfg aPath $ unwords ["add", dst]
+      runGitCommit cfg aPath msg
 
 rsyncAndHash :: Config -> FilePath -> FilePath -> IO HashTree
 rsyncAndHash cfg s dst' = do
@@ -72,6 +76,7 @@ rsyncAndHash cfg s dst' = do
   assertSameTrees s before after
   return after
 
+-- TODO move to HashTree.hs
 assertSameTrees :: FilePath -> HashTree -> HashTree -> IO ()
 assertSameTrees path before after = do
   let missing = diff before after
