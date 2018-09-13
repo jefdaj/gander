@@ -3,6 +3,7 @@ module Gander.Cmd.Init where
 import Gander.Lib
 import Gander.Cmd.Hash (updateAnnexHashes)
 import Gander.Util     (absolutize, log)
+import Gander.Run      (runGit, runGitCommit)
 
 import Prelude hiding (log)
 
@@ -26,7 +27,7 @@ cmdInit cfg dir = do
   log cfg $ concat [out1, out2, out3, out4]
   new <- buildTree (verbose cfg) (exclude cfg) dir
   updateAnnexHashes cfg new
-  gitCommit cfg dir $ "gander init " ++ takeFileName dir
+  runGitCommit cfg dir $ "gander init " ++ takeFileName dir
 
 -- check that init has been run, or prompt user to do that first
 guardInit :: Config -> FilePath -> IO ()

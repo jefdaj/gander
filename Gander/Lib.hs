@@ -41,24 +41,10 @@ module Gander.Lib
   , pathsByHash
   , printDupes
   , simplifyDupes
-
-  -- git
-  , annexAdd
-  , findAnnex
-  , gitAdd
-  , gitCommit
-  , gitMv
-  , gitRm
-  , inAnnex
-  , noSlash
-  , rsync
-  , runGit
-  , withAnnex
   )
   where
 
 import Gander.Lib.Delta
 import Gander.Lib.DupeMap
-import Gander.Lib.Git
 import Gander.Lib.Hash
 import Gander.Lib.HashTree
