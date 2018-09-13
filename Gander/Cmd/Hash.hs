@@ -35,7 +35,7 @@ updateAnnexHashes cfg new = do
   exists <- doesFileExist hashes
   when exists $ do -- TODO only when verbose?
     old <- readTree hashes
-    printDiffs $ diff old new -- just nice to verify this looks right
+    printDeltas $ diff old new -- just nice to verify this looks right
   writeFile hashes $ serializeTree new
   out <- runGit aPath ["add", "hashes.txt"]
   log cfg out

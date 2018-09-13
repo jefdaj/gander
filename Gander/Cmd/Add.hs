@@ -27,7 +27,7 @@ cmdAdd cfg dst mSrc = do
       let missing = diff before after
       when (not $ null missing) $ do
         putStrLn $ "error! final files differ from '" ++ s ++ "':"
-        printDiffs missing
+        printDeltas missing
       return s
   runGitAnnexAdd cfg dst'
   new <- buildTree (verbose cfg) (exclude cfg) aPath
