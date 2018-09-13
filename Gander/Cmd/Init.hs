@@ -2,9 +2,10 @@ module Gander.Cmd.Init where
 
 import Gander.Lib
 import Gander.Cmd.Hash (updateAnnexHashes)
-import Gander.Util     (absolutize)
+import Gander.Util     (absolutize, log)
 
-import Control.Monad    (when)
+import Prelude hiding (log)
+
 import System.FilePath  (takeFileName, (</>))
 import System.Directory (createDirectoryIfMissing)
 import Gander.Config    (Config(..))
@@ -22,10 +23,10 @@ cmdInit cfg dir = do
   out2 <- runGit dir ["config", "user.name", "'gander user'"]
   out3 <- runGit dir ["config", "user.email", "f@ke.email"]
   out4 <- runGit dir ["annex", "init", takeFileName dir]
-  when (verbose cfg) $ putStr $ concat [out1, out2, out3, out4]
+  log cfg $ concat [out1, out2, out3, out4]
   new <- buildTree (verbose cfg) (exclude cfg) dir
   updateAnnexHashes cfg new
-  gitCommit (verbose cfg) dir $ "gander init " ++ takeFileName dir
+  gitCommit cfg dir $ "gander init " ++ takeFileName dir
 
 -- check that init has been run, or prompt user to do that first
 guardInit :: Config -> FilePath -> IO ()

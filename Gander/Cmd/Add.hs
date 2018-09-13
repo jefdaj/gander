@@ -19,7 +19,7 @@ cmdAdd cfg dst mSrc = do
   msgDst <- case mSrc of
     Nothing -> return dst -- files should have been manually added to the annex
     Just s -> do
-      _ <- rsync (verbose cfg) s dst' -- TODO control verbosity
+      _ <- rsync cfg s dst' -- TODO control verbosity
       before  <- buildTree (verbose cfg) (exclude cfg) s
       after   <- buildTree (verbose cfg) (exclude cfg) dst'
       let missing = diff before after
@@ -27,8 +27,8 @@ cmdAdd cfg dst mSrc = do
         putStrLn $ "error! final files differ from '" ++ s ++ "':"
         printDiffs missing
       return s
-  annexAdd (verbose cfg) dst'
+  annexAdd cfg dst'
   new <- buildTree (verbose cfg) (exclude cfg) aPath
   updateAnnexHashes cfg new
   let msg = unwords ["add", takeFileName msgDst]
-  gitCommit (verbose cfg) aPath msg -- TODO sanitize the commit msg!
+  gitCommit cfg aPath msg -- TODO sanitize the commit msg!
