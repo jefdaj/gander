@@ -4,6 +4,7 @@ module Gander.Lib
   , prettyHash
   , hashBytes
   , hashFile
+  , prettyHash
 
   -- hashtree
   , HashTree(..)
@@ -28,8 +29,8 @@ module Gander.Lib
   -- delta
   , Delta(..)
   , diff
-  , prettyDiff
-  , printDiffs
+  , prettyDelta
+  , printDeltas
   , safe
 
   -- dupemap

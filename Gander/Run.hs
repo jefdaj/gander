@@ -73,9 +73,9 @@ runGitCommit cfg aPath msg = withAnnex cfg aPath $ \dir -> do
 -- TODO move to Run.hs
 runDelta :: HashTree -> Delta -> HashTree -- TODO IO ()
 runDelta t1 (Add  f t2) = addSubTree t1 t2 f
-runDelta _ (Rm   _ _  ) = undefined
-runDelta _ (Mv   _ _ _) = undefined
-runDelta _ (Edit _ _ _) = undefined
+runDelta _ (Rm   _    ) = undefined
+runDelta _ (Mv   _ _  ) = undefined
+runDelta _ (Edit _ _  ) = undefined
 
 -- TODO do I want foldl' here instead??
 -- TODO move to Run.hs
