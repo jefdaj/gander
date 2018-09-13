@@ -5,7 +5,7 @@ module Gander.Cmd.Dedup where
 
 import Gander.Lib
 import Gander.Cmd.Hash (updateAnnexHashes)
-import Gander.Util     (dropDir)
+import Gander.Util     (dropDir, userSaysYes)
 
 import Control.Monad       (when)
 import Data.Foldable       (toList)
@@ -50,7 +50,7 @@ dedupLoop cfg path ignored tree = do
       new <- buildTree (verbose cfg) (exclude cfg) aPath
       updateAnnexHashes cfg new
       let msg = unwords ["dedup", keep]
-      gitCommit (verbose cfg) aPath msg
+      gitCommit cfg aPath msg
       tree' <- readTree $ aPath </> "hashes.txt" -- TODO calculate from current tree instead!
       dedupLoop cfg path ignored' tree'
 
@@ -61,13 +61,13 @@ dedupGroup :: Config -> FilePath -> [FilePath] -> FilePath -> IO ()
 dedupGroup cfg aPath dupes dest = do
     -- TODO ok do the easier to think through way: two branches
   if dest `elem` dupes
-    then mapM_ (gitRm (verbose cfg) aPath) (delete dest dupes)
+    then mapM_ (gitRm cfg aPath) (delete dest dupes)
     else do
       -- move the first one to dest, then delete the rest (always at least 2)
       let src    = head dupes
           dupes' = tail dupes
-      gitMv (verbose cfg) aPath src dest -- TODO or just dupes'?
-      mapM_ (gitRm (verbose cfg) aPath) dupes'
+      gitMv cfg aPath src dest -- TODO or just dupes'?
+      mapM_ (gitRm cfg aPath) dupes'
 
 -- Prompt the user where to put the one duplicate from each group we want to keep.
 -- The choice could be one of the existing paths or a new one they enter.

@@ -53,7 +53,6 @@ module Gander.Lib
   , noSlash
   , rsync
   , runGit
-  , userSaysYes
   , withAnnex
   )
   where

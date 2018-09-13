@@ -26,8 +26,8 @@ cmdMv cfg src dst = do -- TODO correct toRm path using root!
   seemsOk <- okToInsert cfg before dst'
   when (seemsOk || force cfg) $ do
     -- TODO write new hashes.txt here!
-    gitMv     (verbose cfg) aPath src' dst' -- TODO check exit code
-    gitCommit (verbose cfg) aPath "gander mv" -- TODO check exit code
+    gitMv     cfg aPath src' dst' -- TODO check exit code
+    gitCommit cfg aPath "gander mv" -- TODO check exit code
 
 -- TODO should this go in HashTree.hs?
 okToInsert :: Config -> HashTree -> FilePath -> IO Bool

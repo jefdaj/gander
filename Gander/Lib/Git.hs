@@ -9,7 +9,6 @@ module Gander.Lib.Git
   , noSlash
   , rsync
   , runGit
-  , userSaysYes -- TODO not git related
   , withAnnex
   )
   where
@@ -17,42 +16,20 @@ module Gander.Lib.Git
 -- TODO rename Util? Files? System?
 -- TODO add git-annex, rsync to nix dependencies
 
-import Gander.Util (pathComponents, absolutize, noSlash)
+import Gander.Util
+import Gander.Config
 
-import Control.Monad    (when)
-import System.Directory (doesDirectoryExist, createDirectoryIfMissing)
+import Prelude hiding (log)
+
+import System.Directory (createDirectoryIfMissing)
 import System.FilePath  (dropFileName)
-import System.FilePath  (takeDirectory, (</>))
-import System.IO        (hFlush, stdout)
+import System.FilePath  ((</>))
 import System.Process   (readProcess, readCreateProcess, CreateProcess(..), proc)
 
-findAnnex :: FilePath -> IO (Maybe FilePath)
-findAnnex path = do
-  absPath <- absolutize path
-  let annex = absPath </> ".git" </> "annex"
-  foundIt <- doesDirectoryExist annex
-  if foundIt
-    then return $ Just $ takeDirectory $ takeDirectory annex
-    else if (null $ pathComponents absPath)
-      then return Nothing
-      else findAnnex $ takeDirectory absPath
-
-inAnnex :: FilePath -> IO Bool
-inAnnex = fmap (not . null) . findAnnex
-
-rsync :: Bool -> FilePath -> FilePath -> IO ()
-rsync verbose src dest = do
+rsync :: Config -> FilePath -> FilePath -> IO ()
+rsync cfg src dest = do
   out <- readProcess "rsync" ["-aErvz", "--delete", noSlash src ++ "/", noSlash dest] ""
-  when verbose $ putStrLn out
-
-withAnnex :: Bool -> FilePath -> (FilePath -> IO a) -> IO a
-withAnnex verbose path fn = do
-  annex <- findAnnex path
-  case annex of
-    Nothing -> error $ "'" ++ path ++ "' is not in a git-annex repo"
-    Just dir -> do
-      when verbose $ putStrLn $ "using git-annex repo '" ++ dir ++ "'"
-      fn dir
+  log cfg out
 
 runGit :: FilePath -> [String] -> IO String
 runGit dir args = readCreateProcess (gitProc { cwd = Just dir }) ""
@@ -60,40 +37,29 @@ runGit dir args = readCreateProcess (gitProc { cwd = Just dir }) ""
     gitProc = proc "git" $ ["--git-dir=" ++ (dir </> ".git")] ++ args
 
 -- TODO handle exit 1 when git-annex not installed
-annexAdd :: Bool -> FilePath -> IO ()
-annexAdd verbose path = withAnnex verbose path $ \dir -> do
-  out <- readProcess "git" ["-C", dir, "annex", "add",
-                            "--include-dotfiles", path] ""
-  when verbose $ putStrLn out
+annexAdd :: Config -> FilePath -> IO ()
+annexAdd cfg path = withAnnex cfg path $ \dir -> do
+  out <- readProcess "git" ["-C", dir, "annex", "add", "--include-dotfiles", path] ""
+  log cfg out
 
 -- TODO get annex path from config! or pass explicitly
-gitMv :: Bool -> FilePath -> FilePath -> FilePath -> IO ()
-gitMv verbose aPath src dst = withAnnex verbose aPath $ \dir -> do
+gitMv :: Config -> FilePath -> FilePath -> FilePath -> IO ()
+gitMv cfg aPath src dst = withAnnex cfg aPath $ \dir -> do
   createDirectoryIfMissing True $ dir </> (dropFileName dst)
   out <- readProcess "git" ["-C", dir, "mv", src, dst] ""
-  when verbose $ putStrLn out
+  log cfg out
 
-gitAdd :: Bool -> FilePath -> [FilePath] -> IO ()
-gitAdd verbose aPath paths = withAnnex verbose aPath $ \dir -> do
+gitAdd :: Config -> FilePath -> [FilePath] -> IO ()
+gitAdd cfg aPath paths = withAnnex cfg aPath $ \dir -> do
   out <- readProcess "git" (["-C", dir, "add"] ++ paths) ""
-  when verbose $ putStrLn out
+  log cfg out
 
-gitRm :: Bool -> FilePath -> FilePath -> IO ()
-gitRm verbose aPath path = withAnnex verbose aPath $ \dir -> do
+gitRm :: Config -> FilePath -> FilePath -> IO ()
+gitRm cfg aPath path = withAnnex cfg aPath $ \dir -> do
   out <- readProcess "git" ["-C", dir, "rm", "-rf", path] ""
-  when verbose $ putStrLn out
+  log cfg out
 
-gitCommit :: Bool -> FilePath -> String -> IO ()
-gitCommit verbose aPath msg = withAnnex verbose aPath $ \dir -> do
+gitCommit :: Config -> FilePath -> String -> IO ()
+gitCommit cfg aPath msg = withAnnex cfg aPath $ \dir -> do
   out <- readProcess "git" ["-C", dir, "commit", "-m", msg] ""
-  when verbose $ putStrLn out
-
-userSaysYes :: String -> IO Bool
-userSaysYes question = do
-  putStr $ question ++ " (yes/no) "
-  hFlush stdout
-  let answers = [("yes", True), ("no", False)]
-  answer <- getLine
-  case lookup answer answers of
-    Nothing -> userSaysYes question
-    Just b  -> return b
+  log cfg out

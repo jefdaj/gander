@@ -21,7 +21,7 @@ cmdHash cfg target = do
     Nothing -> printHashes new
     Just dir -> do
       updateAnnexHashes cfg new
-      gitCommit (verbose cfg) dir "gander hash"
+      gitCommit cfg dir "gander hash"
       -- out2 <- runGit dir ["commit", "-m", "gander hash"]
 
 updateAnnexHashes :: Config -> HashTree -> IO ()

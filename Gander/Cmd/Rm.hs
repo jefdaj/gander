@@ -4,6 +4,7 @@ module Gander.Cmd.Rm where
 -- TODO oh, write a couple other messages if it would help brian. lost files should be mentioned even when 0!
 
 import Gander.Lib
+import Gander.Util   (userSaysYes)
 import Gander.Config (Config(..))
 import Data.Maybe    (fromJust)
 
@@ -17,7 +18,7 @@ cmdRm cfg target _ rmPath = do -- TODO correct toRm path using root!
   tree <- readOrBuildTree True (exclude cfg) target
   ok <- okToRm cfg tree rmPath'
   let rm = do
-             gitRm (verbose cfg) (fromJust $ annex cfg) rmPath'
+             gitRm cfg (fromJust $ annex cfg) rmPath'
              let mTree = rmSubTree tree rmPath'
              case mTree of
                Nothing -> putStrLn "failed to rmSubTree"
