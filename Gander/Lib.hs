@@ -31,6 +31,8 @@ module Gander.Lib
   , diff
   , prettyDelta
   , printDeltas
+  , simDelta
+  , simDeltas
   , safeDelta
   , safeDeltas
 
