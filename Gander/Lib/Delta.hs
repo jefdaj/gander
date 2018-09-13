@@ -4,22 +4,25 @@ module Gander.Lib.Delta
   , prettyDiff
   , printDiffs
   , safe
+  , simDelta
+  , simDeltas
   )
   where
 
 {- This module calculates what a HashTree should look like after doing some git
  - operations, represented as Deltas. It's dramatically faster to update the
- - hashes based on those calculations than re-hash everything afterward.
+ - hashes based on those calculations than re-hash everything from the filesystem.
  - However, you can tell it to do that too and report any differences with the
- - --check flag. Code to actually run the Deltas lives in the Run module.
+ - --check flag. Code to actually run Deltas lives in the Run module.
  -}
 
 import Gander.Config
 import Gander.Lib.Hash (prettyHash)
 
 import Gander.Lib.HashTree (HashTree(..), treeContainsPath, treeContainsHash, addSubTree)
-import System.FilePath ((</>))
-import Data.List (find)
+import System.FilePath     ((</>))
+import Data.List           (find)
+import Data.Either         (fromRight)
 
 data Delta
   = Add  FilePath HashTree
@@ -28,9 +31,9 @@ data Delta
   | Edit FilePath HashTree HashTree
   deriving (Read, Show, Eq)
 
----------------------------------
--- list changes after the fact --
----------------------------------
+------------------------
+-- diff two hashtrees --
+------------------------
 
 prettyDiff :: Delta -> String
 prettyDiff (Add  f     t    ) = "added '"   ++ f  ++ "' (" ++ prettyHash (hash t ) ++ ")"
@@ -82,11 +85,19 @@ fixMoves (d1@(Rm f1 h):ds) = case find (findMv d1) ds of
   Nothing -> d1 : fixMoves ds
 fixMoves (d:ds) = d : fixMoves ds
 
-----------------------------------
--- calculate changes beforehand --
-----------------------------------
+-----------------------------
+-- simulate git operations --
+-----------------------------
 
+simDelta :: HashTree -> Delta -> Either String HashTree
 simDelta = undefined
+
+simDeltas :: HashTree -> [Delta] -> Either String HashTree
+simDeltas = undefined
+
+--------------------------------------------
+-- check if simulated operations are safe --
+--------------------------------------------
 
 -- Can a delta be applied without losing anything?
 -- TODO for efficiency, should this be part of a larger "applyIfSafe"?
@@ -95,8 +106,8 @@ simDelta = undefined
 safe :: HashTree -> Delta -> Bool
 safe t (Add    p _  ) = not $ treeContainsPath t p
 safe t (Mv   _ p _  ) = not $ treeContainsPath t p
-safe t d@(Rm   _ s  ) = treeContainsHash (simDelta t d) (hash s)
-safe t d@(Edit _ s _) = treeContainsHash (simDelta t d) (hash s)
+safe t d@(Rm   _ s  ) = undefined -- treeContainsHash (fromRight False $ simDelta t d) (hash s)
+safe t d@(Edit _ s _) = undefined -- treeContainsHash (fromRight False $ simDelta t d) (hash s)
 
 -- apply the delta if safe, otherwise return an explanation
 -- applyPlan :: HashTree -> Delta -> Either String HashTree

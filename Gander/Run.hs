@@ -15,7 +15,7 @@ module Gander.Run
   )
   where
 
--- TODO rename Util? Files? System?
+-- TODO hide the individual system commands from export? should all go through runDelta*
 -- TODO add git-annex, rsync to nix dependencies
 
 import Gander.Config
@@ -71,7 +71,7 @@ runGitCommit cfg aPath msg = withAnnex cfg aPath $ \dir -> do
 -- Useful for checking whether git operations will be safe,
 -- and that the calculated diffs match actual changes afterward.
 -- TODO move to Run.hs
-runDelta :: HashTree -> Delta -> HashTree
+runDelta :: HashTree -> Delta -> HashTree -- TODO IO ()
 runDelta t1 (Add  f t2) = addSubTree t1 t2 f
 runDelta _ (Rm   _ _  ) = undefined
 runDelta _ (Mv   _ _ _) = undefined
@@ -79,5 +79,5 @@ runDelta _ (Edit _ _ _) = undefined
 
 -- TODO do I want foldl' here instead??
 -- TODO move to Run.hs
-runDeltas :: HashTree -> [Delta] -> HashTree
+runDeltas :: HashTree -> [Delta] -> HashTree -- TODO IO ()
 runDeltas = foldl runDelta
