@@ -97,6 +97,9 @@ fixMoves t (d:ds) = d : fixMoves t ds
 -- check if simulated operations are safe --
 --------------------------------------------
 
+-- TODO thing through how to report results more!
+-- TODO can this whole thing be trivially written in runDeltaIfSafe?
+
 -- Can a delta be applied without losing anything?
 -- TODO for efficiency, should this be part of a larger "applyIfSafe"?
 --      (that would return the updated tree at the same time)
@@ -113,7 +116,7 @@ safeDeltas t ds = case simDeltas t ds of
 -- simulate git operations --
 -----------------------------
 
--- TODO convert Maybe -> Either and give back explanations for use in CLI
+-- TODO thing through how to report results more!
 simDelta :: HashTree -> Delta -> Maybe HashTree
 simDelta t (Rm   p    ) = rmSubTree t p
 simDelta t (Add  p  t2) = Just $ addSubTree t t2 p
@@ -124,3 +127,5 @@ simDelta t (Mv   p1 p2) = case simDelta t (Rm p1) of
 
 simDeltas :: HashTree -> [Delta] -> Maybe HashTree
 simDeltas = foldM simDelta
+
+-- seems like what we really want is runDeltaIfSafe, which does simDelta, checks safety, then runDelta

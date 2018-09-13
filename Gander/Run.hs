@@ -1,21 +1,20 @@
 module Gander.Run
-  ( runGitAnnexAdd
-  , findAnnex
-  , runGitAdd
+  ( runGitAnnexAdd -- TODO don't export?
+  , findAnnex -- TODO don't export?
+  , runGitAdd -- TODO don't export
   , runGitCommit
-  , runGitMv
-  , runGitRm
-  , inAnnex
-  , noSlash
+  , runGitMv -- TODO don't export?
+  , runGitRm -- TODO don't export?
+  , inAnnex -- TODO don't export?
+  , noSlash -- TODO don't export?
   , runRsync
   , runGit
-  , withAnnex
+  , withAnnex -- TODO don't export?
   , runDelta
   , runDeltas
   )
   where
 
--- TODO hide the individual system commands from export? should all go through runDelta*
 -- TODO add git-annex, rsync to nix dependencies
 
 import Gander.Config
@@ -24,6 +23,7 @@ import Gander.Util
 
 import Prelude hiding (log)
 
+import Control.Monad    (mapM_)
 import System.Directory (createDirectoryIfMissing)
 import System.FilePath  (dropFileName)
 import System.FilePath  ((</>))
@@ -67,17 +67,14 @@ runGitCommit cfg aPath msg = withAnnex cfg aPath $ \dir -> do
   out <- readProcess "git" ["-C", dir, "commit", "-m", msg] ""
   log cfg out
 
--- Takes a starting HashTree and a Delta, and applies the delta.
+-- Takes a starting HashTree and a Delta, and actually applies the delta.
 -- Useful for checking whether git operations will be safe,
 -- and that the calculated diffs match actual changes afterward.
--- TODO move to Run.hs
-runDelta :: HashTree -> Delta -> HashTree -- TODO IO ()
-runDelta t1 (Add  f t2) = addSubTree t1 t2 f
-runDelta _ (Rm   _    ) = undefined
-runDelta _ (Mv   _ _  ) = undefined
-runDelta _ (Edit _ _  ) = undefined
+runDelta :: Config -> FilePath -> Delta -> IO ()
+runDelta c a   (Add p _  ) = runGitAdd c a [p]
+runDelta c a   (Rm  p    ) = runGitRm  c a p
+runDelta c a   (Mv  p1 p2) = runGitMv  c a p1 p2
+runDelta c a e@(Edit _ _ ) = runDelta  c a e -- TODO are separate edits really needed?
 
--- TODO do I want foldl' here instead??
--- TODO move to Run.hs
-runDeltas :: HashTree -> [Delta] -> HashTree -- TODO IO ()
-runDeltas = foldl runDelta
+runDeltas :: Config -> FilePath -> [Delta] -> IO ()
+runDeltas c a = mapM_ (runDelta c a)
