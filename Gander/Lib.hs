@@ -30,8 +30,6 @@ module Gander.Lib
   , diff
   , prettyDiff
   , printDiffs
-  , runDelta
-  , runDeltas
   , safe
 
   -- dupemap

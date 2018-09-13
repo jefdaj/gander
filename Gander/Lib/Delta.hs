@@ -4,12 +4,19 @@ module Gander.Lib.Delta
   , prettyDiff
   , printDiffs
   , safe
-  , runDelta
-  , runDeltas
   )
   where
 
+{- This module calculates what a HashTree should look like after doing some git
+ - operations, represented as Deltas. It's dramatically faster to update the
+ - hashes based on those calculations than re-hash everything afterward.
+ - However, you can tell it to do that too and report any differences with the
+ - --check flag. Code to actually run the Deltas lives in the Run module.
+ -}
+
+import Gander.Config
 import Gander.Lib.Hash (prettyHash)
+
 import Gander.Lib.HashTree (HashTree(..), treeContainsPath, treeContainsHash, addSubTree)
 import System.FilePath ((</>))
 import Data.List (find)
@@ -79,18 +86,7 @@ fixMoves (d:ds) = d : fixMoves ds
 -- calculate changes beforehand --
 ----------------------------------
 
--- Takes a starting HashTree and a Delta, and applies the delta.
--- Useful for checking whether git operations will be safe,
--- and that the calculated diffs match actual changes afterward.
-runDelta :: HashTree -> Delta -> HashTree
-runDelta t1 (Add  f t2) = addSubTree t1 t2 f
-runDelta _ (Rm   _ _  ) = undefined
-runDelta _ (Mv   _ _ _) = undefined
-runDelta _ (Edit _ _ _) = undefined
-
--- TODO do I want foldl' here instead??
-runDeltas :: HashTree -> [Delta] -> HashTree
-runDeltas = foldl runDelta
+simDelta = undefined
 
 -- Can a delta be applied without losing anything?
 -- TODO for efficiency, should this be part of a larger "applyIfSafe"?
@@ -99,11 +95,11 @@ runDeltas = foldl runDelta
 safe :: HashTree -> Delta -> Bool
 safe t (Add    p _  ) = not $ treeContainsPath t p
 safe t (Mv   _ p _  ) = not $ treeContainsPath t p
-safe t d@(Rm   _ s  ) = treeContainsHash (runDelta t d) (hash s)
-safe t d@(Edit _ s _) = treeContainsHash (runDelta t d) (hash s)
+safe t d@(Rm   _ s  ) = treeContainsHash (simDelta t d) (hash s)
+safe t d@(Edit _ s _) = treeContainsHash (simDelta t d) (hash s)
 
 -- apply the delta if safe, otherwise return an explanation
 -- applyPlan :: HashTree -> Delta -> Either String HashTree
 -- applyPlan t (Add p _)
 --   | treeContainsPath t p = Left $ "adding '" ++ p ++ "' would overwrite an existing path"
---   | otherwise = Right $ runDelta 
+--   | otherwise = Right $ simDelta 
