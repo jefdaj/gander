@@ -3,6 +3,7 @@ module Gander.Cmd.Hash where
 import Gander.Lib
 import Gander.Config (Config(..))
 import Gander.Util   (log)
+import Gander.Run    (runGit, runGitCommit)
 
 import Prelude hiding (log)
 
@@ -21,7 +22,7 @@ cmdHash cfg target = do
     Nothing -> printHashes new
     Just dir -> do
       updateAnnexHashes cfg new
-      gitCommit cfg dir "gander hash"
+      runGitCommit cfg dir "gander hash"
       -- out2 <- runGit dir ["commit", "-m", "gander hash"]
 
 updateAnnexHashes :: Config -> HashTree -> IO ()
