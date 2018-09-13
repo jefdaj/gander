@@ -31,7 +31,8 @@ module Gander.Lib
   , diff
   , prettyDelta
   , printDeltas
-  , safe
+  , safeDelta
+  , safeDeltas
 
   -- dupemap
   , DupeList

@@ -3,7 +3,8 @@ module Gander.Lib.Delta
   , diff
   , prettyDelta
   , printDeltas
-  , safe
+  , safeDelta
+  , safeDeltas
   , simDelta
   , simDeltas
   )
@@ -19,10 +20,12 @@ module Gander.Lib.Delta
 import Gander.Config
 import Gander.Lib.Hash (prettyHash)
 import Gander.Lib.HashTree (HashTree(..), treeContainsPath, treeContainsHash, addSubTree, dropTo)
+import Gander.Lib.DupeMap  (listLostFiles)
 
 import System.FilePath     ((</>))
 import Data.List           (find)
-import Data.Maybe          (isJust)
+import Data.Maybe          (fromJust)
+import Control.Monad       (foldM)
 -- import Data.Either         (fromRight)
 
 -- TODO should these have embedded hashtrees? seems unneccesary but needed for findMoves
@@ -31,7 +34,7 @@ data Delta
   = Add  FilePath HashTree
   | Rm   FilePath
   | Mv   FilePath FilePath
-  | Edit FilePath HashTree
+  | Edit FilePath HashTree -- TODO remove in favor of subtle use of Add?
   deriving (Read, Show, Eq)
 
 ------------------------
@@ -90,19 +93,6 @@ fixMoves t (d1@(Rm f1):ds) = case find (findMv t d1) ds of
   Nothing -> d1 : fixMoves t ds
 fixMoves t (d:ds) = d : fixMoves t ds
 
------------------------------
--- simulate git operations --
------------------------------
-
-simDelta :: HashTree -> Delta -> Either String HashTree
-simDelta _ (Add  _ _) = undefined
-simDelta _ (Mv   _ _) = undefined
-simDelta _ (Rm   _  ) = undefined
-simDelta _ (Edit _ _) = undefined
-
-simDeltas :: HashTree -> [Delta] -> Either String HashTree
-simDeltas = undefined
-
 --------------------------------------------
 -- check if simulated operations are safe --
 --------------------------------------------
@@ -111,14 +101,26 @@ simDeltas = undefined
 -- TODO for efficiency, should this be part of a larger "applyIfSafe"?
 --      (that would return the updated tree at the same time)
 -- TODO in order to apply, need actual tree rather than just the hash!
-safe :: HashTree -> Delta -> Bool
-safe t (Add  p  _ ) = not $ treeContainsPath t p
-safe t (Mv   _  p2) = not $ treeContainsPath t p2
-safe _ (Rm   _  ) = undefined -- treeContainsHash (fromRight False $ simDelta t d) (hash s)
-safe _ (Edit _ _) = undefined -- treeContainsHash (fromRight False $ simDelta t d) (hash s)
+safeDelta :: HashTree -> Delta -> Bool
+safeDelta t d = safeDeltas t [d]
 
--- apply the delta if safe, otherwise return an explanation
--- applyPlan :: HashTree -> Delta -> Either String HashTree
--- applyPlan t (Add p _)
---   | treeContainsPath t p = Left $ "adding '" ++ p ++ "' would overwrite an existing path"
---   | otherwise = Right $ simDelta 
+safeDeltas :: HashTree -> [Delta] -> Bool
+safeDeltas t ds = case simDeltas t ds of
+  Nothing -> False
+  Just t2 -> null $ listLostFiles t t2
+
+-----------------------------
+-- simulate git operations --
+-----------------------------
+
+-- TODO convert Maybe -> Either and give back explanations for use in CLI
+simDelta :: HashTree -> Delta -> Maybe HashTree
+simDelta t (Rm   p    ) = rmSubTree t p
+simDelta t (Add  p  t2) = Just $ addSubTree t t2 p
+simDelta t (Edit p  t2) = Just $ addSubTree t t2 p
+simDelta t (Mv   p1 p2) = case simDelta t (Rm p1) of
+  Just t2 -> simDelta t2 $ Add p2 $ fromJust $ dropTo t p1
+  Nothing -> Nothing
+
+simDeltas :: HashTree -> [Delta] -> Maybe HashTree
+simDeltas = foldM simDelta
