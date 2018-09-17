@@ -88,8 +88,8 @@ safeRunDeltas cfg deltas msg = do
       hashes = aPath </> "hashes.txt"
   before <- readTree hashes
   case simDeltas before deltas of
-    Nothing -> undefined -- use Either and print error here
-    Just expected -> do
+    Left e -> log cfg e
+    Right expected -> do
       runDeltas cfg aPath deltas
       when (check cfg) $ do
         actual <- buildTree (verbose cfg) (exclude cfg) aPath
