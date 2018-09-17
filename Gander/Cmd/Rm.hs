@@ -5,6 +5,9 @@ module Gander.Cmd.Rm where
 -- TODO oh, write a couple other messages if it would help brian. lost files should be mentioned even when 0!
 
 import Gander.Lib
+import Prelude hiding (log)
+
+import Gander.Util   (log)
 import Gander.Run    (runGitRm)
 import Gander.Util   (userSaysYes)
 import Gander.Config (Config(..))
@@ -23,8 +26,8 @@ cmdRm cfg target _ rmPath = do -- TODO correct toRm path using root!
              runGitRm cfg (fromJust $ annex cfg) rmPath'
              let mTree = rmSubTree tree rmPath'
              case mTree of
-               Nothing -> putStrLn "failed to rmSubTree"
-               Just t -> printTree t
+               Left  e -> log cfg e
+               Right t -> printHashes t
   if (ok || force cfg)
     then rm
     else do

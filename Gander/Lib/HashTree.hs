@@ -36,7 +36,7 @@ import qualified System.Directory.Tree as DT
 
 import Control.Monad        (forM, msum)
 import Data.List            (find, delete, sort)
-import Data.Maybe           (isJust, fromMaybe)
+import Data.Maybe           (isJust)
 import Data.Function        (on)
 import Data.List            (partition, sortBy)
 import Data.Either          (fromRight)
@@ -308,12 +308,12 @@ addSubTree main sub path = main { hash = h', contents = cs', nFiles = n' }
  - Buuuut for now can just ignore nFiles as it's not needed for the rm itself.
  - TODO does this actually solve nFiles too?
  -}
-rmSubTree :: HashTree -> FilePath -> Maybe HashTree
-rmSubTree (File _ _) _ = Nothing
+rmSubTree :: HashTree -> FilePath -> Either String HashTree
+rmSubTree (File _ _) p = Left $ "no such subtree: '" ++ p ++ "'"
 rmSubTree d@(Dir _ _ cs n) p = case dropTo d p of
-  Nothing -> Nothing
-  Just t -> Just $ if t `elem` cs
+  Nothing -> Left $ "no suck subtree: '" ++ p ++ "'"
+  Just t -> Right $ if t `elem` cs
     then d { contents = delete t cs, nFiles = n - countFiles t }
-    else d { contents = map (\c -> fromMaybe c $ rmSubTree c $ joinPath $ tail $ splitPath p) cs
+    else d { contents = map (\c -> fromRight c $ rmSubTree c $ joinPath $ tail $ splitPath p) cs
            , nFiles = n - countFiles t
            }

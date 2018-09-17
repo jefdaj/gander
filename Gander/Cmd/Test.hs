@@ -1,6 +1,9 @@
 module Gander.Cmd.Test where
 
 import Gander.Lib
+import Prelude hiding (log)
+
+import Gander.Util        (log)
 import Text.Pretty.Simple (pPrint)
 import Gander.Config      (Config(..))
 
@@ -38,8 +41,8 @@ testDupes _ tree = do
   explain "using dupemap to report duplicates:" $ printDupes ds
 
 testRm :: Config -> HashTree -> IO ()
-testRm _ tree = case rmSubTree tree "./demo/backup" of
-  Just t -> do
-    explain "before rmSubTree:" $ printTree tree
-    explain "after  rmSubTree:" $ printTree t
-  Nothing -> putStrLn "failed to rmSubTree"
+testRm cfg tree = case rmSubTree tree "./demo/backup" of
+  Left e -> log cfg e
+  Right t -> do
+    explain "before rmSubTree:" $ printHashes tree
+    explain "after  rmSubTree:" $ printHashes t

@@ -84,8 +84,6 @@ findMv _ _ _ = False
 -- else, that should be displayed as a single move operation. This will never
 -- match 100% before and after actual operations, because the filesystem
 -- version might be a move followed by editing files.
--- TODO to calculate that, need to store/get the hash of each subtree
--- TODO should edits be disallowed? that way all operations are hashable
 fixMoves :: HashTree -> [Delta] -> [Delta]
 fixMoves _ [] = []
 fixMoves t (d1@(Rm f1):ds) = case find (findMv t d1) ds of
@@ -110,23 +108,23 @@ safeDelta t d = safeDeltas t [d]
 
 safeDeltas :: HashTree -> [Delta] -> Bool
 safeDeltas t ds = case simDeltas t ds of
-  Nothing -> False
-  Just t2 -> null $ listLostFiles t t2
+  Left  _  -> False
+  Right t2 -> null $ listLostFiles t t2
 
 -----------------------------
 -- simulate git operations --
 -----------------------------
 
 -- TODO thing through how to report results more!
-simDelta :: HashTree -> Delta -> Maybe HashTree
+simDelta :: HashTree -> Delta -> Either String HashTree
 simDelta t (Rm   p    ) = rmSubTree t p
-simDelta t (Add  p  t2) = Just $ addSubTree t t2 p
-simDelta t (Edit p  t2) = Just $ addSubTree t t2 p
+simDelta t (Add  p  t2) = Right $ addSubTree t t2 p
+simDelta t (Edit p  t2) = Right $ addSubTree t t2 p
 simDelta t (Mv   p1 p2) = case simDelta t (Rm p1) of
-  Just t2 -> simDelta t2 $ Add p2 $ fromJust $ dropTo t p1
-  Nothing -> Nothing
+  Left  e  -> Left e
+  Right t2 -> simDelta t2 $ Add p2 $ fromJust $ dropTo t p1
 
-simDeltas :: HashTree -> [Delta] -> Maybe HashTree
+simDeltas :: HashTree -> [Delta] -> Either String HashTree
 simDeltas = foldM simDelta
 
 -- seems like what we really want is runDeltaIfSafe, which does simDelta, checks safety, then runDelta
