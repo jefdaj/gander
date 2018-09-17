@@ -90,11 +90,27 @@ safeRunDeltas cfg deltas msg = do
   case simDeltas before deltas of
     Left e -> log cfg e
     Right expected -> do
-      runDeltas cfg aPath deltas
-      when (check cfg) $ do
-        actual <- buildTree (verbose cfg) (exclude cfg) aPath
-        assertSameTrees aPath expected actual
-        writeFile hashes $ serializeTree expected
-      -- TODO should gitCommit be part of runDeltas?
-      -- TODO sanitize dst for commit message
-      runGitCommit cfg aPath msg
+      -- TODO check no lost files here and ask user to confirm if there are
+      let lost = listLostFiles before expected
+          run = do
+            runDeltas cfg aPath deltas
+            when (check cfg) $ do
+              actual <- buildTree (verbose cfg) (exclude cfg) aPath
+              assertSameTrees ("expected '" ++ aPath ++ "'", expected)
+                              ("actual '"   ++ aPath ++ "'", actual)
+            writeFile hashes $ serializeTree expected
+            -- TODO should gitCommit be part of runDeltas?
+            -- TODO sanitize dst for commit message
+            runGitCommit cfg aPath msg
+      case lost of
+        [] -> do
+          log cfg "deltas should be safe. running them..."
+          run
+        ls -> do
+          let msg2 = unlines $
+                      [ "Warning! The last copies of these files will be removed:" ]
+                      ++ ls ++ [ "Is that what you want?"]
+          confirm <- userSaysYes msg2
+          if confirm
+            then run
+            else putStrLn "OK, aborting" -- TODO better message
