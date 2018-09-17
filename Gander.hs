@@ -13,6 +13,7 @@ import System.Console.Docopt (docoptFile, parseArgsOrExit,
                               getArgOrExitWith, isPresent, getArg,
                               shortOption, command, argument)
 import System.Environment    (getArgs)
+import System.FilePath       ((</>))
 
 main :: IO ()
 main = do
@@ -38,6 +39,7 @@ main = do
     -- annex-aware mode
     Just a -> do
       aPath <- absolutize a
+      let hashes = aPath </> "hashes.txt"
       if      cmd "init"  then cmdInit  cfg aPath
       else if cmd "hash"  then cmdHash  cfg aPath
       else if cmd "dupes" then cmdDupes cfg aPath
@@ -49,6 +51,9 @@ main = do
         src <- arg "src"
         dst <- arg "dst"
         cmdMv cfg src dst
+      else if cmd "rm" then do
+        rmPath <- arg "rmPath"
+        cmdRm cfg hashes aPath rmPath
       else if cmd "dedup" then cmdDedup cfg
       else do
         print args

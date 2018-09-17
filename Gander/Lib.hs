@@ -33,8 +33,8 @@ module Gander.Lib
   , printDeltas
   , simDelta
   , simDeltas
-  , safeDelta
-  , safeDeltas
+  -- , safeDelta
+  -- , safeDeltas
   , assertSameTrees
 
   -- dupemap

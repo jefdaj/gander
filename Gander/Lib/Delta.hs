@@ -3,8 +3,8 @@ module Gander.Lib.Delta
   , diff
   , prettyDelta
   , printDeltas
-  , safeDelta
-  , safeDeltas
+  -- , safeDelta
+  -- , safeDeltas
   , simDelta
   , simDeltas
   , assertSameTrees -- TODO rename to mention diff
@@ -103,13 +103,13 @@ fixMoves t (d:ds) = d : fixMoves t ds
 -- TODO for efficiency, should this be part of a larger "applyIfSafe"?
 --      (that would return the updated tree at the same time)
 -- TODO in order to apply, need actual tree rather than just the hash!
-safeDelta :: HashTree -> Delta -> Bool
-safeDelta t d = safeDeltas t [d]
-
-safeDeltas :: HashTree -> [Delta] -> Bool
-safeDeltas t ds = case simDeltas t ds of
-  Left  _  -> False
-  Right t2 -> null $ listLostFiles t t2
+-- safeDelta :: HashTree -> Delta -> Bool
+-- safeDelta t d = safeDeltas t [d]
+-- 
+-- safeDeltas :: HashTree -> [Delta] -> Bool
+-- safeDeltas t ds = case simDeltas t ds of
+--   Left  _  -> False
+--   Right t2 -> null $ listLostFiles t t2
 
 -----------------------------
 -- simulate git operations --
@@ -129,9 +129,11 @@ simDeltas = foldM simDelta
 
 -- seems like what we really want is runDeltaIfSafe, which does simDelta, checks safety, then runDelta
 
-assertSameTrees :: FilePath -> HashTree -> HashTree -> IO ()
-assertSameTrees path before after = do
-  let missing = diff before after
-  when (not $ null missing) $ do
-    putStrLn $ "error! final files differ from '" ++ path ++ "':"
-    printDeltas missing
+-- TODO be clearer on before/after and or expected/actual here
+-- assertSameTrees :: FilePath -> HashTree -> HashTree -> IO ()
+assertSameTrees :: (String, HashTree) -> (String, HashTree) -> IO ()
+assertSameTrees (msg1, tree1) (msg2, tree2) = do
+  let wrong = diff tree1 tree2
+  when (not $ null wrong) $ do
+    putStrLn $ unwords ["error!", msg1, "and", msg2, "should be identical, but aren't:"]
+    printDeltas wrong

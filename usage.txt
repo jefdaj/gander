@@ -11,6 +11,7 @@ Usage:
   gander <annex> init  [-vc]
   gander <annex> add <dst> [<src>] [-vc]
   gander <annex> mv  <src>  <dst>  [-vc]
+  gander <annex> rm  <rmpath> [-vc]
   gander <annex> hash  [-vc]
   gander <annex> dupes [-vc]
   gander <annex> dedup [-vc]
