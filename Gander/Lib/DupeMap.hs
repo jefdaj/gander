@@ -29,7 +29,7 @@ import System.FilePath ((</>), splitDirectories)
 
 -- TODO can Foldable or Traversable simplify these?
 
--- TODO add the hash here too?
+-- note that most of the functions use (Hash, DupeList) instead of plain DupeList
 type DupeList = (Int, TreeType, [FilePath])
 
 {- A map from file/dir hash to a list of duplicate file paths.
@@ -70,11 +70,11 @@ dupesByNFiles = sortDescLength . filter hasDupes . toList
  - and the next is dir1/file.txt, dir2/file.txt, dir3/file.txt
  - ... then the second set is redundant and confusing to show.
  -}
-simplifyDupes :: [DupeList] -> [DupeList]
+simplifyDupes :: [(Hash, DupeList)] -> [(Hash, DupeList)]
 simplifyDupes [] = []
-simplifyDupes (d@(_,_,fs):ds) = d : filter (not . redundantList) ds
+simplifyDupes (d@(_, (_,_,fs)):ds) = d : filter (not . redundantList) ds
   where
-    redundantList (_,_,fs') = all redundantElem fs'
+    redundantList (_, (_,_,fs')) = all redundantElem fs'
     redundantElem e'  = any id [(splitDirectories e) `isPrefixOf` (splitDirectories e') | e <- fs]
 
 -- TODO orderDupePaths :: [FilePath] -> [FilePath]
@@ -83,8 +83,8 @@ simplifyDupes (d@(_,_,fs):ds) = d : filter (not . redundantList) ds
 -- sorts paths by shallowest (fewest dirs down), then length of filename,
 -- then finally alphabetical
 -- TODO is it inefficient enough to slow down the dupes command? rewrite if so
-sortDupePaths :: DupeList -> DupeList
-sortDupePaths (i, t, ps) = (i, t, sortBy myCompare ps)
+sortDupePaths :: (Hash, DupeList) -> (Hash, DupeList)
+sortDupePaths (h, (i, t, ps)) = (h, (i, t, sortBy myCompare ps))
   where
     myCompare p1 p2 = let d1 = length $ splitDirectories p1
                           d2 = length $ splitDirectories p2
@@ -100,16 +100,15 @@ hasDupes :: (Hash, DupeList) -> Bool
 hasDupes (_, (nfiles, _, paths)) = length paths > 1 && nfiles > 0
 
 -- TODO use this as the basis for the dedup repl
-printDupes :: [DupeList] -> IO ()
+printDupes :: [(Hash, DupeList)] -> IO ()
 printDupes groups = mapM_ printGroup groups
   where
-    -- explain fs ds = if fs == ds
-    explain t fs ds = if t == F
-      then "# " ++ show fs ++ " duplicate files"
-      else "# " ++ show ds ++ " duplicate dirs with " ++ show (div fs ds)
-                ++ " files each (" ++ show fs ++ " total)"
-    printGroup (n, t, paths) = mapM_ putStrLn
-                             $ [explain t n (length paths)]
+    explain t h fs ds = (if t == F
+      then "# " ++ show fs ++ " files"
+      else "# " ++ show ds ++ " dirs (" ++ show (div fs ds) ++ " files each, " ++ show fs ++ " total)")
+      ++ " have hash " ++ prettyHash h ++ ":"
+    printGroup (h, (n, t, paths)) = mapM_ putStrLn
+                             $ [explain t h n (length paths)]
                              ++ sort paths ++ [""]
 
 -----------------------------
