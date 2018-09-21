@@ -6,6 +6,7 @@
 
 module Gander.Lib.Hash
   ( Hash(..)
+  , prettyHash
   , hashBytes
   , hashString
   , hashFile
@@ -29,6 +30,10 @@ import System.Posix.Files (getSymbolicLinkStatus, isSymbolicLink, readSymbolicLi
  -}
 newtype Hash = Hash { unHash :: String }
   deriving (Eq, Read, Show, Ord)
+
+-- TODO actual Pretty instance
+prettyHash :: Hash -> String
+prettyHash = take 8 . unHash
 
 hashBytes :: LB.ByteString -> String
 hashBytes = show . (hashlazy :: LB.ByteString -> Digest SHA256)

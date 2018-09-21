@@ -9,7 +9,7 @@ module Gander.Lib.Delta
   )
   where
 
-import Gander.Lib.Hash (Hash(..))
+import Gander.Lib.Hash (prettyHash)
 import Gander.Lib.HashTree (HashTree(..), treeContainsPath, treeContainsHash, addSubTree)
 import System.FilePath ((</>))
 import Data.List (find)
@@ -25,14 +25,11 @@ data Delta
 -- list changes after the fact --
 ---------------------------------
 
-prettyHash :: HashTree -> String
-prettyHash = take 8 . unHash . hash
-
 prettyDiff :: Delta -> String
-prettyDiff (Add  f     t    ) = "added '"   ++ f  ++ "' (" ++ prettyHash t ++ ")"
-prettyDiff (Rm   f     t    ) = "removed '" ++ f  ++ "' (" ++ prettyHash t ++ ")"
-prettyDiff (Edit f     t1 t2) = "edited '"  ++ f  ++ "' (" ++ prettyHash t1 ++ " -> " ++ prettyHash t2 ++ ")"
-prettyDiff (Mv   f1 f2 t    ) = "moved '"   ++ f1 ++ "' -> '" ++ f2 ++ "' (" ++ prettyHash t ++ ")"
+prettyDiff (Add  f     t    ) = "added '"   ++ f  ++ "' (" ++ prettyHash (hash t ) ++ ")"
+prettyDiff (Rm   f     t    ) = "removed '" ++ f  ++ "' (" ++ prettyHash (hash t ) ++ ")"
+prettyDiff (Edit f     t1 t2) = "edited '"  ++ f  ++ "' (" ++ prettyHash (hash t1) ++ " -> " ++ prettyHash (hash t2) ++ ")"
+prettyDiff (Mv   f1 f2 t    ) = "moved '"   ++ f1 ++ "' -> '" ++ f2 ++ "' (" ++ prettyHash (hash t) ++ ")"
 
 printDiffs :: [Delta] -> IO ()
 printDiffs = mapM_ (putStrLn . prettyDiff)
