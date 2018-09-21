@@ -17,7 +17,7 @@ import qualified Data.ByteString.Lazy.Char8 as B8
 
 import Crypto.Hash        (Digest, SHA256, hashlazy)
 import Data.Char          (ord)
-import Data.List          (isInfixOf)
+import Data.List          (isInfixOf, isPrefixOf)
 import Data.List.Split    (splitOn)
 import System.FilePath    (takeBaseName)
 import System.Posix.Files (getSymbolicLinkStatus, isSymbolicLink, readSymbolicLink)
@@ -36,7 +36,6 @@ hashBytes = show . (hashlazy :: LB.ByteString -> Digest SHA256)
 hashString :: String -> String
 hashString = hashBytes . B8.pack
 
--- TODO warn in the readme that the annex is assumed to use the sha256 backend?
 hashSymlink :: FilePath -> IO (Maybe Hash)
 hashSymlink path = do
   status <- getSymbolicLinkStatus path
@@ -45,7 +44,8 @@ hashSymlink path = do
     else do
       link <- readSymbolicLink path
       return $ Just $ Hash $ if ".git/annex/objects/" `isInfixOf` link
-        then last $ splitOn "--" $ takeBaseName link
+                             && "SHA256E-" `isPrefixOf` (takeBaseName link)
+        then last $ splitOn "--" $ head $ splitOn "." $ takeBaseName link
         else hashBytes $ (LB.pack . map (fromIntegral . ord)) link
 
 -- see: https://stackoverflow.com/a/30537010
