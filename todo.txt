@@ -1,69 +1,33 @@
-bug: dir hashes need to be recalculated after changing contents (including rm)
+better hashing:
+  should be fast to verify dir hashes when reading the tree right? might prevent file editing mistakes
+  check for sha256sum annex backend before trusting filenames
+  remove occasional ".ext" from annex hashes
+  print each hash as it finished (line buffering issue?)
+  multithread by default
 
-also add hashes to the dupes output (harder than it seems though)
-
-much faster to finish if....
-  only need to rigorously test the `git rm` command
-  that way you can:
-    do one big scan
-    rm something
-    update the hashes file just to remove other duplicates it mentions without re-scanning
-
-still want a basic ask-remove-update interface at least though
-delete commandn needs to: check all are dupes, confirm, then update hashes (and needs a hashes arg)
+bugs to fix:
+  dir hashes need to be recalculated after changing contents (including rm)
+  "too many levels of symbolic links" when hashing system folders with cyclic symlinks
+    /usr/bin/X11 seems to trigger it
+    just want to hash the destination path instead of following it
+  have to handle "permission denied" errors? maybe just abort and make user have sudo
 
 simplify the interface:
-  most commands take a file listing hashes first thing
-  would exclude test
-  would exclude hash too? nah might as well do it for consistency
-    but should warn if the file already exists
-    and should warn if files to be hashed aren't within the same file tree/repo
-      maybe explicitly set the repo? not sure if needed
+  gander hash  <target> [-e <exclude>]
+  gander dupes <target> [-e <exclude>]
+  gander dedup <target> [-e <exclude>] [-fc]
+  gander diff  <oldtarget> <newtarget> [-e <exclude>]
+  gander test  <testdir>
+  gander <annex> init
+  gander <annex> hash  [<path>] [-f]
+  gander <annex> dupes [<path>]
+  gander <annex> dedup [<path>] [-fc]
+  gander <annex> add    <path>  [-s <srcpath>] [-fc]
+  gander <annex> rm     <path>  [-fc]
 
-separate modes for just hashing/fscking vs working with an annex:
-  annex has a <repo> (<annex>?) path
-  when not using repo, require a --no-repo flag to be explicit?
-    then can print to stdout like current
-    or just do it anyway, that wouldn't hurt anything
-  when using repo:
-    require git status to be clean first
-    store the hashes in the git repo too? or put them in .git/gander/hashes.txt?
-
-add a backup flag that makes a backup of the main hashes file before changing it
-
-would it help to break up HashTree.hs further?
-put dir/file before hash and split on that to handle newlines in filenames
-
-have to prevent "too many levels of symbolic links" when hashing system folders?
-  /usr/bin/X11 seems to trigger it
-  just want to hash the destination path instead of following it
-
-have to handle "permission denied" errors? maybe just abort and make user have sudo
-
-when listing dupes, sort paths by n components then alphabet
-
-better interface:
-  all commands start with the main hashes file
-  find repo based on that and stick with it throughout
-  init command to create repo + empty hashes file
-
-asciinema demos:
-  fork from master or dedup-1-compiles-but-broken?
-  first demo because this works already:
-    want manual control to work gander into an existing workflow
-    do the operations separately
-    manage hash files yourself
-    mix freely with git operations
-  second demo that will be more for brian:
-    want to use the repo specifically for deduping as simply as possible
-    add a gander init command to create repo, annex init, create empty hashes.txt
-
-everything as edits:
-  make an Edit datatype... or Delta? that describes change in a hashtree
-  it can start as the same one used for Diff now
-  but should include everything needed to say beforehand whether a given list of changes is safe too
-  later you can test that for any edit the precalculated delta == actual scan at the end
-
-does diff actually work enough for testing already?
-  only important to go from delta -> new hashes, not new hashes -> delta so much
-  because can do the git operation and re-hash everything to test that!
+minor features to add if time:
+  add hashes to the dupes output? have to adjust the types first
+  when listing dupes, sort paths by n components then alphabet
+  make sure dir listings are alphabetical (probably are already)
+  can the format be compressed a little more by combining D and the indent? or better, can the indent be removed?
+  warning when you use potentially destructive standalone commands in an annex
