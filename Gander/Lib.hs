@@ -41,6 +41,7 @@ module Gander.Lib
   , pathsByHash
   , printDupes
   , simplifyDupes
+  , sortDupePaths
   )
   where
 

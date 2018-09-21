@@ -23,6 +23,5 @@ simplify the interface:
 
 minor features to add if time:
   add hashes to the dupes output? have to adjust the types first
-  when listing dupes, sort paths by n components then alphabet
   make sure dir listings are alphabetical (probably are already)
   warning when you use potentially destructive standalone commands in an annex
