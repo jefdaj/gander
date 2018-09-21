@@ -5,7 +5,7 @@ module Gander.Lib.HashTree
   , buildTree
   , readOrBuildTree
   , renameRoot
-  , printHashes
+  , printTree
   , prettyHashLine
   , serializeTree
   , flattenTree
@@ -136,10 +136,6 @@ readOrBuildTree verbose exclude path = do
 renameRoot :: String -> HashTree -> HashTree
 renameRoot newName tree = tree { name = newName }
 
--- TODO use serialize for this
-printHashes :: HashTree -> IO ()
-printHashes = putStr . serializeTree
-
 -------------------------------------
 -- serialize and deserialize trees --
 -------------------------------------
@@ -148,6 +144,9 @@ printHashes = putStr . serializeTree
 -- TODO need to handle unicode here?
 serializeTree :: HashTree -> String
 serializeTree = unlines . map prettyHashLine . flattenTree
+
+printTree :: HashTree -> IO ()
+printTree = mapM_ (putStrLn . prettyHashLine) . flattenTree
 
 flattenTree :: HashTree -> [HashLine]
 flattenTree = flattenTree' ""

@@ -23,7 +23,7 @@ testSerialization _ tree1 = do
       str2  = serializeTree tree2
   let tests = [tree1 == tree2, show tree1 == show tree1, str1 == str2]
   if (all id tests) then do
-    explain "round-tripped hashtree to string:" $ printHashes tree1
+    explain "round-tripped hashtree to string:" $ printTree tree1
   else do
     putStrLn "failed to round-trip hashtree to string!"
     print str1
@@ -40,6 +40,6 @@ testDupes _ tree = do
 testRm :: Config -> HashTree -> IO ()
 testRm _ tree = case rmSubTree tree "./demo/backup" of
   Just t -> do
-    explain "before rmSubTree:" $ printHashes tree
-    explain "after  rmSubTree:" $ printHashes t
+    explain "before rmSubTree:" $ printTree tree
+    explain "after  rmSubTree:" $ printTree t
   Nothing -> putStrLn "failed to rmSubTree"
