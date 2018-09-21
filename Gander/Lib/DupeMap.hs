@@ -10,6 +10,7 @@ module Gander.Lib.DupeMap
   , pathsByHash
   , printDupes
   , simplifyDupes
+  , sortDupePaths
   , sortDescLength
   )
   where
@@ -75,6 +76,25 @@ simplifyDupes (d@(_,_,fs):ds) = d : filter (not . redundantList) ds
   where
     redundantList (_,_,fs') = all redundantElem fs'
     redundantElem e'  = any id [(splitDirectories e) `isPrefixOf` (splitDirectories e') | e <- fs]
+
+-- TODO orderDupePaths :: [FilePath] -> [FilePath]
+--      should order by least path components, then shortest name, then maybe alphabetical
+
+-- sorts paths by shallowest (fewest dirs down), then length of filename,
+-- then finally alphabetical
+-- TODO is it inefficient enough to slow down the dupes command? rewrite if so
+sortDupePaths :: DupeList -> DupeList
+sortDupePaths (i, t, ps) = (i, t, sortBy myCompare ps)
+  where
+    myCompare p1 p2 = let d1 = length $ splitDirectories p1
+                          d2 = length $ splitDirectories p2
+                          l1 = length p1
+                          l2 = length p2
+                      in if      d1 > d2 then GT
+                         else if d1 < d2 then LT
+                         else if l1 > l2 then GT
+                         else if l1 < l2 then LT
+                         else compare p1 p2
 
 hasDupes :: (Hash, DupeList) -> Bool
 hasDupes (_, (nfiles, _, paths)) = length paths > 1 && nfiles > 0
