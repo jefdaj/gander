@@ -44,5 +44,5 @@ testRm :: Config -> HashTree -> IO ()
 testRm cfg tree = case rmSubTree tree "./demo/backup" of
   Left e -> log cfg e
   Right t -> do
-    explain "before rmSubTree:" $ printHashes tree
-    explain "after  rmSubTree:" $ printHashes t
+    explain "before rmSubTree:" $ printTree tree
+    explain "after  rmSubTree:" $ printTree t
