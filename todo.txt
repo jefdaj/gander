@@ -1,7 +1,5 @@
 better hashing:
   should be fast to verify dir hashes when reading the tree right? might prevent file editing mistakes
-  check for sha256sum annex backend before trusting filenames
-  remove occasional ".ext" from annex hashes
   print each hash as it finished (line buffering issue?)
   multithread by default
 
