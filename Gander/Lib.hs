@@ -4,7 +4,6 @@ module Gander.Lib
   , prettyHash
   , hashBytes
   , hashFile
-  , prettyHash
 
   -- hashtree
   , HashTree(..)
