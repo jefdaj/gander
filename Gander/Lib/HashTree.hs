@@ -44,6 +44,7 @@ import Data.Ord             (compare)
 import System.Directory     (doesFileExist, doesDirectoryExist)
 import System.FilePath      ((</>), splitPath, joinPath)
 import System.FilePath.Glob (compile, match)
+import System.IO            (hFlush, stdout)
 import System.IO.Unsafe     (unsafeInterleaveIO)
 
 import Prelude hiding (take)
@@ -146,7 +147,9 @@ serializeTree :: HashTree -> String
 serializeTree = unlines . map prettyHashLine . flattenTree
 
 printTree :: HashTree -> IO ()
-printTree = mapM_ (putStrLn . prettyHashLine) . flattenTree
+printTree = mapM_ printLine . flattenTree
+  where
+    printLine l = (putStrLn $ prettyHashLine l) >> hFlush stdout
 
 flattenTree :: HashTree -> [HashLine]
 flattenTree = flattenTree' ""
