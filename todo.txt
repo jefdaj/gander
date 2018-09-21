@@ -25,5 +25,4 @@ minor features to add if time:
   add hashes to the dupes output? have to adjust the types first
   when listing dupes, sort paths by n components then alphabet
   make sure dir listings are alphabetical (probably are already)
-  can the format be compressed a little more by combining D and the indent? or better, can the indent be removed?
   warning when you use potentially destructive standalone commands in an annex
