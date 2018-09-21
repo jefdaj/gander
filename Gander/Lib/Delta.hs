@@ -41,14 +41,15 @@ data Delta
 -- diff two hashtrees --
 ------------------------
 
-prettyDiff :: Delta -> String
-prettyDiff (Add  f     t    ) = "added '"   ++ f  ++ "' (" ++ prettyHash (hash t ) ++ ")"
-prettyDiff (Rm   f     t    ) = "removed '" ++ f  ++ "' (" ++ prettyHash (hash t ) ++ ")"
-prettyDiff (Edit f     t1 t2) = "edited '"  ++ f  ++ "' (" ++ prettyHash (hash t1) ++ " -> " ++ prettyHash (hash t2) ++ ")"
-prettyDiff (Mv   f1 f2 t    ) = "moved '"   ++ f1 ++ "' -> '" ++ f2 ++ "' (" ++ prettyHash (hash t) ++ ")"
+-- TODO put the hashes back here?
+prettyDelta :: Delta -> String
+prettyDelta (Add  f  t ) = "added '"   ++ f  ++ "' (" ++ prettyHash (hash t) ++ ")"
+prettyDelta (Rm   f    ) = "removed '" ++ f  ++ "'"
+prettyDelta (Edit f  t ) = "edited '"  ++ f  ++ "' (" ++ prettyHash (hash t) ++ ")"
+prettyDelta (Mv   f1 f2) = "moved '"   ++ f1 ++ "' -> '" ++ f2 ++ "'"
 
 printDeltas :: [Delta] -> IO ()
-printDeltas = mapM_ (putStrLn . prettyDiff)
+printDeltas = mapM_ (putStrLn . prettyDelta)
 
 diff :: HashTree -> HashTree -> [Delta]
 diff = diff' ""

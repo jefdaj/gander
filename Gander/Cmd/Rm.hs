@@ -36,7 +36,7 @@ cmdRm cfg target _ rmPath = do -- TODO correct toRm path using root!
 --              let mTree = rmSubTree tree rmPath'
 --              case mTree of
 --                Left  e -> log cfg e
---                Right t -> printHashes t
+--                Right t -> printTree t
 --   if (ok || force cfg)
 --     then rm
 --     else do
