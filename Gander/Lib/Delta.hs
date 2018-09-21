@@ -19,15 +19,14 @@ module Gander.Lib.Delta
  -}
 
 import Gander.Config
-import Gander.Lib.Hash (prettyHash)
-import Gander.Lib.HashTree (HashTree(..), treeContainsPath, treeContainsHash, addSubTree, dropTo)
-import Gander.Lib.DupeMap  (listLostFiles)
+import Gander.Lib.HashTree
 
-import System.FilePath     ((</>))
+import Control.Monad       (when, foldM)
 import Data.List           (find)
 import Data.Maybe          (fromJust)
-import Control.Monad       (when, foldM)
--- import Data.Either         (fromRight)
+import Gander.Lib.DupeMap  (listLostFiles)
+import Gander.Lib.Hash     (prettyHash)
+import System.FilePath     ((</>))
 
 -- TODO should these have embedded hashtrees? seems unneccesary but needed for findMoves
 --      maybe only some of them are needed: add and edit. and edit only needs one.
@@ -48,8 +47,8 @@ prettyDiff (Rm   f     t    ) = "removed '" ++ f  ++ "' (" ++ prettyHash (hash t
 prettyDiff (Edit f     t1 t2) = "edited '"  ++ f  ++ "' (" ++ prettyHash (hash t1) ++ " -> " ++ prettyHash (hash t2) ++ ")"
 prettyDiff (Mv   f1 f2 t    ) = "moved '"   ++ f1 ++ "' -> '" ++ f2 ++ "' (" ++ prettyHash (hash t) ++ ")"
 
-printDiffs :: [Delta] -> IO ()
-printDiffs = mapM_ (putStrLn . prettyDiff)
+printDeltas :: [Delta] -> IO ()
+printDeltas = mapM_ (putStrLn . prettyDiff)
 
 diff :: HashTree -> HashTree -> [Delta]
 diff = diff' ""

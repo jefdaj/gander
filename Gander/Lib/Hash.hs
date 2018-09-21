@@ -10,7 +10,6 @@ module Gander.Lib.Hash
   , hashBytes
   , hashString
   , hashFile
-  , prettyHash
   )
   where
 
