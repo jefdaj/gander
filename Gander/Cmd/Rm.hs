@@ -23,7 +23,7 @@ cmdRm cfg target _ rmPath = do -- TODO correct toRm path using root!
              let mTree = rmSubTree tree rmPath'
              case mTree of
                Nothing -> putStrLn "failed to rmSubTree"
-               Just t -> printHashes t
+               Just t -> printTree t
   if (ok || force cfg)
     then rm
     else do

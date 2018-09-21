@@ -15,7 +15,7 @@ module Gander.Lib
   , hashContents
   , listAllFiles
   , listLostFiles
-  , printHashes
+  , printTree
   , readOrBuildTree
   , readTree
   , renameRoot

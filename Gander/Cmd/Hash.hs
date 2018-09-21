@@ -19,7 +19,7 @@ cmdHash :: Config -> FilePath -> IO ()
 cmdHash cfg target = do
   new <- buildTree (verbose cfg) (exclude cfg) target
   case annex cfg of
-    Nothing -> printHashes new
+    Nothing -> printTree new
     Just dir -> do
       updateAnnexHashes cfg new
       runGitCommit cfg dir "gander hash"
