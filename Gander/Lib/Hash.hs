@@ -21,7 +21,8 @@ import Data.Char          (ord)
 import Data.List          (isInfixOf, isPrefixOf)
 import Data.List.Split    (splitOn)
 import System.FilePath    (takeBaseName)
-import System.Posix.Files (getSymbolicLinkStatus, isSymbolicLink, readSymbolicLink)
+import System.Directory   (pathIsSymbolicLink)
+import System.Posix.Files (readSymbolicLink)
 
 {- Checksum (sha256sum?) of a file or folder.
  - For files, should match the corresponding git-annex key.
@@ -41,10 +42,14 @@ hashBytes = show . (hashlazy :: LB.ByteString -> Digest SHA256)
 hashString :: String -> String
 hashString = hashBytes . B8.pack
 
+{- This applies to directories as well as files because when trying to traverse
+ - non-annex symlinks there can be infinite cycles. For example it will fail on
+ - /usr/bin/X11.
+ -}
 hashSymlink :: FilePath -> IO (Maybe Hash)
 hashSymlink path = do
-  status <- getSymbolicLinkStatus path
-  if not (isSymbolicLink status)
+  isLink <- pathIsSymbolicLink path
+  if not isLink
     then return Nothing
     else do
       link <- readSymbolicLink path
@@ -62,11 +67,13 @@ hashFileContents path = do -- TODO hashFileContents
 
 -- Hashes if necessary, but tries to read it from a link first
 -- Note that this can only print file hashes, not the whole streaming trees format
+-- TODO remove the unused verbose flag?
 hashFile :: Bool -> FilePath -> IO Hash
 hashFile _ path = do
   -- aHash <- hashAnnexSymlink path
   sHash <- hashSymlink path
-  fHash <- hashFileContents path
-  return $ case sHash of
-    Just h  -> h
-    Nothing -> fHash
+  case sHash of
+    Just h  -> return h
+    Nothing -> do
+      fHash <- hashFileContents path
+      return fHash
