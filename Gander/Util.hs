@@ -8,6 +8,8 @@ module Gander.Util
   , pathComponents
   , userSaysYes
   , withAnnex
+  , isAnnexSymlink
+  , isNonAnnexSymlink
   )
   where
 
@@ -16,12 +18,13 @@ import Gander.Config (Config(..))
 import Prelude hiding (log)
 
 import Control.Monad         (when)
-import Data.List             (isPrefixOf)
+import Data.List             (isPrefixOf, isInfixOf)
 import Data.Maybe            (fromJust)
 import System.Directory      (getHomeDirectory, doesDirectoryExist)
-import System.FilePath       (addTrailingPathSeparator, normalise, pathSeparator, splitPath, joinPath, takeDirectory, (</>))
+import System.FilePath       (addTrailingPathSeparator, normalise, pathSeparator, splitPath, joinPath, takeDirectory, (</>), takeBaseName)
 import System.Path.NameManip (guess_dotdot, absolute_path)
 import System.IO        (hFlush, stdout)
+import System.Posix.Files (getSymbolicLinkStatus, isSymbolicLink, readSymbolicLink)
 
 pathComponents :: FilePath -> [FilePath]
 pathComponents f = filter (not . null)
@@ -80,3 +83,26 @@ withAnnex cfg path fn = do
     Just dir -> do
       log cfg $ "using git-annex repo '" ++ dir ++ "'"
       fn dir
+
+-- We reuse the existing SHA256SUM from the link
+-- TODO is this less efficient than putting all the logic in one function?
+isAnnexSymlink :: FilePath -> IO Bool
+isAnnexSymlink path = do
+  status <- getSymbolicLinkStatus path
+  if not (isSymbolicLink status)
+    then return False
+    else do
+      l <- readSymbolicLink path
+      return $ ".git/annex/objects/" `isInfixOf` l && "SHA256E-" `isPrefixOf` (takeBaseName l)
+
+
+-- We treat these as files rather than following to avoid infinite cycles
+isNonAnnexSymlink :: FilePath -> IO Bool
+isNonAnnexSymlink path = do
+  status <- getSymbolicLinkStatus path
+  if not (isSymbolicLink status)
+    then return False
+    else do
+      link <- readSymbolicLink path
+      return $ not $ (".git/annex/objects/" `isInfixOf` link)
+                  && ("SHA256E-" `isPrefixOf` (takeBaseName link))

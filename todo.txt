@@ -3,9 +3,6 @@ better hashing:
 
 bugs to fix:
   dir hashes need to be recalculated after changing contents (including rm)
-  "too many levels of symbolic links" when hashing system folders with cyclic symlinks
-    /usr/bin/X11 seems to trigger it
-    just want to hash the destination path instead of following it
   have to handle "permission denied" errors? maybe just abort and make user have sudo
 
 simplify the interface:
