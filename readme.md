@@ -5,8 +5,8 @@ gander
 
 The "Git ANnex DedupER" deduplicates files, optionally using [git-annex][1] to track changes.
 
-It's especially suited for cases where you have so many files that git-annex
-alone slows to a crawl trying to index them all (several million +), where they
+It's especially suited for cases where you have so many files that git
+slows to a crawl trying to index them all (several million +), where they
 are too large to fit on your computer at once, or where you want to be really
 sure not to delete anything important in the process.
 
