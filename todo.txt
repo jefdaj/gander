@@ -1,5 +1,6 @@
 better hashing:
   should be fast to verify dir hashes when reading the tree right? might prevent file editing mistakes
+  should there be a third L type for symlinks?
 
 bugs to fix:
   dir hashes need to be recalculated after changing contents (including rm)
