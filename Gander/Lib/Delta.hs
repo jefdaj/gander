@@ -25,7 +25,7 @@ import Control.Monad       (when, foldM)
 import Data.List           (find)
 import Data.Maybe          (fromJust)
 import Gander.Lib.DupeMap  (listLostFiles)
-import Gander.Lib.Hash     (prettyHash)
+import Gander.Lib.Hash     (Hash(..), prettyHash)
 import System.FilePath     ((</>))
 
 -- TODO should these have embedded hashtrees? seems unneccesary but needed for findMoves

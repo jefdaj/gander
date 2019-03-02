@@ -1,6 +1,6 @@
 module Gander.Lib
   -- hash
-  ( Hash
+  ( Hash(..)
   , prettyHash
   , hashBytes
   , hashFile
