@@ -33,8 +33,13 @@ newtype Hash = Hash { unHash :: String }
   deriving (Eq, Read, Show, Ord)
 
 -- TODO actual Pretty instance
+-- TODO how many chars to display? git uses two groups of 7 like this
 prettyHash :: Hash -> String
-prettyHash = take 8 . unHash
+prettyHash (Hash h) = firstN h ++ "..." ++ lastN h
+  where
+    nChars = 7
+    firstN = take nChars
+    lastN  = reverse . take nChars . reverse
 
 hashBytes :: LB.ByteString -> String
 hashBytes = show . (hashlazy :: LB.ByteString -> Digest SHA256)
