@@ -23,25 +23,28 @@ echo
 cd ..; tree demo; cd demo
 echo
 
-echo "this is what \`diff -r\` says about them:"
+echo "this is how \`diff -r\` explains the difference between backup and current:"
 diff -r backup current
 echo
 
-echo "and this is what \`gander diff\` says:"
+echo "and this is how \`gander diff\` explains it:"
 gander diff backup current
 echo
+
+echo "simpler for our purposes, right?"
 
 echo "duplicating the backup folder twice more..."
 cp -r backup current/old-backup-1
 cp -r backup current/old-backup-2
 echo
 
-echo "list all duplicates with \`gander dupes\`:"
+echo "you can list all duplicates with \`gander dupes\`:"
 cd ..
 gander dupes demo
-echo
 
-echo "delete those two old-backup folders, then re-run:"
+echo "there are some overlapping duplicates, as usual."
+echo "simplify it by deleting those two old-backup folders listed first,"
+echo "then re-run to see what's still duplicated:"
 rm -rf demo/current/old-backup-*
 gander dupes demo
 echo
