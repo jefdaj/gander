@@ -1,5 +1,12 @@
 #!/usr/bin/env bash
 
+checkdep() {
+  which $1 &> /dev/null || (echo "you need $1 to run the demo"; exit 1)
+}
+
+checkdep git-annex
+checkdep gander
+
 rm -rf demo demo-hashes.txt
 mkdir demo
 cd demo
