@@ -1,6 +1,7 @@
 module Gander.Util
   ( absolutize
   , dropDir
+  , dropDir'
   , findAnnex
   , inAnnex
   , log
@@ -20,9 +21,9 @@ import Prelude hiding (log)
 import Control.Monad         (when)
 import Data.List             (isPrefixOf, isInfixOf)
 import Data.Maybe            (fromJust)
-import System.Directory      (getHomeDirectory, doesDirectoryExist)
+import System.Directory      (getCurrentDirectory, doesDirectoryExist, canonicalizePath)
 import System.FilePath       (addTrailingPathSeparator, normalise, pathSeparator, splitPath, joinPath, takeDirectory, (</>), takeBaseName)
-import System.Path.NameManip (guess_dotdot, absolute_path)
+-- import System.Path.NameManip (guess_dotdot, absolute_path)
 import System.IO        (hFlush, stdout)
 import System.Posix.Files (getSymbolicLinkStatus, isSymbolicLink, readSymbolicLink)
 
@@ -31,19 +32,30 @@ pathComponents f = filter (not . null)
                  $ map (filter (/= pathSeparator))
                  $ splitPath f
 
+-- removed because MissingH is deprecated. now tilde expansion won't work?
 -- from schoolofhaskell.com/user/dshevchenko/cookbook
-absolutize :: FilePath -> IO FilePath
-absolutize aPath
-    | "~" `isPrefixOf` aPath = do
-        homePath <- getHomeDirectory
-        return $ normalise $ addTrailingPathSeparator homePath
-                             ++ tail aPath
-    | otherwise = do
-        pathMaybeWithDots <- absolute_path aPath
-        return $ fromJust $ guess_dotdot pathMaybeWithDots
+-- absolutize :: FilePath -> IO FilePath
+-- absolutize aPath
+--     | "~" `isPrefixOf` aPath = do
+--         homePath <- getHomeDirectory
+--         return $ normalise $ addTrailingPathSeparator homePath
+--                              ++ tail aPath
+--     | otherwise = do
+--         pathMaybeWithDots <- absolute_path aPath
+--         return $ fromJust $ guess_dotdot pathMaybeWithDots
 
+absolutize :: FilePath -> IO FilePath
+absolutize p = do
+  wd <- getCurrentDirectory
+  canonicalizePath (wd </> p)
+
+-- TODO this fails on the leading / in a full path?
 dropDir :: FilePath -> FilePath
 dropDir = joinPath . tail . splitPath
+
+dropDir' path = case path of
+  ('/':p) -> dropDir p
+  p -> dropDir p
 
 noSlash :: FilePath -> FilePath
 noSlash = reverse . dropWhile (== '/') . reverse
