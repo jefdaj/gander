@@ -98,7 +98,9 @@ readTree = fmap deserializeTree . readFile
 -- TODO are contents sorted? they probably should be for stable hashes
 buildTree :: Bool -> [String] -> FilePath -> IO HashTree
 buildTree beVerbose excludes path = do
-  tree <- DT.readDirectoryWithL return path
+  -- putStrLn $ "buildTree path: '" ++ path ++ "'"
+  tree <- DT.readDirectoryWithL return path -- TODO need to rename root here?
+  -- putStrLn $ show tree
   buildTree' beVerbose $ excludeGlobs excludes tree
 
 -- TODO oh no, does AnchoredDirTree fail on cyclic symlinks?
@@ -279,6 +281,7 @@ wrapInEmptyDirs p t = case pathComponents p of
   (n:[]) -> wrapInEmptyDir n t
   (n:ns) -> wrapInEmptyDir n $ wrapInEmptyDirs (joinPath ns) t
 
+-- TODO does the anchor here matter? maybe it's set to the full path accidentally
 addSubTree :: HashTree -> HashTree -> FilePath -> HashTree
 addSubTree (File _ _) _ _ = error $ "attempt to insert tree into a file"
 addSubTree _ _ path | null (pathComponents path) = error "can't insert tree at null path"
@@ -311,7 +314,7 @@ addSubTree main sub path = main { hash = h', contents = cs', nFiles = n' }
 rmSubTree :: HashTree -> FilePath -> Either String HashTree
 rmSubTree (File _ _) p = Left $ "no such subtree: '" ++ p ++ "'"
 rmSubTree d@(Dir _ _ cs n) p = case dropTo d p of
-  Nothing -> Left $ "no suck subtree: '" ++ p ++ "'"
+  Nothing -> Left $ "no such subtree: '" ++ p ++ "'"
   Just t -> Right $ if t `elem` cs
     then d { contents = delete t cs, nFiles = n - countFiles t }
     else d { contents = map (\c -> fromRight c $ rmSubTree c $ joinPath $ tail $ splitPath p) cs

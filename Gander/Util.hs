@@ -73,6 +73,7 @@ userSaysYes question = do
     Nothing -> userSaysYes question
     Just b  -> return b
 
+-- TODO should this return the main dir or .git/annex inside it?
 findAnnex :: FilePath -> IO (Maybe FilePath)
 findAnnex path = do
   absPath <- absolutize path

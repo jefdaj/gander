@@ -8,7 +8,7 @@ module Main where
 
 import Gander.Cmd
 import Gander.Util           (absolutize)
-import Gander.Config         (Config(..))
+import Gander.Config         (Config(..), defaultConfig)
 import System.Console.Docopt (docoptFile, parseArgsOrExit,
                               getArgOrExitWith, isPresent, getArg,
                               shortOption, command, argument)
@@ -25,7 +25,7 @@ main = do
       flag  n = isPresent args $ shortOption n
   eList <- if (flag 'e')
              then short 'e' >>= readFile >>= return . lines
-             else return [".git*"]
+             else return $ exclude defaultConfig
   let cfg = Config
         { annex   = getArg args $ argument "annex"
         , verbose = flag 'v'
