@@ -10,16 +10,18 @@ import Gander.Run    (safeRunDeltas, runRsync)
 import Data.Maybe      (fromJust)
 import System.FilePath ((</>))
 
+-- TODO ensure that dst is a valid relative path, or trust the user?
 cmdAdd :: Config -> FilePath -> Maybe FilePath -> IO ()
 cmdAdd cfg dst mSrc = do
-  let aPath = fromJust $ annex cfg
-      dst'  = aPath </> "unsorted" </> dst
+  let aPath   = fromJust $ annex cfg
+      dstRoot = "unsorted" </> dst
+      dstAbs  = aPath </> dstRoot
   dstTree <- case mSrc of
-    Nothing -> buildTree (verbose cfg) (exclude cfg) dst
-    Just s  -> rsyncAndHash cfg s dst' -- TODO aha! safeRunDeltas doesn't take this into account
+    Nothing -> buildTree (verbose cfg) (exclude cfg) dstAbs
+    Just s  -> rsyncAndHash cfg s dstAbs -- TODO aha! safeRunDeltas doesn't take this into account
     -- is there any need to --check when adding anyway? maybe need some extra logic for it
-  let ds  = [Add dst' dstTree]
-      msg = unwords ["add", dst] -- TODO sanitize!
+  let ds  = [Add dstRoot dstTree]
+      msg = unwords ["gander add", dst] -- TODO sanitize!
   safeRunDeltas cfg ds msg
 
 rsyncAndHash :: Config -> FilePath -> FilePath -> IO HashTree

@@ -33,13 +33,14 @@ import System.Process   (readProcess, readCreateProcess, CreateProcess(..), proc
 
 runRsync :: Config -> FilePath -> FilePath -> IO ()
 runRsync cfg src dest = do
-  out <- readProcess "rsync" ["-aErvz", "--delete", noSlash src ++ "/", noSlash dest] ""
+  out <- readProcess "rsync" ["-aErvz", "--copy-links", "--delete", noSlash src ++ "/", noSlash dest] ""
   log cfg out
 
+-- TODO problem to both change cwd and do -C?
 runGit :: FilePath -> [String] -> IO String
-runGit dir args = readCreateProcess (gitProc { cwd = Just dir }) ""
+runGit dir args = readCreateProcess gitProc ""
   where
-    gitProc = proc "git" $ ["--git-dir=" ++ (dir </> ".git")] ++ args
+    gitProc = proc "git" $ ["-C", dir] ++ args
 
 -- TODO get annex path from config! or pass explicitly
 runGitMv :: Config -> FilePath -> FilePath -> FilePath -> IO ()
@@ -60,6 +61,7 @@ runGitAnnexAdd cfg aPath path = withAnnex cfg aPath $ \dir -> do
   out <- readProcess "git" ["-C", dir, "annex", "add", "--include-dotfiles", path] ""
   log cfg out
 
+-- TODO always remove the first path component?
 runGitRm :: Config -> FilePath -> FilePath -> IO ()
 runGitRm cfg aPath path = withAnnex cfg aPath $ \dir -> do
   out <- readProcess "git" ["-C", dir, "rm", "-rf", path] ""

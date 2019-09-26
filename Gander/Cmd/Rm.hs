@@ -24,7 +24,7 @@ cmdRm cfg target _ rmPath = do -- TODO correct toRm path using root!
 -- cmdRm cfg target = do -- TODO correct toRm path using root!
   -- let rmPath' = "./" ++ rmPath -- TODO fix this of course
   let ds  = [Rm rmPath]
-      msg = unwords ["rm", rmPath] -- TODO sanitize!
+      msg = unwords ["gander rm", rmPath] -- TODO sanitize!
   pPrint ds
   -- TODO need to pass this the hashes and root path in case of standalone cmd too?
   -- safeRunDeltas cfg ds msg

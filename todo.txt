@@ -1,3 +1,23 @@
+bugs:
+  messed up root path to the annex (includes /.git at the end)
+  when `annex hash`ing, need to remove the annex dir itself from path before building tree
+    tree is already written that way
+    ok after first init step
+    but broken after annex add backup
+    gander <annex> hash can fix it by updating hashes properly
+
+proper testing:
+  start with an actual dir of user-provided files we're allowed to mess up
+  read the tree
+  generate random deltas, simulate their results, and check that running them matches
+
+sane dir hashes format: hash of sorted hashes of all entries separated by newlines
+
+x hashes.txt should not be included in itself
+shouldn't use the top level dir name, only the forest of thngs hashed?
+annexing new files always fails?
+how to handle adding other annexes? copy links, ignore the hidden stuff
+
 better hashing:
   should be fast to verify dir hashes when reading the tree right? might prevent file editing mistakes
   should there be a third L type for symlinks?
@@ -22,3 +42,4 @@ simplify the interface:
 minor features to add if time:
   make sure dir listings are alphabetical (probably are already)
   warning when you use potentially destructive standalone commands in an annex
+  warning if it looks like you're trying to delete the root dir!
