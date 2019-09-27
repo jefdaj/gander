@@ -1,4 +1,5 @@
 bugs:
+  edited 'folder1/folder2/file2.txt/file2.txt' (a86b253f)
   messed up root path to the annex (includes /.git at the end)
   when `annex hash`ing, need to remove the annex dir itself from path before building tree
     tree is already written that way
