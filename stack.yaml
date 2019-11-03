@@ -1,6 +1,6 @@
-resolver: lts-11.8
+resolver: lts-14.1
 packages:
 - '.'
 nix:
-  enable: false # works, but not everyone needs it
+  enable: false # works, but too heavy to justify unless you use it already
   pure: false

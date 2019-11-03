@@ -17,15 +17,16 @@ import System.FilePath  ((</>))
 -- the maybe filepath controls standalone (print hashes)
 -- vs annex mode (write to the filepath)...
 -- TODO is there a better way to set that up?
+-- TODO require that the path be either absolute + in the annex or relative and in the annex
+-- this works, but add doesn't. so what changed?
 cmdHash :: Config -> FilePath -> IO ()
-cmdHash cfg target = do
-  new <- buildTree (verbose cfg) (exclude cfg) target
-  case annex cfg of
-    Nothing -> printTree new
-    Just dir -> do
-      updateAnnexHashes cfg new
-      runGitCommit cfg dir "gander hash"
-      -- out2 <- runGit dir ["commit", "-m", "gander hash"]
+cmdHash cfg target = case annex cfg of
+  Nothing -> buildTree (verbose cfg) (exclude cfg) target >>= printTree
+  Just dir -> do
+    new <- buildTree (verbose cfg) (exclude cfg) target
+    updateAnnexHashes cfg new
+    runGitCommit cfg dir "gander hash" -- TODO only if hashes changed
+    -- out2 <- runGit dir ["commit", "-m", "gander hash"]
 
 updateAnnexHashes :: Config -> HashTree -> IO ()
 updateAnnexHashes cfg new = do

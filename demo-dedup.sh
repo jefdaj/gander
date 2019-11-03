@@ -4,6 +4,10 @@ checkdep() {
   which $1 &> /dev/null || (echo "you need $1 to run the demo"; exit 1)
 }
 
+linktree() {
+  tree "$1" | cut -d'>' -f1 | sed 's/-$//g'
+}
+
 checkdep git-annex
 checkdep gander
 
@@ -25,29 +29,36 @@ echo "continuing to edit the originals..."
 echo "edit the 2nd file"  >> current/folder1/folder2/file2.txt
 echo "create a third file" > current/file3.txt
 mv current/folder1/file3.txt current/folder1/folder2/
-
 # TODO shouldn't need the PWD here! fix path handling
 
 echo -n "creating the myfirstdedup git-annex repo..."
-gander $PWD/myfirstdedup init
+gander $PWD/myfirstdedup init # -v
+# tail $PWD/myfirstdedup/hashes.txt
 echo "done"
 
 echo "copying the files to it and hashing them..."
-gander $PWD/myfirstdedup add backup  ./backup
-gander $PWD/myfirstdedup add current ./current
+
+# paths error introduced here:
+gander $PWD/myfirstdedup add backup  ./backup # -v
+
+# tail $PWD/myfirstdedup/hashes.txt
+# exit
+gander $PWD/myfirstdedup add current ./current # -v
+# tail $PWD/myfirstdedup/hashes.txt
 echo "done"
 echo
 
 echo "ok, the repo looks like:"
-tree myfirstdedup | cut -d'-' -f1
+linktree myfirstdedup
 echo
 
 echo "press ENTER to dedup the annexed files"; read dummyvar
-gander $PWD/myfirstdedup dedup
+gander $PWD/myfirstdedup dedup # -v
+# tail $PWD/myfirstdedup/hashes.txt
 echo
 
 echo "notice that gander left the unique files where they were:"
-tree myfirstdedup | cut -d'-' -f1
+linktree myfirstdedup
 echo
 
 echo "you still have to sort those yourself"

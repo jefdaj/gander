@@ -15,10 +15,14 @@ module Gander.Lib.DupeMap
   )
   where
 
+-- TODO are the paths getting messed up somewhere in here?
+-- like this: myfirstdedup/home/user/gander/demo/myfirstdedup/unsorted/backup/backup
+
 import Prelude hiding (lookup)
 
 import Gander.Lib.Hash
 import Gander.Lib.HashTree
+import Gander.Util (dropDir)
 
 -- import Data.Foldable   (toList)
 import Data.List       (nub, sort, sortBy, isPrefixOf)
@@ -39,8 +43,12 @@ type DupeMap = Map Hash DupeList
 -- type DupeMap = Map Hash (Int, TreeType, [FilePath])
 -- toList that to get :: [(Hash, (Int, TreeType, [FilePath]))]
 
+-- TODO does this need to drop the top component?
 pathsByHash :: HashTree -> DupeMap
-pathsByHash = fromListWith mergeDupeLists . pathsByHash' ""
+pathsByHash = fromListWith mergeDupeLists . map dropDirs' . pathsByHash' ""
+  where
+    dropDirs (i, t, ps) = (i, t, map dropDir ps)
+    dropDirs' (h, l) = (h, dropDirs l)
 
 mergeDupeLists :: DupeList -> DupeList -> DupeList
 mergeDupeLists (n1, t, l1) (n2, _, l2) = (n1 + n2, t, l1 ++ l2)
