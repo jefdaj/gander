@@ -34,10 +34,11 @@ newtype Hash = Hash { unHash :: String }
 
 -- TODO actual Pretty instance
 -- TODO how many chars to display? git uses two groups of 7 like this
+-- prettyHash (Hash h) = firstN h ++ "..." ++ lastN h
 prettyHash :: Hash -> String
-prettyHash (Hash h) = firstN h ++ "..." ++ lastN h
+prettyHash (Hash h) = firstN h
   where
-    nChars = 7
+    nChars = 8
     firstN = take nChars
     lastN  = reverse . take nChars . reverse
 

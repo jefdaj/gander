@@ -96,7 +96,7 @@ fixMoves t (d:ds) = d : fixMoves t ds
 -- check if simulated operations are safe --
 --------------------------------------------
 
--- TODO thing through how to report results more!
+-- TODO think through how to report results more!
 -- TODO can this whole thing be trivially written in runDeltaIfSafe?
 
 -- Can a delta be applied without losing anything?
@@ -115,14 +115,14 @@ fixMoves t (d:ds) = d : fixMoves t ds
 -- simulate git operations --
 -----------------------------
 
--- TODO thing through how to report results more!
+-- TODO think through how to report results more!
 simDelta :: HashTree -> Delta -> Either String HashTree
 simDelta t (Rm   p    ) = rmSubTree t p
 simDelta t (Add  p  t2) = Right $ addSubTree t t2 p
 simDelta t (Edit p  t2) = Right $ addSubTree t t2 p
 simDelta t (Mv   p1 p2) = case simDelta t (Rm p1) of
   Left  e  -> Left e
-  Right t2 -> simDelta t2 $ Add p2 $ fromJust $ dropTo t p1
+  Right t2 -> simDelta t2 $ Add p2 $ fromJust $ dropTo t p1 -- TODO path error here?
 
 simDeltas :: HashTree -> [Delta] -> Either String HashTree
 simDeltas = foldM simDelta
