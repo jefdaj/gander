@@ -12,12 +12,66 @@ build-type:          Simple
 cabal-version:       >=1.10
 data-files:          usage.txt
 
--- TODO reorganize into proper library + executable + test suite
+library
+  default-language:    Haskell2010
+  ghc-options:         -Wall -O2
+  build-depends:       base,
+                       Glob,
+                       ansi-terminal,
+                       attoparsec,
+                       bytestring,
+                       containers,
+                       cryptohash,
+                       directory,
+                       directory-tree,
+                       docopt,
+                       filepath,
+                       pretty-simple,
+                       process,
+                       split,
+                       unix
+  exposed-modules:     Gander.Cmd,
+                       Gander.Cmd.Init,
+                       Gander.Cmd.Hash,
+                       Gander.Cmd.Diff,
+                       Gander.Cmd.Dupes,
+                       Gander.Cmd.Test,
+                       Gander.Cmd.Update,
+                       Gander.Cmd.Add,
+                       Gander.Cmd.Rm,
+                       Gander.Cmd.Mv,
+                       Gander.Cmd.Dedup,
+                       Gander.Config,
+                       Gander.Lib,
+                       Gander.Run,
+                       Gander.Lib.Hash,
+                       Gander.Lib.HashTree,
+                       Gander.Lib.Delta,
+                       Gander.Lib.DupeMap,
+                       Gander.Util,
+                       System.Directory.Tree
 
 executable gander
   default-language:    Haskell2010
+  -- TODO which of these are actually needed for efficiency?
   ghc-options:         -Wall -O2 -threaded -rtsopts -with-rtsopts=-N
   main-is:             Gander.hs
+  build-depends:       base,
+                       Gander,
+                       Glob,
+                       ansi-terminal,
+                       attoparsec,
+                       bytestring,
+                       containers,
+                       cryptohash,
+                       directory,
+                       directory-tree,
+                       docopt,
+                       filepath,
+                       pretty-simple,
+                       process,
+                       split,
+                       unix
   other-modules:       Gander.Cmd,
                        Gander.Cmd.Init,
                        Gander.Cmd.Hash,
@@ -38,22 +92,6 @@ executable gander
                        Gander.Lib.DupeMap,
                        Gander.Util,
                        System.Directory.Tree
-  build-depends:       base,
-                       bytestring,
-                       containers,
-                       cryptohash,
-                       docopt,
-                       directory,
-                       directory-tree,
-                       filepath,
-                       Glob,
-                       unix,
-                       pretty-simple,
-                       process,
-                       ansi-terminal,
-                       -- MissingH,
-                       attoparsec,
-                       split
 
 test-suite test
   default-language:    Haskell2010
@@ -61,19 +99,6 @@ test-suite test
   main-is:             Test.hs
   ghc-options:         -Wall -O2 -threaded -rtsopts -with-rtsopts=-N
   build-depends:       base,
-                       bytestring,
-                       containers,
-                       cryptohash,
-                       docopt,
-                       directory,
-                       directory-tree,
-                       filepath,
-                       Glob,
-                       unix,
-                       pretty-simple,
-                       process,
-                       ansi-terminal,
-                       attoparsec,
-                       split,
+                       Gander,
                        tasty,
                        tasty-hspec
