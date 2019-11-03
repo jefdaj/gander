@@ -19,7 +19,7 @@ module Gander.Run
 -- TODO add git-annex, rsync to nix dependencies
 
 import Gander.Config
-import Gander.Lib
+import Gander.Data
 import Gander.Util
 
 import Prelude hiding (log)

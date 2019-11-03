@@ -1,6 +1,6 @@
 module Gander.Cmd.Test where
 
-import Gander.Lib
+import Gander.Data
 import Prelude hiding (log)
 
 import Gander.Util        (log)

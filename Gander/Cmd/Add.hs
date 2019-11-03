@@ -3,7 +3,7 @@ module Gander.Cmd.Add where
 -- TODO add rsync to nix dependencies
 -- TODO is the dst path being duplicated a bit? like unsorted/u1/u1?
 
-import Gander.Lib
+import Gander.Data
 import Gander.Config (Config(..))
 import Gander.Run    (safeRunDeltas, runRsync)
 
