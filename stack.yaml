@@ -4,3 +4,5 @@ packages:
 nix:
   enable: false # works, but too heavy to justify unless you use it already
   pure: false
+extra-deps:
+- tasty-rerun-1.1.14

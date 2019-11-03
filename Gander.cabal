@@ -101,4 +101,5 @@ test-suite test
   build-depends:       base,
                        Gander,
                        tasty,
+                       tasty-rerun,
                        tasty-hspec
