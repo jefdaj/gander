@@ -1,4 +1,4 @@
-module Gander.Lib.Delta
+module Gander.Data.Delta
   ( Delta(..)
   , diff
   , prettyDelta
@@ -19,13 +19,13 @@ module Gander.Lib.Delta
  -}
 
 import Gander.Config
-import Gander.Lib.HashTree
+import Gander.Data.HashTree
 
 import Control.Monad       (when, foldM)
 import Data.List           (find)
 import Data.Maybe          (fromJust)
-import Gander.Lib.DupeMap  (listLostFiles)
-import Gander.Lib.Hash     (Hash(..), prettyHash)
+import Gander.Data.DupeMap (listLostFiles)
+import Gander.Data.Hash    (Hash(..), prettyHash)
 import System.FilePath     ((</>))
 
 -- TODO should these have embedded hashtrees? seems unneccesary but needed for findMoves

@@ -1,4 +1,4 @@
-module Gander.Lib.DupeMap
+module Gander.Data.DupeMap
   ( DupeList
   , DupeMap
   , allDupes
@@ -20,8 +20,8 @@ module Gander.Lib.DupeMap
 
 import Prelude hiding (lookup)
 
-import Gander.Lib.Hash
-import Gander.Lib.HashTree
+import Gander.Data.Hash
+import Gander.Data.HashTree
 import Gander.Util (dropDir)
 
 -- import Data.Foldable   (toList)

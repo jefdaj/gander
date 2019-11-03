@@ -1,4 +1,4 @@
-module Gander.Lib.HashTree
+module Gander.Data.HashTree
   ( HashTree(..)
   , TreeType(..)
   , readTree
@@ -24,7 +24,7 @@ module Gander.Lib.HashTree
 
 -- import Debug.Trace
 
-import Gander.Lib.Hash
+import Gander.Data.Hash
 
 -- import qualified Data.ByteString as B
 import qualified Data.ByteString.Char8 as B8

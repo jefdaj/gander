@@ -4,7 +4,7 @@ module Gander.Cmd.Mv where
 -- TODO next: fix relative paths thing, write a nice lost files warning, fix any last bugs... then good :D
 -- TODO oh, write a couple other messages if it would help brian. lost files should be mentioned even when 0!
 
-import Gander.Lib
+import Gander.Data
 import Gander.Config (Config(..))
 import Gander.Run    (safeRunDeltas)
 
