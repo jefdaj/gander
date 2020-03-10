@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Gander.Data.DupeMap
   ( DupeList
   , DupeMap
@@ -19,6 +21,7 @@ module Gander.Data.DupeMap
 -- like this: myfirstdedup/home/user/gander/demo/myfirstdedup/unsorted/backup/backup
 
 import Prelude hiding (lookup)
+import qualified Data.ByteString.Char8 as B8
 
 import Gander.Data.Hash
 import Gander.Data.HashTree
@@ -114,7 +117,7 @@ printDupes groups = mapM_ printGroup groups
     explain t h fs ds = (if t == F
       then "# " ++ show fs ++ " files"
       else "# " ++ show ds ++ " dirs (" ++ show (div fs ds) ++ " files each, " ++ show fs ++ " total)")
-      ++ " have hash " ++ prettyHash h ++ ":"
+      ++ " have hash " ++ B8.unpack (prettyHash h) ++ ":"
     printGroup (h, (n, t, paths)) = mapM_ putStrLn
                              $ [explain t h n (length paths)]
                              ++ sort paths ++ [""]

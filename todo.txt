@@ -10,11 +10,17 @@ features:
       bytestring-trie?
     would doing strict tree operations speed it up?
       no! prevents streaming hashes
+    what about strict tree constructors?
+      small benefit?
     use filterMap instead of any lists when finding lost files
 
 timing data:
   time gander hash ~/nixpkgs/ +RTS -p > test-hashes.txt
-    strictmap 17m48s (final hash 59fb4ec51)
+    strictmap hashes 17m48s (final hash 59fb4ec51)
+    bytestrings hashes 7m6s (final hash 59fb4ec51) ... wait that was without -p :(
+    bytestrings dupes 4m53s (no -p)
+    bytestrings dupes with string tree fields 4m48s (no -p)
+    bytestrings dupes with string tree fields 7m39s (with -p)
 
 bugs:
   wrong counts for empty dirs:

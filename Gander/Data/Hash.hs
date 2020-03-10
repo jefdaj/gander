@@ -37,11 +37,11 @@ newtype Hash = Hash { unHash :: B8.ByteString }
 -- TODO actual Pretty instance
 -- TODO how many chars to display? git uses two groups of 7 like this
 -- prettyHash (Hash h) = firstN h ++ "..." ++ lastN h
-prettyHash :: Hash -> String
-prettyHash = firstN . B8.unpack . unHash
+prettyHash :: Hash -> B8.ByteString
+prettyHash = firstN . unHash
   where
     nChars = 8
-    firstN = take nChars
+    firstN = B8.take nChars
     -- lastN  = reverse . take nChars . reverse
 
 -- this works, but can probably be made faster...
