@@ -1,4 +1,9 @@
+features:
+  sane dir hashes format: hash of sorted hashes of all entries separated by newlines
+  precompiled binary release for mac + linux
+
 bugs:
+  crashes on hashing a symlink... but is that what we want anyway?
   edited 'folder1/folder2/file2.txt/file2.txt' (a86b253f)
   messed up root path to the annex (includes /.git at the end)
   when `annex hash`ing, need to remove the annex dir itself from path before building tree
@@ -12,7 +17,6 @@ proper testing:
   read the tree
   generate random deltas, simulate their results, and check that running them matches
 
-sane dir hashes format: hash of sorted hashes of all entries separated by newlines
 
 x hashes.txt should not be included in itself
 shouldn't use the top level dir name, only the forest of thngs hashed?
