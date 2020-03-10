@@ -1,5 +1,18 @@
 {-# LANGUAGE OverloadedStrings #-}
 
+{-
+ - But regardless of data structure, one of the most crucial things to do is to
+ - prune your bytestrings! By default, ByteStrings seek to share the underlying
+ - byte array no matter how you slice and dice them; and by default that's a
+ - good thing. However, when you're reading hundreds of Mbs, chopping them into
+ - little pieces —most of which are equal— and storing them in a data
+ - structure, you don't want to accidentally keep holding on to every byte
+ - array you ever touched! If you use bytestring-trie, it does this pruning for
+ - you automatically. If you use HashMap or something, then you'll want to
+ - write a thin wrapper around the API in order to ByteString.copy keys before
+ - inserting them into the map.
+ -}
+
 module Gander.Data.DupeMap
   ( DupeList
   , DupeMap
