@@ -28,7 +28,7 @@ import Gander.Data.Hash
 
 -- import qualified Data.ByteString as B
 import qualified Data.ByteString.Char8 as B8
-import qualified Data.ByteString.Lazy.Char8 as BL
+-- import qualified Data.ByteString.Lazy.Char8 as BL
 -- import qualified Data.ByteString.Char8 as B
 
 import Gander.Util (pathComponents)
@@ -64,7 +64,7 @@ type HashLine = (TreeType, IndentLevel, Hash, FilePath)
 -- TODO actual Pretty instance
 -- TODO need to handle unicode here?
 prettyHashLine :: HashLine -> String
-prettyHashLine (t, n, Hash h, p) = unwords [show t, show n, h, p]
+prettyHashLine (t, n, Hash h, p) = unwords [show t, show n, B8.unpack h, p]
 
 {- A tree of file names matching (a subdirectory of) the annex,
  - where each dir and file node contains a hash of its contents.
@@ -126,7 +126,7 @@ buildTree' v (a DT.:/ (DT.Dir n cs)) = do
     }
 
 hashContents :: [HashTree] -> Hash
-hashContents = Hash . hashBytes . BL.pack . unlines . sort . map (unHash . hash)
+hashContents = Hash . hashBytes . B8.unlines . sort . map (unHash . hash)
 
 -- If passed a file this assumes it contains hashes and builds a tree of them;
 -- If passed a dir it will scan it first and then build the tree.
@@ -177,7 +177,7 @@ hashP :: Parser Hash
 hashP = do
   h <- take 64 -- TODO any need to sanitize these?
   _ <- char ' '
-  return $ Hash $ B8.unpack h
+  return $ Hash h
 
 -- line endOfLine, but make sure D/F comes next instead of the rest of a filename
 -- TODO uh, what if the filename contains "\n(D|F)\ "? pretty pathological

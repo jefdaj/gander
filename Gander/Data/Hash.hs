@@ -13,11 +13,13 @@ module Gander.Data.Hash
   )
   where
 
-import qualified Data.ByteString.Lazy as LB
-import qualified Data.ByteString.Lazy.Char8 as B8
+-- import qualified Data.ByteString.Lazy as LB
+-- import qualified Data.ByteString.Lazy.Char8 as B8
+import qualified Data.ByteString.Char8 as B8
 
-import Crypto.Hash        (Digest, SHA256, hashlazy)
-import Data.Char          (ord)
+import Crypto.Hash        (Digest, SHA256, hash)
+import Data.Byteable      (toBytes)
+-- import Data.Char          (ord)
 import Data.List          (isInfixOf, isPrefixOf)
 import Data.List.Split    (splitOn)
 import System.FilePath    (takeBaseName)
@@ -29,23 +31,27 @@ import System.Posix.Files (readSymbolicLink)
  - TODO would storing it in a more efficient way help?
  - TODO would adding timestamps or number of files help?
  -}
-newtype Hash = Hash { unHash :: String }
+newtype Hash = Hash { unHash :: B8.ByteString }
   deriving (Eq, Read, Show, Ord)
 
 -- TODO actual Pretty instance
 -- TODO how many chars to display? git uses two groups of 7 like this
 -- prettyHash (Hash h) = firstN h ++ "..." ++ lastN h
 prettyHash :: Hash -> String
-prettyHash (Hash h) = firstN h
+prettyHash (Hash h) = firstN $ B8.unpack h
   where
     nChars = 8
     firstN = take nChars
     -- lastN  = reverse . take nChars . reverse
 
-hashBytes :: LB.ByteString -> String
-hashBytes = show . (hashlazy :: LB.ByteString -> Digest SHA256)
+-- this works, but can probably be made faster...
+-- hashBytes :: B8.ByteString -> B8.ByteString
+-- hashBytes = B8.pack . show . (hash :: B8.ByteString -> Digest SHA256)
 
-hashString :: String -> String
+hashBytes :: B8.ByteString -> B8.ByteString
+hashBytes = toBytes . (hash :: B8.ByteString -> Digest SHA256)
+
+hashString :: String -> B8.ByteString
 hashString = hashBytes . B8.pack
 
 {- This applies to directories as well as files because when trying to traverse
@@ -61,13 +67,13 @@ hashSymlink path = do
       link <- readSymbolicLink path
       return $ Just $ Hash $ if ".git/annex/objects/" `isInfixOf` link
                              && "SHA256E-" `isPrefixOf` (takeBaseName link)
-        then last $ splitOn "--" $ head $ splitOn "." $ takeBaseName link
-        else hashBytes $ (LB.pack . map (fromIntegral . ord)) link
+        then B8.pack $ last $ splitOn "--" $ head $ splitOn "." $ takeBaseName link
+        else hashString link -- TODO should this be a user-facing error instead?
 
 -- see: https://stackoverflow.com/a/30537010
 hashFileContents :: FilePath -> IO Hash
 hashFileContents path = do -- TODO hashFileContents
-  !sha256sum <- fmap hashBytes $ LB.readFile path
+  !sha256sum <- fmap hashBytes $ B8.readFile path
   -- when verbose (putStrLn $ sha256sum ++ " " ++ path)
   return $ Hash sha256sum
 
