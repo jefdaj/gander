@@ -1,7 +1,8 @@
 { mkDerivation, ansi-terminal, attoparsec, base, byteable
-, bytestring, bytestring-trie, containers, cryptohash, directory
-, directory-tree, docopt, filepath, Glob, hspec, pretty-simple
-, process, QuickCheck, split, stdenv, unix
+, bytestring, bytestring-trie, cryptohash, directory
+, directory-tree, docopt, filepath, Glob, hashable, hspec
+, pretty-simple, process, QuickCheck, split, stdenv, unix
+, unordered-containers
 }:
 mkDerivation {
   pname = "Gander";
@@ -12,13 +13,13 @@ mkDerivation {
   enableSeparateDataOutput = true;
   libraryHaskellDepends = [
     ansi-terminal attoparsec base byteable bytestring bytestring-trie
-    containers cryptohash directory directory-tree docopt filepath Glob
-    pretty-simple process split unix
+    cryptohash directory directory-tree docopt filepath Glob hashable
+    pretty-simple process split unix unordered-containers
   ];
   executableHaskellDepends = [
     ansi-terminal attoparsec base byteable bytestring bytestring-trie
-    containers cryptohash directory directory-tree docopt filepath Glob
-    pretty-simple process split unix
+    cryptohash directory directory-tree docopt filepath Glob hashable
+    pretty-simple process split unix unordered-containers
   ];
   testHaskellDepends = [ base hspec QuickCheck ];
   description = "The \"Git ANnex DEdupeR\"";

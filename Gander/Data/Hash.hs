@@ -16,8 +16,8 @@ module Gander.Data.Hash
 -- import qualified Data.ByteString.Lazy as LB
 -- import qualified Data.ByteString.Lazy.Char8 as B8
 import qualified Data.ByteString.Char8 as B8
+import qualified Crypto.Hash as CH
 
-import Crypto.Hash        (Digest, SHA256, hash)
 -- import Data.Byteable      (toBytes)
 -- import Data.Char          (ord)
 import Data.List          (isInfixOf, isPrefixOf)
@@ -25,6 +25,7 @@ import Data.List.Split    (splitOn)
 import System.FilePath    (takeBaseName)
 import System.Directory   (pathIsSymbolicLink)
 import System.Posix.Files (readSymbolicLink)
+import Data.Hashable      (Hashable(..))
 
 {- Checksum (sha256sum?) of a file or folder.
  - For files, should match the corresponding git-annex key.
@@ -33,6 +34,11 @@ import System.Posix.Files (readSymbolicLink)
  -}
 newtype Hash = Hash { unHash :: B8.ByteString }
   deriving (Eq, Read, Show, Ord)
+
+-- This is unrelated to Gander's hashing. It's required to use Data.HashMap
+instance Hashable Hash
+  where
+    hashWithSalt n h = hashWithSalt n (unHash h)
 
 -- TODO actual Pretty instance
 -- TODO how many chars to display? git uses two groups of 7 like this
@@ -46,14 +52,14 @@ prettyHash = firstN . unHash
 
 -- this works, but can probably be made faster...
 -- hashBytes :: B8.ByteString -> B8.ByteString
--- hashBytes = B8.pack . show . (hash :: B8.ByteString -> Digest SHA256)
+-- hashBytes = B8.pack . show . (hash :: B8.ByteString -> CH.Digest CH.SHA256)
 
 -- TODO would digestFromByteString be faster?
 -- TODO bug! digests come out unreadable :(
 hashBytes :: B8.ByteString -> B8.ByteString
--- still unreadable: hashBytes = digestToByteString . (hash :: B8.ByteString -> Digest SHA256)
--- back to readable: hashBytes = B8.pack . show . (hash :: B8.ByteString -> Digest SHA256)
-hashBytes = B8.pack . show . (hash :: B8.ByteString -> Digest SHA256)
+-- still unreadable: hashBytes = digestToByteString . (hash :: B8.ByteString -> CH.Digest CH.SHA256)
+-- back to readable: hashBytes = B8.pack . show . (hash :: B8.ByteString -> CH.Digest CH.SHA256)
+hashBytes = B8.pack . show . (CH.hash :: B8.ByteString -> CH.Digest CH.SHA256)
 
 hashString :: String -> B8.ByteString
 hashString = hashBytes . B8.pack
