@@ -185,10 +185,10 @@ hashP = do
 -- like endOfLine, but make sure D/F comes next instead of the rest of a filename
 -- TODO uh, what if the filename contains "\n(D|F)\ "? pretty pathological
 breakP :: Parser ()
-breakP = endOfLine >> typeP >> return ()
+breakP = endOfLine >> choice [typeP >> return (), endOfInput]
 
 nameP :: Parser FilePath
-nameP = manyTill anyChar $ lookAhead $ choice [breakP, endOfLine >> endOfInput]
+nameP = manyTill anyChar $ lookAhead breakP
 
 indentP :: Parser IndentLevel
 indentP = do
@@ -207,11 +207,14 @@ lineP = do
 linesP :: Parser [(TreeType, IndentLevel, Hash, FilePath)]
 linesP = sepBy' lineP endOfLine
 
+fileP :: Parser [(TreeType, IndentLevel, Hash, FilePath)]
+fileP = linesP <* endOfLine <* endOfInput
+
 -- TODO use bytestring the whole time rather than converting
 -- TODO should this propogate the Either?
 -- TODO any more elegant way to make the parsing strict?
 parseHashes :: B8.ByteString -> [(TreeType, IndentLevel, Hash, FilePath)]
-parseHashes = fromRight [] . parseOnly linesP
+parseHashes = fromRight [] . parseOnly fileP
 
 -- TODO error on null string/lines?
 -- TODO wtf why is reverse needed? remove that to save RAM
