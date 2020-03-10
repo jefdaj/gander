@@ -113,16 +113,20 @@ buildTree' v (a DT.:/ (DT.Dir n cs)) = do
   let root = a </> n
       hashSubtree t = unsafeInterleaveIO $ buildTree' v $ root DT.:/ t
   subTrees <- forM cs hashSubtree
-  let cs' = sortBy (compare `on` hash) subTrees
+  -- sorting by hash is better in that it catches file renames,
+  -- but sorting by name is better in that it lets you stream hashes to stdout.
+  -- so we do both: name when building the tree, then hash when computing dir hashes
+  let csByN = sortBy (compare `on` name) subTrees
+      csByH = sortBy (compare `on` hash) subTrees
   return Dir
     { name     = n
-    , contents = cs'
-    , hash     = hashContents cs'
-    , nFiles   = sum $ map countFiles cs'
+    , contents = csByN
+    , hash     = hashContents csByH
+    , nFiles   = sum $ map countFiles csByN
     }
 
 hashContents :: [HashTree] -> Hash
-hashContents = Hash . hashBytes . BL.pack . sort . concatMap (unHash . hash)
+hashContents = Hash . hashBytes . BL.pack . unlines . sort . map (unHash . hash)
 
 -- If passed a file this assumes it contains hashes and builds a tree of them;
 -- If passed a dir it will scan it first and then build the tree.
