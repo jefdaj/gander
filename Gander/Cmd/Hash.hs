@@ -8,6 +8,7 @@ import Gander.Util   (log)
 import Gander.Run    (runGit, runGitCommit)
 
 import Prelude hiding (log)
+import qualified Data.ByteString.Char8 as B8
 
 import Control.Monad    (when)
 import Data.Maybe       (fromJust)
@@ -37,7 +38,7 @@ updateAnnexHashes cfg new = do
   when exists $ do -- TODO only when verbose?
     old <- readTree hashes
     printDeltas $ diff old new -- just nice to verify this looks right
-  writeFile hashes $ serializeTree new
+  B8.writeFile hashes $ serializeTree new
   out <- runGit aPath ["add", "hashes.txt"]
   log cfg out
 

@@ -1,3 +1,5 @@
+{-# LANGUAGE BangPatterns #-}
+
 module Gander.Data.HashTree
   ( HashTree(..)
   , TreeType(..)
@@ -63,8 +65,8 @@ type HashLine = (TreeType, IndentLevel, Hash, FilePath)
 
 -- TODO actual Pretty instance
 -- TODO need to handle unicode here?
-prettyHashLine :: HashLine -> String
-prettyHashLine (t, n, Hash h, p) = unwords [show t, show n, B8.unpack h, p]
+prettyHashLine :: HashLine -> B8.ByteString
+prettyHashLine (t, n, Hash h, p) = B8.unwords [B8.pack $ show t, B8.pack $ show n, h, B8.pack $ p]
 
 {- A tree of file names matching (a subdirectory of) the annex,
  - where each dir and file node contains a hash of its contents.
@@ -75,8 +77,8 @@ prettyHashLine (t, n, Hash h, p) = unwords [show t, show n, B8.unpack h, p]
 --   deriving (Eq, Read, Show)
 --   TODO rename name -> path?
 data HashTree
-  = File { name :: FilePath, hash :: Hash }
-  | Dir  { name :: FilePath, hash :: Hash, contents :: [HashTree], nFiles :: Int }
+  = File { name :: !FilePath, hash :: !Hash }
+  | Dir  { name :: !FilePath, hash :: !Hash, contents :: ![HashTree], nFiles :: !Int }
   deriving (Read, Show, Ord) -- TODO switch to hash-based equality after testing
 
 -- TODO disable this while testing to ensure deep equality?
@@ -93,7 +95,7 @@ excludeGlobs excludes (a DT.:/ tree) = (a DT.:/ DT.filterDir keep tree)
     keep _ = True
 
 readTree :: FilePath -> IO HashTree
-readTree = fmap deserializeTree . readFile
+readTree = fmap deserializeTree . B8.readFile
 
 -- TODO are contents sorted? they probably should be for stable hashes
 buildTree :: Bool -> [String] -> FilePath -> IO HashTree
@@ -149,13 +151,14 @@ renameRoot newName tree = tree { name = newName }
 
 -- TODO can Foldable or Traversable simplify these?
 -- TODO need to handle unicode here?
-serializeTree :: HashTree -> String
-serializeTree = unlines . map prettyHashLine . flattenTree
+serializeTree :: HashTree -> B8.ByteString
+serializeTree = B8.unlines . map prettyHashLine . flattenTree
 
 printTree :: HashTree -> IO ()
 printTree = mapM_ printLine . flattenTree
   where
-    printLine l = (putStrLn $ prettyHashLine l) >> hFlush stdout
+    -- TODO don't flush every line
+    printLine l = (putStrLn $ B8.unpack $ prettyHashLine l) >> hFlush stdout
 
 flattenTree :: HashTree -> [HashLine]
 flattenTree = flattenTree' ""
@@ -179,7 +182,7 @@ hashP = do
   _ <- char ' '
   return $ Hash h
 
--- line endOfLine, but make sure D/F comes next instead of the rest of a filename
+-- like endOfLine, but make sure D/F comes next instead of the rest of a filename
 -- TODO uh, what if the filename contains "\n(D|F)\ "? pretty pathological
 breakP :: Parser ()
 breakP = endOfLine >> typeP >> return ()
@@ -206,14 +209,15 @@ linesP = sepBy' lineP endOfLine
 
 -- TODO use bytestring the whole time rather than converting
 -- TODO should this propogate the Either?
-parseHashes :: String -> [(TreeType, IndentLevel, Hash, FilePath)]
-parseHashes = fromRight [] . parseOnly linesP . B8.pack
+-- TODO any more elegant way to make the parsing strict?
+parseHashes :: B8.ByteString -> [(TreeType, IndentLevel, Hash, FilePath)]
+parseHashes = fromRight [] . parseOnly linesP
 
 -- TODO error on null string/lines?
 -- TODO wtf why is reverse needed? remove that to save RAM
 -- TODO refactor so there's a proper buildTree function and this uses it
 -- TODO what about files with newlines in them? might need to split at \n(file|dir)
-deserializeTree :: String -> HashTree
+deserializeTree :: B8.ByteString -> HashTree
 deserializeTree = snd . head . foldr accTrees [] . reverse . parseHashes
 
 countFiles :: HashTree -> Int
