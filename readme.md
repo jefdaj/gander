@@ -12,9 +12,6 @@ sure not to delete anything important in the process.
 
 Of course, it also handles small and medium-sized dedup jobs quickly.
 
-Please send suggestions, pull requests, and/or report whether it worked for you.
-Open to new use cases or syntax.
-
 
 Install
 -------
