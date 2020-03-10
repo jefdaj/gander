@@ -23,6 +23,7 @@ import Data.List.Split    (splitOn)
 import System.FilePath    (takeBaseName)
 import System.Directory   (pathIsSymbolicLink)
 import System.Posix.Files (readSymbolicLink)
+import Data.Hashable      (Hashable(..))
 
 {- Checksum (sha256sum?) of a file or folder.
  - For files, should match the corresponding git-annex key.
@@ -31,6 +32,11 @@ import System.Posix.Files (readSymbolicLink)
  -}
 newtype Hash = Hash { unHash :: String }
   deriving (Eq, Read, Show, Ord)
+
+-- This is unrelated to Gander's hashing. It's required to use Data.HashMap
+instance Hashable Hash
+  where
+    hashWithSalt n h = hashWithSalt n (unHash h)
 
 -- TODO actual Pretty instance
 -- TODO how many chars to display? git uses two groups of 7 like this
