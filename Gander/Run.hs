@@ -29,7 +29,7 @@ import Control.Monad    (when, mapM_)
 import System.Directory (createDirectoryIfMissing)
 import System.FilePath  (dropFileName)
 import System.FilePath  ((</>))
-import System.Process   (readProcess, readCreateProcess, CreateProcess(..), proc)
+import System.Process   (readProcess, readCreateProcess, proc)
 
 runRsync :: Config -> FilePath -> FilePath -> IO ()
 runRsync cfg src dest = do

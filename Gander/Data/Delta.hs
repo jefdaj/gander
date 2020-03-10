@@ -18,14 +18,14 @@ module Gander.Data.Delta
  - --check flag. Code to actually run Deltas lives in the Run module.
  -}
 
-import Gander.Config
+-- import Gander.Config
 import Gander.Data.HashTree
 
 import Control.Monad       (when, foldM)
 import Data.List           (find)
 import Data.Maybe          (fromJust)
-import Gander.Data.DupeMap (listLostFiles)
-import Gander.Data.Hash    (Hash(..), prettyHash)
+--import Gander.Data.DupeMap (listLostFiles)
+import Gander.Data.Hash    (prettyHash)
 import System.FilePath     ((</>))
 
 -- TODO should these have embedded hashtrees? seems unneccesary but needed for findMoves
