@@ -42,8 +42,7 @@ import Gander.Util (dropDir)
 
 -- import Data.Foldable   (toList)
 import Data.List       (nub, sort, sortBy, isPrefixOf)
-import Data.Map        (Map, (\\))
-import Data.Map        (toList, fromListWith, keys, lookup)
+import Data.HashMap.Strict (HashMap, difference, toList, fromListWith, keys, lookup)
 import Data.Ord        (comparing)
 import System.FilePath ((</>), splitDirectories)
 
@@ -55,8 +54,8 @@ type DupeList = (Int, TreeType, [FilePath])
 {- A map from file/dir hash to a list of duplicate file paths.
  - Could be rewritten to contain links to HashTrees if that helps.
  -}
-type DupeMap = Map Hash DupeList
--- type DupeMap = Map Hash (Int, TreeType, [FilePath])
+type DupeMap = HashMap Hash DupeList
+-- type DupeMap = :ashMap Hash (Int, TreeType, [FilePath])
 -- toList that to get :: [(Hash, (Int, TreeType, [FilePath]))]
 
 -- TODO does this need to drop the top component?
@@ -170,5 +169,5 @@ listLostFiles before after = filesLost
   where
     hashesBefore = pathsByHash before
     hashesAfter  = pathsByHash after
-    hashesLost   = hashesBefore \\ hashesAfter
+    hashesLost   = difference hashesBefore hashesAfter
     filesLost    = nub $ sort $ concatMap (\(_,t,fs) -> if t == F then fs else []) hashesLost
