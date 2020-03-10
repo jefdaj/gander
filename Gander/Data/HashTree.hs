@@ -113,7 +113,7 @@ buildTree' v (a DT.:/ (DT.Dir n cs)) = do
   let root = a </> n
       hashSubtree t = unsafeInterleaveIO $ buildTree' v $ root DT.:/ t
   subTrees <- forM cs hashSubtree
-  let cs' = sortBy (compare `on` name) subTrees
+  let cs' = sortBy (compare `on` hash) subTrees
   return Dir
     { name     = n
     , contents = cs'
