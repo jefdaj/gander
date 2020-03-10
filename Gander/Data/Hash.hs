@@ -18,7 +18,7 @@ module Gander.Data.Hash
 import qualified Data.ByteString.Char8 as B8
 
 import Crypto.Hash        (Digest, SHA256, hash)
-import Data.Byteable      (toBytes)
+-- import Data.Byteable      (toBytes)
 -- import Data.Char          (ord)
 import Data.List          (isInfixOf, isPrefixOf)
 import Data.List.Split    (splitOn)
@@ -38,7 +38,7 @@ newtype Hash = Hash { unHash :: B8.ByteString }
 -- TODO how many chars to display? git uses two groups of 7 like this
 -- prettyHash (Hash h) = firstN h ++ "..." ++ lastN h
 prettyHash :: Hash -> String
-prettyHash (Hash h) = firstN $ B8.unpack h
+prettyHash = firstN . B8.unpack . unHash
   where
     nChars = 8
     firstN = take nChars
@@ -48,8 +48,12 @@ prettyHash (Hash h) = firstN $ B8.unpack h
 -- hashBytes :: B8.ByteString -> B8.ByteString
 -- hashBytes = B8.pack . show . (hash :: B8.ByteString -> Digest SHA256)
 
+-- TODO would digestFromByteString be faster?
+-- TODO bug! digests come out unreadable :(
 hashBytes :: B8.ByteString -> B8.ByteString
-hashBytes = toBytes . (hash :: B8.ByteString -> Digest SHA256)
+-- still unreadable: hashBytes = digestToByteString . (hash :: B8.ByteString -> Digest SHA256)
+-- back to readable: hashBytes = B8.pack . show . (hash :: B8.ByteString -> Digest SHA256)
+hashBytes = B8.pack . show . (hash :: B8.ByteString -> Digest SHA256)
 
 hashString :: String -> B8.ByteString
 hashString = hashBytes . B8.pack
