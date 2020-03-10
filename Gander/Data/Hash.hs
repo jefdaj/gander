@@ -40,7 +40,7 @@ prettyHash (Hash h) = firstN h
   where
     nChars = 8
     firstN = take nChars
-    lastN  = reverse . take nChars . reverse
+    -- lastN  = reverse . take nChars . reverse
 
 hashBytes :: LB.ByteString -> String
 hashBytes = show . (hashlazy :: LB.ByteString -> Digest SHA256)

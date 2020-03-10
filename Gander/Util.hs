@@ -20,9 +20,9 @@ import Prelude hiding (log)
 
 import Control.Monad         (when)
 import Data.List             (isPrefixOf, isInfixOf)
-import Data.Maybe            (fromJust)
+-- import Data.Maybe            (fromJust)
 import System.Directory      (getCurrentDirectory, doesDirectoryExist, canonicalizePath)
-import System.FilePath       (addTrailingPathSeparator, normalise, pathSeparator, splitPath, joinPath, takeDirectory, (</>), takeBaseName)
+import System.FilePath       (pathSeparator, splitPath, joinPath, takeDirectory, (</>), takeBaseName)
 -- import System.Path.NameManip (guess_dotdot, absolute_path)
 import System.IO        (hFlush, stdout)
 import System.Posix.Files (getSymbolicLinkStatus, isSymbolicLink, readSymbolicLink)
@@ -53,6 +53,7 @@ absolutize p = do
 dropDir :: FilePath -> FilePath
 dropDir = joinPath . tail . splitPath
 
+dropDir' :: FilePath -> FilePath
 dropDir' path = case path of
   ('/':p) -> dropDir p
   p -> dropDir p

@@ -6,7 +6,7 @@ module Gander.Cmd.Dedup where
 
 import Gander.Data
 import Gander.Cmd.Hash (updateAnnexHashes)
-import Gander.Util     (dropDir', userSaysYes)
+import Gander.Util     (userSaysYes)
 import Gander.Run      (runGitMv, runGitRm, runGitCommit)
 
 import Control.Monad       (when)

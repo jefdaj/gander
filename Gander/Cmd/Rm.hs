@@ -8,7 +8,7 @@ import Gander.Data
 import Prelude hiding (log)
 
 import Text.Pretty.Simple (pPrint)
-import Gander.Run    (safeRunDeltas)
+-- import Gander.Run    (safeRunDeltas)
 -- import Gander.Util   (log)
 -- import Gander.Run    (runGitRm)
 -- import Gander.Util   (userSaysYes)
