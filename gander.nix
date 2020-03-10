@@ -1,7 +1,7 @@
 { mkDerivation, ansi-terminal, attoparsec, base, byteable
-, bytestring, containers, cryptohash, directory, directory-tree
-, docopt, filepath, Glob, hspec, pretty-simple, process, QuickCheck
-, split, stdenv, unix
+, bytestring, bytestring-trie, containers, cryptohash, directory
+, directory-tree, docopt, filepath, Glob, hspec, pretty-simple
+, process, QuickCheck, split, stdenv, unix
 }:
 mkDerivation {
   pname = "Gander";
@@ -11,13 +11,13 @@ mkDerivation {
   isExecutable = true;
   enableSeparateDataOutput = true;
   libraryHaskellDepends = [
-    ansi-terminal attoparsec base byteable bytestring containers
-    cryptohash directory directory-tree docopt filepath Glob
+    ansi-terminal attoparsec base byteable bytestring bytestring-trie
+    containers cryptohash directory directory-tree docopt filepath Glob
     pretty-simple process split unix
   ];
   executableHaskellDepends = [
-    ansi-terminal attoparsec base byteable bytestring containers
-    cryptohash directory directory-tree docopt filepath Glob
+    ansi-terminal attoparsec base byteable bytestring bytestring-trie
+    containers cryptohash directory directory-tree docopt filepath Glob
     pretty-simple process split unix
   ];
   testHaskellDepends = [ base hspec QuickCheck ];
