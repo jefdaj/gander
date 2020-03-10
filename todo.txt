@@ -1,5 +1,20 @@
 features:
   precompiled binary release for mac + linux
+  efficiency:
+    strict strings/bytestrings for hashes?
+    better map in dupemap is probably important on big datasets
+      data.map.strict or .lazy don't seem to help on small examples
+        according to https://wiki.haskell.org/GHC/Memory_Footprint,
+          there should be a savings of ~4.5 vs 6
+      judy arrays? require Word keys, so no
+      bytestring-trie?
+    would doing strict tree operations speed it up?
+      no! prevents streaming hashes
+    use filterMap instead of any lists when finding lost files
+
+timing data:
+  time gander hash ~/nixpkgs/ +RTS -p > test-hashes.txt
+    strictmap 17m48s (final hash 59fb4ec51)
 
 bugs:
   wrong counts for empty dirs:

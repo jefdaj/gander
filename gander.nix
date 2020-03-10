@@ -23,4 +23,7 @@ mkDerivation {
   testHaskellDepends = [ base hspec QuickCheck ];
   description = "The \"Git ANnex DEdupeR\"";
   license = stdenv.lib.licenses.lgpl3;
+
+  enableLibraryProfiling = true;
+  enableExecutableProfiling = true;
 }
