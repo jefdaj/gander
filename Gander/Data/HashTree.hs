@@ -77,8 +77,8 @@ prettyHashLine (t, n, Hash h, p) = B8.unwords [B8.pack $ show t, B8.pack $ show 
 --   deriving (Eq, Read, Show)
 --   TODO rename name -> path?
 data HashTree
-  = File { name :: !FilePath, hash :: !Hash }
-  | Dir  { name :: !FilePath, hash :: !Hash, contents :: ![HashTree], nFiles :: !Int }
+  = File { name :: FilePath, hash :: Hash }
+  | Dir  { name :: FilePath, hash :: Hash, contents :: [HashTree], nFiles :: Int }
   deriving (Read, Show, Ord) -- TODO switch to hash-based equality after testing
 
 -- TODO disable this while testing to ensure deep equality?
