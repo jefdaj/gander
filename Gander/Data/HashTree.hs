@@ -30,6 +30,7 @@ import Gander.Data.Hash
 
 -- import qualified Data.ByteString as B
 import qualified Data.ByteString.Char8 as B
+-- import qualified Data.ByteString.Streaming.Char8 as Q
 -- import qualified Data.ByteString.Lazy.Char8 as BL
 -- import qualified Data.ByteString.Char8 as B
 
@@ -128,7 +129,7 @@ buildTree' v (a DT.:/ (DT.Dir n cs)) = do
     }
 
 hashContents :: [HashTree] -> Hash
-hashContents = Hash . hashBytes . B.unlines . sort . map (unHash . hash)
+hashContents = hashBytes . B.unlines . sort . map (unHash . hash)
 
 -- If passed a file this assumes it contains hashes and builds a tree of them;
 -- If passed a dir it will scan it first and then build the tree.
@@ -281,7 +282,8 @@ treeContainsHash (Dir  _ h1 cs _) h2
 -------------------
 
 wrapInEmptyDir :: FilePath -> HashTree -> HashTree
-wrapInEmptyDir n t = Dir { name = n, hash = h, contents = cs, nFiles = nFiles t }
+wrapInEmptyDir n t = do
+  Dir { name = n, hash = h, contents = cs, nFiles = nFiles t }
   where
     cs = [t]
     h = hashContents cs
