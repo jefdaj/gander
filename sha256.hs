@@ -5,9 +5,8 @@ module Main where
 
 -- test streaming sha256sum to prevent huge memory usage
 
-import Streaming
+import Streaming (Stream, Of)
 import qualified Streaming.Prelude as S
-import Data.ByteString.Streaming (ByteString)
 import qualified Data.ByteString.Streaming.Char8 as Q
 import qualified Data.ByteString.Char8 as B
 -- import qualified Crypto.Hash as CH
@@ -26,16 +25,12 @@ import Crypto.Hash.IO
 --   return sha256sum
 
 -- based on https://gist.github.com/michaelt/6c6843e6dd8030e95d58
-hashFileContents2 :: FilePath -> IO B.ByteString
-hashFileContents2 path = withFile path ReadMode $ \h -> do
+hashFileContentsStreaming :: FilePath -> IO B.ByteString
+hashFileContentsStreaming path = withFile path ReadMode $ \h -> do
   ctx <- hashMutableInitWith SHA256
-  let raw :: ByteString IO () -- get raw bytes
-      raw = Q.fromHandle h 
-      segmented :: Stream (ByteString IO) IO () -- divide on "chunks"?
-      segmented = Q.lines raw -- TODO how to segment?
-      individualized :: Stream (Of B.ByteString) IO ()
-      individualized = mapped Q.toStrict segmented -- danger: concatenate 'real' bytestrings!
-  S.mapM_ (hashMutableUpdate ctx) individualized
+  let chunked :: Stream (Of B.ByteString) IO ()
+      chunked = Q.toChunks $ Q.fromHandle h
+  S.mapM_ (hashMutableUpdate ctx) chunked
   final <- hashMutableFinalize ctx
   return $ B.pack $ show final
 
@@ -51,5 +46,5 @@ bigfile = "/mnt/data/Pfam/database-files/alignment_and_tree.txt.gz"
 
 main :: IO ()
 main = do
-  h <- hashFileContents2 smallfile
+  h <- hashFileContentsStreaming smallfile
   putStrLn $ (B.unpack h) ++ "  " ++ smallfile
