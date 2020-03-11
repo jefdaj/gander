@@ -15,16 +15,21 @@ features:
     use filterMap instead of any lists when finding lost files
     make maps immediately rather than using fromListWith in DupeMap?
     does reading hashes take too much memory? if so try https://hackage.haskell.org/package/streaming-utils
+    parallel strategies instead of monad-parallel? want only as many threads as cores
 
 timing data:
   time gander hash ~/nixpkgs/ +RTS -p > test-hashes.txt
     strictmap hashes 17m48s (final hash 59fb4ec51)
     bytestrings hashes 7m6s (final hash 59fb4ec51) ... wait that was without -p :(
+
     bytestrings dupes 4m53s (no -p)
     bytestrings dupes with string tree fields 4m48s (no -p)
     bytestrings dupes with string tree fields 7m39s (with -p)
     bytestrings dupes with strict constructors + stict map 10m17s (with -p)
     bytestrings dupes with strict constructors 9m36s (with -p), so remove them!
+
+    feature-strictmap-bytestrings-dupesets hashes 16m13s (final hash 59fb4ec51)
+    feature-strictmap-bytestrings-dupesets dupes 11m1s
 
 bugs:
   wrong counts for empty dirs:
