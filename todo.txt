@@ -28,7 +28,8 @@ timing data:
     bytestrings dupes with strict constructors + stict map 10m17s (with -p)
     bytestrings dupes with strict constructors 9m36s (with -p), so remove them!
 
-    feature-strictmap-bytestrings-dupesets hashes 16m13s (final hash 59fb4ec51)
+    feature-strictmap-bytestrings-dupesets hashes 16m13s with -p (final hash 59fb4ec51)
+      14m10s without -p
     feature-strictmap-bytestrings-dupesets dupes 11m1s
 
 bugs:
