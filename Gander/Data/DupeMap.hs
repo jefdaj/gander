@@ -122,8 +122,7 @@ sortDupePaths = undefined
 --                          else compare p1 p2
 
 hasDupes :: (Hash, DupeSet) -> Bool
-hasDupes = undefined
--- hasDupes (_, (nfiles, _, paths)) = HM.size paths > 1 && nfiles > 0
+hasDupes (_, (nfiles, _, paths)) = HS.size paths > 1 && nfiles > 0
 
 -- TODO use this as the basis for the dedup repl
 printDupes :: [(Hash, DupeList)] -> IO ()
