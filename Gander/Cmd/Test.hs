@@ -36,7 +36,7 @@ testSerialization _ tree1 = do
 testDupes :: Config -> HashTree -> IO ()
 testDupes _ tree = do
   let m  = pathsByHash tree
-      ds = simplifyDupes $ dupesByNFiles m
+      ds = map sortDupePaths $ simplifyDupes $ dupesByNFiles m
   explain "making dupemap from hashtree:" $ pPrint m
   explain "using dupemap to report duplicates:" $ printDupes ds
 
