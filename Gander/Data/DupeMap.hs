@@ -60,21 +60,20 @@ type DupeMap = HM.HashMap Hash DupeSet
 
 -- TODO does this need to drop the top component?
 pathsByHash :: HashTree -> DupeMap
-pathsByHash = undefined
--- pathsByHash = HM.fromListWith mergeDupeSets . map dropDirs' . pathsByHash' ""
---   where
---     dropDirs (i, t, ps) = (i, t, HS.map dropDir ps)
---     dropDirs' (h, l) = (h, dropDirs l)
+pathsByHash = HM.fromListWith mergeDupeSets . map dropDirs' . pathsByHash' ""
+  where
+    dropDirs (i, t, ps) = (i, t, HS.map dropDir ps)
+    dropDirs' (h, l) = (h, dropDirs l)
 
 -- TODO make maps immediately instead of intermediate lists here?
 mergeDupeSets :: DupeSet -> DupeSet -> DupeSet
 mergeDupeSets (n1, t, l1) (n2, _, l2) = (n1 + n2, t, HS.union l1 l2)
 
--- pathsByHash' :: FilePath -> HashTree -> [(Hash, DupeSet)]
--- pathsByHash' dir (File n h      ) = [(h, (1, F, [dir </> n]))]
--- pathsByHash' dir (Dir  n h cs fs) = cPaths ++ [(h, (fs, D, [dir </> n]))]
---   where
---     cPaths = concatMap (pathsByHash' $ dir </> n) cs
+pathsByHash' :: FilePath -> HashTree -> [(Hash, DupeSet)]
+pathsByHash' dir (File n h      ) = [(h, (1, F, HS.singleton (dir </> n)))]
+pathsByHash' dir (Dir  n h cs fs) = cPaths ++ [(h, (fs, D, HS.singleton (dir </> n)))]
+  where
+    cPaths = concatMap (pathsByHash' $ dir </> n) cs
 
 -- TODO warning: so far it lists anything annexed as a dup
 
