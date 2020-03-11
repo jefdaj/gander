@@ -9,9 +9,11 @@ import Gander.Cmd.Hash (updateAnnexHashes)
 import Gander.Util     (userSaysYes)
 import Gander.Run      (runGitMv, runGitRm, runGitCommit)
 
+import qualified Data.HashSet as HS
+
 import Control.Monad       (when)
-import Data.Foldable       (toList)
-import Data.List           (delete)
+-- import Data.Foldable       (toList)
+-- import Data.List           (delete)
 import Data.Maybe          (fromJust)
 import Gander.Config       (Config(..))
 import System.Console.ANSI (clearScreen, cursorUp)
@@ -37,8 +39,8 @@ dedupLoop :: Config -> FilePath -> [Hash] -> HashTree -> IO ()
 dedupLoop cfg path ignored tree = do
   let aPath       = fromJust $ annex cfg
       dupes       = dupesByNFiles $ pathsByHash tree -- TODO toList here?
-      dupesToSort = undefined -- filter (\(h,_) -> not $ h `elem` ignored) (toList dupes)
-  undefined -- when (null dupesToSort) (clear >> putStrLn "no duplicates. congrats!" >> exitSuccess)
+      dupesToSort = filter (\(h,_) -> not $ h `elem` ignored) dupes -- :: [(Hash, DupeSet)]
+  when (null dupesToSort) (clear >> putStrLn "no duplicates. congrats!" >> exitSuccess)
   let (h1, ds)    = head dupesToSort -- TODO should these be just the plain paths?
       (_,_,paths) = ds
       ignored'    = h1:ignored
@@ -48,7 +50,7 @@ dedupLoop cfg path ignored tree = do
     Nothing -> dedupLoop cfg path ignored' tree
     Just keep -> do
       -- let keep'  = dropDir keep
-      let paths' = map (makeRelative aPath) paths
+      let paths' = HS.map (makeRelative aPath) paths
       dedupGroup cfg aPath paths' keep -- at this point everything is relative to annex
       -- let tree' = tree -- TODO need to update tree to remove non-keepers!
       -- TODO use filename as part of commit? have to shorten/sanitize
@@ -62,15 +64,15 @@ dedupLoop cfg path ignored tree = do
 -- TODO check that they share the same annex?
 -- TODO check that dupes is longer than 2 (1?)
 -- TODO current code is wrong whenever picking a number besides 1!
-dedupGroup :: Config -> FilePath -> [FilePath] -> FilePath -> IO ()
+dedupGroup :: Config -> FilePath -> HS.HashSet FilePath -> FilePath -> IO ()
 dedupGroup cfg aPath dupes dest = do
     -- TODO ok do the easier to think through way: two branches
   if dest `elem` dupes
-    then mapM_ (runGitRm cfg aPath) (delete dest dupes)
+    then mapM_ (runGitRm cfg aPath) (HS.delete dest dupes)
     else do
       -- move the first one to dest, then delete the rest (always at least 2)
-      let src    = head dupes
-          dupes' = tail dupes
+      let src    = head $ HS.toList dupes -- TODO any better way here?
+          dupes' = tail $ HS.toList dupes -- TODO any better way here?
       runGitMv cfg aPath src dest -- TODO or just dupes'?
       mapM_ (runGitRm cfg aPath) dupes'
 
@@ -84,18 +86,19 @@ userPicks sorted (n, t, paths) = do
   clear
   -- let paths' = map Dir' paths
   let nDupes = length paths :: Int
+      paths' = HS.toList paths
   -- putStrLn $ "usePicks paths: '" ++ show paths ++ "'"
   putStrLn $ "These " ++ show nDupes ++ " are duplicates:"
-  undefined -- listDupes 20 paths
+  listDupes 20 paths'
   listOptions
   putStr "What do you want to do? "
   hFlush stdout
   answer <- getLine
   if answer == "skip" then return Nothing
   else if answer == "quit" then exitSuccess
-  else if answer `elem` map show [1..length paths+1] then do
+  else if answer `elem` map show [1..length paths'+1] then do
     let index = read answer :: Int
-    return $ Just $ undefined -- paths !! (index - 1)
+    return $ Just $ paths' !! (index - 1)
   -- TODO if user inputs a path, makedirs up to it before trying to move
   else do -- TODO this whole branch is an infinite loop somehow?
     -- let answer' = sorted </> answer -- TODO why does this cause <<loop>>??
