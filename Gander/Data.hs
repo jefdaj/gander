@@ -37,7 +37,7 @@ module Gander.Data
   , assertSameTrees
 
   -- dupemap
-  , DupeList
+  , DupeSet
   , DupeMap
   , allDupes
   , dupesByNFiles
