@@ -37,7 +37,8 @@ import qualified Data.ByteString.Char8 as B
 import Gander.Util (pathComponents)
 import qualified System.Directory.Tree as DT
 
-import Control.Monad        (forM, msum)
+import Control.Monad        (msum)
+import Control.Monad.Parallel (forM)
 import Data.List            (find, delete, sort)
 import Data.Maybe           (isJust)
 import Data.Function        (on)
