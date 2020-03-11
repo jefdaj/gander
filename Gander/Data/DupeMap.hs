@@ -33,45 +33,45 @@ module Gander.Data.DupeMap
 -- TODO are the paths getting messed up somewhere in here?
 -- like this: myfirstdedup/home/user/gander/demo/myfirstdedup/unsorted/backup/backup
 
-import qualified Data.ByteString.Char8 as B8
-import qualified Data.HashMap.Strict   as HM
-import qualified Data.HashSet          as HS
+import qualified Data.ByteString.Char8 as B
+import qualified Data.HashMap.Strict   as M
+import qualified Data.HashSet          as S
 
 import Gander.Data.Hash
 import Gander.Data.HashTree
 import Gander.Util (dropDir)
 
-import Data.List       (nub, sort, sortBy, isPrefixOf)
+import Data.List       (sort, sortBy, isPrefixOf)
 import Data.Ord        (comparing)
 import System.FilePath ((</>), splitDirectories)
 
 -- TODO can Foldable or Traversable simplify these?
 
 -- note that most of the functions use (Hash, DupeSet) instead of plain DupeSet
-type DupeSet  = (Int, TreeType, HS.HashSet FilePath)
+type DupeSet  = (Int, TreeType, S.HashSet FilePath)
 type DupeList = (Int, TreeType, [FilePath]) -- TODO move to Cmd/Dupes.hs?
 
 {- A map from file/dir hash to a list of duplicate file paths.
  - Could be rewritten to contain links to HashTrees if that helps.
  -}
-type DupeMap = HM.HashMap Hash DupeSet
+type DupeMap = M.HashMap Hash DupeSet
 -- type DupeMap = :ashMap Hash (Int, TreeType, [FilePath])
 -- toList that to get :: [(Hash, (Int, TreeType, [FilePath]))]
 
 -- TODO does this need to drop the top component?
 pathsByHash :: HashTree -> DupeMap
-pathsByHash = HM.fromListWith mergeDupeSets . map dropDirs' . pathsByHash' ""
+pathsByHash = M.fromListWith mergeDupeSets . map dropDirs' . pathsByHash' ""
   where
-    dropDirs (i, t, ps) = (i, t, HS.map dropDir ps)
+    dropDirs (i, t, ps) = (i, t, S.map dropDir ps)
     dropDirs' (h, l) = (h, dropDirs l)
 
 -- TODO make maps immediately instead of intermediate lists here?
 mergeDupeSets :: DupeSet -> DupeSet -> DupeSet
-mergeDupeSets (n1, t, l1) (n2, _, l2) = (n1 + n2, t, HS.union l1 l2)
+mergeDupeSets (n1, t, l1) (n2, _, l2) = (n1 + n2, t, S.union l1 l2)
 
 pathsByHash' :: FilePath -> HashTree -> [(Hash, DupeSet)]
-pathsByHash' dir (File n h      ) = [(h, (1, F, HS.singleton (dir </> n)))]
-pathsByHash' dir (Dir  n h cs fs) = cPaths ++ [(h, (fs, D, HS.singleton (dir </> n)))]
+pathsByHash' dir (File n h      ) = [(h, (1, F, S.singleton (dir </> n)))]
+pathsByHash' dir (Dir  n h cs fs) = cPaths ++ [(h, (fs, D, S.singleton (dir </> n)))]
   where
     cPaths = concatMap (pathsByHash' $ dir </> n) cs
 
@@ -86,7 +86,7 @@ sortDescLength = map unDecorate . sortBy (comparing score) . map decorate
     score (n, _) = negate n -- sorts by descending number of files
 
 dupesByNFiles :: DupeMap -> [(Hash, DupeSet)]
-dupesByNFiles = sortDescLength . filter hasDupes . HM.toList
+dupesByNFiles = sortDescLength . filter hasDupes . M.toList
 
 {- Assumes a pre-sorted list as provided by dupesByNFiles.
  - Removes lists whose elements are all inside elements of the first list.
@@ -98,8 +98,8 @@ simplifyDupes :: [(Hash, DupeSet)] -> [(Hash, DupeSet)]
 simplifyDupes [] = []
 simplifyDupes (d@(_, (_,_,fs)):ds) = d : filter (not . redundantSet) ds
   where
-    redundantSet (_, (_,_,fs)) = all redundantElem fs
-    redundantElem e' = any id [(splitDirectories e) `isPrefixOf` (splitDirectories e') | e <- HS.toList fs]
+    redundantSet (_, (_,_,fs')) = all redundantElem fs'
+    redundantElem e' = any id [(splitDirectories e) `isPrefixOf` (splitDirectories e') | e <- S.toList fs]
 
 -- TODO orderDupePaths :: [FilePath] -> [FilePath]
 --      should order by least path components, then shortest name, then maybe alphabetical
@@ -108,7 +108,7 @@ simplifyDupes (d@(_, (_,_,fs)):ds) = d : filter (not . redundantSet) ds
 -- then finally alphabetical
 -- TODO is it inefficient enough to slow down the dupes command? rewrite if so
 sortDupePaths :: (Hash, DupeSet) -> (Hash, DupeList)
-sortDupePaths (h, (i, t, ps)) = (h, (i, t, sortBy myCompare $ HS.toList ps))
+sortDupePaths (h, (i, t, ps)) = (h, (i, t, sortBy myCompare $ S.toList ps))
   where
     myCompare p1 p2 = let d1 = length $ splitDirectories p1
                           d2 = length $ splitDirectories p2
@@ -121,7 +121,7 @@ sortDupePaths (h, (i, t, ps)) = (h, (i, t, sortBy myCompare $ HS.toList ps))
                          else compare p1 p2
 
 hasDupes :: (Hash, DupeSet) -> Bool
-hasDupes (_, (nfiles, _, paths)) = HS.size paths > 1 && nfiles > 0
+hasDupes (_, (nfiles, _, paths)) = S.size paths > 1 && nfiles > 0
 
 -- TODO use this as the basis for the dedup repl
 printDupes :: [(Hash, DupeList)] -> IO ()
@@ -130,7 +130,7 @@ printDupes groups = mapM_ printGroup $ groups
     explain t h fs ds = (if t == F
       then "# " ++ show fs ++ " files"
       else "# " ++ show ds ++ " dirs (" ++ show (div fs ds) ++ " files each, " ++ show fs ++ " total)")
-      ++ " have hash " ++ B8.unpack (prettyHash h) ++ ":"
+      ++ " have hash " ++ B.unpack (prettyHash h) ++ ":"
     printGroup (h, (n, t, paths)) = mapM_ putStrLn
                              $ [explain t h n (length paths)]
                              ++ sort paths ++ [""]
@@ -153,11 +153,11 @@ listAllFiles anchor (Dir  n _ cs _) = concatMap (listAllFiles $ anchor </> n) cs
 anotherCopy :: Hash -> DupeMap -> DupeMap -> Bool
 anotherCopy h mainMap subMap = nMain > nSub
   where
-    (Just nMain) = fmap (\(n,_,_) -> n) $ HM.lookup h mainMap
-    (Just nSub ) = fmap (\(n,_,_) -> n) $ HM.lookup h subMap
+    (Just nMain) = fmap (\(n,_,_) -> n) $ M.lookup h mainMap
+    (Just nSub ) = fmap (\(n,_,_) -> n) $ M.lookup h subMap
 
 allDupes :: HashTree -> HashTree -> Bool
-allDupes mainTree subTree = all safeToRmHash $ HM.keys subDupes
+allDupes mainTree subTree = all safeToRmHash $ M.keys subDupes
   where
     mainDupes = pathsByHash mainTree
     subDupes  = pathsByHash subTree
@@ -165,12 +165,13 @@ allDupes mainTree subTree = all safeToRmHash $ HM.keys subDupes
 
 -- for warning the user when their action will delete the last copy of a file
 -- TODO also warn about directories, because sometimes they might care (Garageband files for example)
-listLostFiles = undefined
--- listLostFiles :: HashTree -> HashTree -> [FilePath]
--- listLostFiles before after = filesLost
---   where
---     hashesBefore = pathsByHash before
---     hashesAfter  = pathsByHash after
---     hashesLost   = HM.difference hashesBefore hashesAfter
---     -- filesLost    = nub $ sort $ concatMap (\(_,t,fs) -> if t == F then fs else []) hashesLost
---     filesLost    = Prelude.map snd $ HM.toList $ HM.map (\(_,_,fs) -> fs) $ HM.filter (\(_,t,_) -> t == F) hashesLost
+-- TODO make more efficient by restricting to hashes found in the removed subtree! (only used for Rm right?)
+listLostFiles :: HashTree -> HashTree -> [FilePath]
+listLostFiles before after = filesLost
+  where
+    hashesBefore = pathsByHash before
+    hashesAfter  = pathsByHash after
+    hashesLost   = M.difference hashesBefore hashesAfter
+    filesLost    = sort $ S.toList $ S.unions $ M.elems
+                 $ M.map (\(_,_,fs) -> fs)
+                 $ M.filter (\(_,t,_) -> t == F) hashesLost
