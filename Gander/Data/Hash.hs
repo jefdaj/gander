@@ -14,8 +14,8 @@ module Gander.Data.Hash
   where
 
 -- import qualified Data.ByteString.Lazy as LB
--- import qualified Data.ByteString.Lazy.Char8 as B8
-import qualified Data.ByteString.Char8 as B8
+-- import qualified Data.ByteString.Lazy.Char8 as B
+import qualified Data.ByteString.Char8 as B
 import qualified Crypto.Hash as CH
 
 -- import Data.Byteable      (toBytes)
@@ -32,7 +32,7 @@ import Data.Hashable      (Hashable(..))
  - TODO would storing it in a more efficient way help?
  - TODO would adding timestamps or number of files help?
  -}
-newtype Hash = Hash { unHash :: B8.ByteString }
+newtype Hash = Hash { unHash :: B.ByteString }
   deriving (Eq, Read, Show, Ord)
 
 -- This is unrelated to Gander's hashing. It's required to use Data.HashMap
@@ -43,26 +43,26 @@ instance Hashable Hash
 -- TODO actual Pretty instance
 -- TODO how many chars to display? git uses two groups of 7 like this
 -- prettyHash (Hash h) = firstN h ++ "..." ++ lastN h
-prettyHash :: Hash -> B8.ByteString
+prettyHash :: Hash -> B.ByteString
 prettyHash = firstN . unHash
   where
     nChars = 8
-    firstN = B8.take nChars
+    firstN = B.take nChars
     -- lastN  = reverse . take nChars . reverse
 
 -- this works, but can probably be made faster...
--- hashBytes :: B8.ByteString -> B8.ByteString
--- hashBytes = B8.pack . show . (hash :: B8.ByteString -> CH.Digest CH.SHA256)
+-- hashBytes :: B.ByteString -> B.ByteString
+-- hashBytes = B.pack . show . (hash :: B.ByteString -> CH.Digest CH.SHA256)
 
 -- TODO would digestFromByteString be faster?
 -- TODO bug! digests come out unreadable :(
-hashBytes :: B8.ByteString -> B8.ByteString
--- still unreadable: hashBytes = digestToByteString . (hash :: B8.ByteString -> CH.Digest CH.SHA256)
--- back to readable: hashBytes = B8.pack . show . (hash :: B8.ByteString -> CH.Digest CH.SHA256)
-hashBytes = B8.pack . show . (CH.hash :: B8.ByteString -> CH.Digest CH.SHA256)
+hashBytes :: B.ByteString -> B.ByteString
+-- still unreadable: hashBytes = digestToByteString . (hash :: B.ByteString -> CH.Digest CH.SHA256)
+-- back to readable: hashBytes = B.pack . show . (hash :: B.ByteString -> CH.Digest CH.SHA256)
+hashBytes = B.pack . show . (CH.hash :: B.ByteString -> CH.Digest CH.SHA256)
 
-hashString :: String -> B8.ByteString
-hashString = hashBytes . B8.pack
+hashString :: String -> B.ByteString
+hashString = hashBytes . B.pack
 
 {- This applies to directories as well as files because when trying to traverse
  - non-annex symlinks there can be infinite cycles. For example it will fail on
@@ -77,13 +77,13 @@ hashSymlink path = do
       link <- readSymbolicLink path
       return $ Just $ Hash $ if ".git/annex/objects/" `isInfixOf` link
                              && "SHA256E-" `isPrefixOf` (takeBaseName link)
-        then B8.pack $ last $ splitOn "--" $ head $ splitOn "." $ takeBaseName link
+        then B.pack $ last $ splitOn "--" $ head $ splitOn "." $ takeBaseName link
         else hashString link -- TODO should this be a user-facing error instead?
 
 -- see: https://stackoverflow.com/a/30537010
 hashFileContents :: FilePath -> IO Hash
 hashFileContents path = do -- TODO hashFileContents
-  !sha256sum <- fmap hashBytes $ B8.readFile path
+  !sha256sum <- fmap hashBytes $ B.readFile path
   -- when verbose (putStrLn $ sha256sum ++ " " ++ path)
   return $ Hash sha256sum
 

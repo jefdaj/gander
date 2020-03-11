@@ -9,7 +9,7 @@ import Gander.Cmd.Hash (updateAnnexHashes)
 import Gander.Util     (userSaysYes)
 import Gander.Run      (runGitMv, runGitRm, runGitCommit)
 
-import qualified Data.HashSet as HS
+import qualified Data.HashSet as S
 
 import Control.Monad       (when)
 -- import Data.Foldable       (toList)
@@ -50,7 +50,7 @@ dedupLoop cfg path ignored tree = do
     Nothing -> dedupLoop cfg path ignored' tree
     Just keep -> do
       -- let keep'  = dropDir keep
-      let paths' = HS.map (makeRelative aPath) paths
+      let paths' = S.map (makeRelative aPath) paths
       dedupGroup cfg aPath paths' keep -- at this point everything is relative to annex
       -- let tree' = tree -- TODO need to update tree to remove non-keepers!
       -- TODO use filename as part of commit? have to shorten/sanitize
@@ -64,15 +64,15 @@ dedupLoop cfg path ignored tree = do
 -- TODO check that they share the same annex?
 -- TODO check that dupes is longer than 2 (1?)
 -- TODO current code is wrong whenever picking a number besides 1!
-dedupGroup :: Config -> FilePath -> HS.HashSet FilePath -> FilePath -> IO ()
+dedupGroup :: Config -> FilePath -> S.HashSet FilePath -> FilePath -> IO ()
 dedupGroup cfg aPath dupes dest = do
     -- TODO ok do the easier to think through way: two branches
   if dest `elem` dupes
-    then mapM_ (runGitRm cfg aPath) (HS.delete dest dupes)
+    then mapM_ (runGitRm cfg aPath) (S.delete dest dupes)
     else do
       -- move the first one to dest, then delete the rest (always at least 2)
-      let src    = head $ HS.toList dupes -- TODO any better way here?
-          dupes' = tail $ HS.toList dupes -- TODO any better way here?
+      let src    = head $ S.toList dupes -- TODO any better way here?
+          dupes' = tail $ S.toList dupes -- TODO any better way here?
       runGitMv cfg aPath src dest -- TODO or just dupes'?
       mapM_ (runGitRm cfg aPath) dupes'
 
@@ -86,7 +86,7 @@ userPicks sorted (n, t, paths) = do
   clear
   -- let paths' = map Dir' paths
   let nDupes = length paths :: Int
-      paths' = HS.toList paths
+      paths' = S.toList paths
   -- putStrLn $ "usePicks paths: '" ++ show paths ++ "'"
   putStrLn $ "These " ++ show nDupes ++ " are duplicates:"
   listDupes 20 paths'

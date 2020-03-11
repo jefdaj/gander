@@ -23,7 +23,7 @@ import Gander.Data
 import Gander.Util
 
 import Prelude hiding (log)
-import qualified Data.ByteString.Char8 as B8
+import qualified Data.ByteString.Char8 as B
 
 import Data.Maybe       (fromJust)
 import Control.Monad    (when, mapM_)
@@ -101,7 +101,7 @@ safeRunDeltas cfg deltas msg = do
               actual <- buildTree (verbose cfg) (exclude cfg) aPath
               assertSameTrees ("expected '" ++ aPath ++ "'", expected)
                               ("actual '"   ++ aPath ++ "'", actual)
-            B8.writeFile hashes $ serializeTree expected
+            B.writeFile hashes $ serializeTree expected
             -- TODO should gitCommit be part of runDeltas?
             -- TODO sanitize dst for commit message
             runGitCommit cfg aPath msg

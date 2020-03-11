@@ -29,7 +29,7 @@ module Gander.Data.HashTree
 import Gander.Data.Hash
 
 -- import qualified Data.ByteString as B
-import qualified Data.ByteString.Char8 as B8
+import qualified Data.ByteString.Char8 as B
 -- import qualified Data.ByteString.Lazy.Char8 as BL
 -- import qualified Data.ByteString.Char8 as B
 
@@ -65,8 +65,8 @@ type HashLine = (TreeType, IndentLevel, Hash, FilePath)
 
 -- TODO actual Pretty instance
 -- TODO need to handle unicode here?
-prettyHashLine :: HashLine -> B8.ByteString
-prettyHashLine (t, n, Hash h, p) = B8.unwords [B8.pack $ show t, B8.pack $ show n, h, B8.pack $ p]
+prettyHashLine :: HashLine -> B.ByteString
+prettyHashLine (t, n, Hash h, p) = B.unwords [B.pack $ show t, B.pack $ show n, h, B.pack $ p]
 
 {- A tree of file names matching (a subdirectory of) the annex,
  - where each dir and file node contains a hash of its contents.
@@ -95,7 +95,7 @@ excludeGlobs excludes (a DT.:/ tree) = (a DT.:/ DT.filterDir keep tree)
     keep _ = True
 
 readTree :: FilePath -> IO HashTree
-readTree = fmap deserializeTree . B8.readFile
+readTree = fmap deserializeTree . B.readFile
 
 -- TODO are contents sorted? they probably should be for stable hashes
 buildTree :: Bool -> [String] -> FilePath -> IO HashTree
@@ -128,7 +128,7 @@ buildTree' v (a DT.:/ (DT.Dir n cs)) = do
     }
 
 hashContents :: [HashTree] -> Hash
-hashContents = Hash . hashBytes . B8.unlines . sort . map (unHash . hash)
+hashContents = Hash . hashBytes . B.unlines . sort . map (unHash . hash)
 
 -- If passed a file this assumes it contains hashes and builds a tree of them;
 -- If passed a dir it will scan it first and then build the tree.
@@ -151,14 +151,14 @@ renameRoot newName tree = tree { name = newName }
 
 -- TODO can Foldable or Traversable simplify these?
 -- TODO need to handle unicode here?
-serializeTree :: HashTree -> B8.ByteString
-serializeTree = B8.unlines . map prettyHashLine . flattenTree
+serializeTree :: HashTree -> B.ByteString
+serializeTree = B.unlines . map prettyHashLine . flattenTree
 
 printTree :: HashTree -> IO ()
 printTree = mapM_ printLine . flattenTree
   where
     -- TODO don't flush every line
-    printLine l = (putStrLn $ B8.unpack $ prettyHashLine l) >> hFlush stdout
+    printLine l = (putStrLn $ B.unpack $ prettyHashLine l) >> hFlush stdout
 
 flattenTree :: HashTree -> [HashLine]
 flattenTree = flattenTree' ""
@@ -213,14 +213,14 @@ fileP = linesP <* endOfLine <* endOfInput
 -- TODO use bytestring the whole time rather than converting
 -- TODO should this propogate the Either?
 -- TODO any more elegant way to make the parsing strict?
-parseHashes :: B8.ByteString -> [(TreeType, IndentLevel, Hash, FilePath)]
+parseHashes :: B.ByteString -> [(TreeType, IndentLevel, Hash, FilePath)]
 parseHashes = fromRight [] . parseOnly fileP
 
 -- TODO error on null string/lines?
 -- TODO wtf why is reverse needed? remove that to save RAM
 -- TODO refactor so there's a proper buildTree function and this uses it
 -- TODO what about files with newlines in them? might need to split at \n(file|dir)
-deserializeTree :: B8.ByteString -> HashTree
+deserializeTree :: B.ByteString -> HashTree
 deserializeTree = snd . head . foldr accTrees [] . reverse . parseHashes
 
 countFiles :: HashTree -> Int
