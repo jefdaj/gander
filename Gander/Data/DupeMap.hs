@@ -79,12 +79,11 @@ pathsByHash' dir (Dir  n h cs fs) = cPaths ++ [(h, (fs, D, HS.singleton (dir </>
 
 -- see https://mail.haskell.org/pipermail/beginners/2009-June/001867.html
 sortDescLength :: [(Hash, DupeSet)] -> [(Hash, DupeSet)]
-sortDescLength = undefined
--- sortDescLength = map unDecorate . sortBy (comparing score) . map decorate . HM.elems
---   where
---     decorate (h, l@(n, _, _)) = (n, (h, l))
---     unDecorate (_, (h, l)) = (h, l)
---     score (n, _) = negate n -- sorts by descending number of files
+sortDescLength = map unDecorate . sortBy (comparing score) . map decorate
+  where
+    decorate (h, l@(n, _, _)) = (n, (h, l))
+    unDecorate (_, (h, l)) = (h, l)
+    score (n, _) = negate n -- sorts by descending number of files
 
 dupesByNFiles :: DupeMap -> [(Hash, DupeSet)]
 dupesByNFiles = sortDescLength . filter hasDupes . HM.toList
