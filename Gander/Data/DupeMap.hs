@@ -99,7 +99,7 @@ dupesByNFiles = undefined
  -}
 -- simplifyDupes [] = []
 -- simplifyDupes (d@(_, (_,_,fs)):ds) = d : filter (not . redundantSet) ds
-simplifyDupes :: [(Hash, DupeSet)] -> [(Hash, DupeSet)]
+simplifyDupes :: [(Hash, DupeSet)] -> [(Hash, DupeList)]
 simplifyDupes = undefined
 -- simplifyDupes = HM.filter (not . redundantSet)
 --   where
@@ -112,7 +112,7 @@ simplifyDupes = undefined
 -- sorts paths by shallowest (fewest dirs down), then length of filename,
 -- then finally alphabetical
 -- TODO is it inefficient enough to slow down the dupes command? rewrite if so
-sortDupePaths :: (Hash, DupeSet) -> (Hash, DupeList)
+sortDupePaths :: (Hash, DupeList) -> (Hash, DupeList)
 sortDupePaths = undefined
 -- sortDupePaths (h, (i, t, ps)) = (h, (i, t, sortBy myCompare ps))
 --   where

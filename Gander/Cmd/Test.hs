@@ -37,9 +37,8 @@ testDupes :: Config -> HashTree -> IO ()
 testDupes _ tree = do
   let m  = pathsByHash tree
       ds = simplifyDupes $ dupesByNFiles m
-  -- explain "making dupemap from hashtree:" $ pPrint m
-  -- explain "using dupemap to report duplicates:" $ printDupes ds
-  undefined
+  explain "making dupemap from hashtree:" $ pPrint m
+  explain "using dupemap to report duplicates:" $ printDupes ds
 
 testRm :: Config -> HashTree -> IO ()
 testRm cfg tree = case rmSubTree tree "./demo/backup" of
