@@ -87,8 +87,7 @@ sortDescLength = undefined
 --     score (n, _) = negate n -- sorts by descending number of files
 
 dupesByNFiles :: DupeMap -> [(Hash, DupeSet)]
-dupesByNFiles = undefined
--- dupesByNFiles = sortDescLength . HM.filter hasDupes
+dupesByNFiles = sortDescLength . HM.filter hasDupes
 
 {- Assumes a pre-sorted list as provided by dupesByNFiles.
  - Removes lists whose elements are all inside elements of the first list.
