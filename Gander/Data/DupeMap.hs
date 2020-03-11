@@ -125,16 +125,15 @@ hasDupes (_, (nfiles, _, paths)) = HS.size paths > 1 && nfiles > 0
 
 -- TODO use this as the basis for the dedup repl
 printDupes :: [(Hash, DupeList)] -> IO ()
-printDupes = undefined
--- printDupes groups = mapM_ printGroup $ HS.toList groups
---   where
---     explain t h fs ds = (if t == F
---       then "# " ++ show fs ++ " files"
---       else "# " ++ show ds ++ " dirs (" ++ show (div fs ds) ++ " files each, " ++ show fs ++ " total)")
---       ++ " have hash " ++ B8.unpack (prettyHash h) ++ ":"
---     printGroup (h, (n, t, paths)) = mapM_ putStrLn
---                              $ [explain t h n (length paths)]
---                              ++ sort paths ++ [""]
+printDupes groups = mapM_ printGroup $ groups
+  where
+    explain t h fs ds = (if t == F
+      then "# " ++ show fs ++ " files"
+      else "# " ++ show ds ++ " dirs (" ++ show (div fs ds) ++ " files each, " ++ show fs ++ " total)")
+      ++ " have hash " ++ B8.unpack (prettyHash h) ++ ":"
+    printGroup (h, (n, t, paths)) = mapM_ putStrLn
+                             $ [explain t h n (length paths)]
+                             ++ sort paths ++ [""]
 
 -----------------------------
 -- info about copy numbers --
