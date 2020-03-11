@@ -21,7 +21,7 @@ main = hspec $ do
     describe "Hash"     $ it "behaves properly" pending
     describe "HashTree" $ it "behaves properly" pending
     describe "Delta"    $ it "behaves properly" pending
-    describe "DupeList" $ it "behaves properly" pending
+    describe "DupeSet" $ it "behaves properly" pending
 
   describe "Gander.Util" $ do
 

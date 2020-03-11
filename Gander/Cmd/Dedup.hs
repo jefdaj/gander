@@ -37,8 +37,8 @@ dedupLoop :: Config -> FilePath -> [Hash] -> HashTree -> IO ()
 dedupLoop cfg path ignored tree = do
   let aPath       = fromJust $ annex cfg
       dupes       = dupesByNFiles $ pathsByHash tree -- TODO toList here?
-      dupesToSort = filter (\(h,_) -> not $ h `elem` ignored) (toList dupes)
-  when (null dupesToSort) (clear >> putStrLn "no duplicates. congrats!" >> exitSuccess)
+      dupesToSort = undefined -- filter (\(h,_) -> not $ h `elem` ignored) (toList dupes)
+  undefined -- when (null dupesToSort) (clear >> putStrLn "no duplicates. congrats!" >> exitSuccess)
   let (h1, ds)    = head dupesToSort -- TODO should these be just the plain paths?
       (_,_,paths) = ds
       ignored'    = h1:ignored
@@ -79,14 +79,14 @@ dedupGroup cfg aPath dupes dest = do
 -- It could also be Nothing if they choose to skip the group.
 -- TODO have a default save dir for custom paths?
 -- TODO are all these paths given an extra top-level component that causes errors?
-userPicks :: FilePath -> DupeList -> IO (Maybe FilePath)
+userPicks :: FilePath -> DupeSet -> IO (Maybe FilePath)
 userPicks sorted (n, t, paths) = do
   clear
   -- let paths' = map Dir' paths
   let nDupes = length paths :: Int
   -- putStrLn $ "usePicks paths: '" ++ show paths ++ "'"
   putStrLn $ "These " ++ show nDupes ++ " are duplicates:"
-  listDupes 20 paths
+  undefined -- listDupes 20 paths
   listOptions
   putStr "What do you want to do? "
   hFlush stdout
@@ -95,7 +95,7 @@ userPicks sorted (n, t, paths) = do
   else if answer == "quit" then exitSuccess
   else if answer `elem` map show [1..length paths+1] then do
     let index = read answer :: Int
-    return $ Just $ paths !! (index - 1)
+    return $ Just $ undefined -- paths !! (index - 1)
   -- TODO if user inputs a path, makedirs up to it before trying to move
   else do -- TODO this whole branch is an infinite loop somehow?
     -- let answer' = sorted </> answer -- TODO why does this cause <<loop>>??
@@ -103,7 +103,7 @@ userPicks sorted (n, t, paths) = do
     if confirm
       then return $ Just $ "sorted" </> answer
       else do
-        userPicks sorted (n, t, paths) -- repeat the question
+        userPicks sorted (n, t, undefined) -- repeat the question
  
 listDupes :: Int -> [FilePath] -> IO ()
 listDupes howMany paths = putStrLn $ unlines numbered
