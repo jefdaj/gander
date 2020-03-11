@@ -11,8 +11,9 @@ features:
     would doing strict tree operations speed it up?
       no! prevents streaming hashes
     what about strict tree constructors?
-      small benefit?
+      small benefit? actually decreases performance a bit so far
     use filterMap instead of any lists when finding lost files
+    make maps immediately rather than using fromListWith in DupeMap?
 
 timing data:
   time gander hash ~/nixpkgs/ +RTS -p > test-hashes.txt

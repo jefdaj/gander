@@ -65,6 +65,7 @@ pathsByHash = fromListWith mergeDupeLists . map dropDirs' . pathsByHash' ""
     dropDirs (i, t, ps) = (i, t, map dropDir ps)
     dropDirs' (h, l) = (h, dropDirs l)
 
+-- TODO make maps immediately instead of intermediate lists here?
 mergeDupeLists :: DupeList -> DupeList -> DupeList
 mergeDupeLists (n1, t, l1) (n2, _, l2) = (n1 + n2, t, l1 ++ l2)
 
