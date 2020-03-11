@@ -22,7 +22,7 @@ module Gander.Data.Delta
 
 -- import Gander.Config
 import Gander.Data.HashTree
-import qualified Data.ByteString.Char8 as B8
+import qualified Data.ByteString.Char8 as B
 
 import Control.Monad       (when, foldM)
 import Data.List           (find)
@@ -45,14 +45,14 @@ data Delta
 ------------------------
 
 -- TODO put the hashes back here?
-prettyDelta :: Delta -> B8.ByteString
-prettyDelta (Add  f  t ) = B8.pack $ "added '"   ++ f  ++ "' (" ++ B8.unpack (prettyHash (hash t)) ++ ")"
-prettyDelta (Rm   f    ) = B8.pack $ "removed '" ++ f  ++ "'"
-prettyDelta (Edit f  t ) = B8.pack $ "edited '"  ++ f  ++ "' (" ++ B8.unpack (prettyHash (hash t)) ++ ")"
-prettyDelta (Mv   f1 f2) = B8.pack $ "moved '"   ++ f1 ++ "' -> '" ++ f2 ++ "'"
+prettyDelta :: Delta -> B.ByteString
+prettyDelta (Add  f  t ) = B.pack $ "added '"   ++ f  ++ "' (" ++ B.unpack (prettyHash (hash t)) ++ ")"
+prettyDelta (Rm   f    ) = B.pack $ "removed '" ++ f  ++ "'"
+prettyDelta (Edit f  t ) = B.pack $ "edited '"  ++ f  ++ "' (" ++ B.unpack (prettyHash (hash t)) ++ ")"
+prettyDelta (Mv   f1 f2) = B.pack $ "moved '"   ++ f1 ++ "' -> '" ++ f2 ++ "'"
 
 printDeltas :: [Delta] -> IO ()
-printDeltas = mapM_ (putStrLn . B8.unpack . prettyDelta)
+printDeltas = mapM_ (putStrLn . B.unpack . prettyDelta)
 
 diff :: HashTree -> HashTree -> [Delta]
 diff = diff' ""
