@@ -78,8 +78,8 @@ pathsByHash' dir (Dir  n h cs fs) = cPaths ++ [(h, (fs, D, HS.singleton (dir </>
 -- TODO warning: so far it lists anything annexed as a dup
 
 -- see https://mail.haskell.org/pipermail/beginners/2009-June/001867.html
+sortDescLength :: [(Hash, DupeSet)] -> [(Hash, DupeSet)]
 sortDescLength = undefined
--- sortDescLength :: [(Hash, DupeSet)] -> [(Hash, DupeList)]
 -- sortDescLength = map unDecorate . sortBy (comparing score) . map decorate . HM.elems
 --   where
 --     decorate (h, l@(n, _, _)) = (n, (h, l))
@@ -87,7 +87,7 @@ sortDescLength = undefined
 --     score (n, _) = negate n -- sorts by descending number of files
 
 dupesByNFiles :: DupeMap -> [(Hash, DupeSet)]
-dupesByNFiles = sortDescLength . HM.filter hasDupes
+dupesByNFiles = sortDescLength . filter hasDupes . HM.toList
 
 {- Assumes a pre-sorted list as provided by dupesByNFiles.
  - Removes lists whose elements are all inside elements of the first list.
@@ -95,14 +95,12 @@ dupesByNFiles = sortDescLength . HM.filter hasDupes
  - and the next is dir1/file.txt, dir2/file.txt, dir3/file.txt
  - ... then the second set is redundant and confusing to show.
  -}
--- simplifyDupes [] = []
--- simplifyDupes (d@(_, (_,_,fs)):ds) = d : filter (not . redundantSet) ds
-simplifyDupes :: [(Hash, DupeSet)] -> [(Hash, DupeList)]
-simplifyDupes = undefined
--- simplifyDupes = HM.filter (not . redundantSet)
---   where
---     redundantSet (_, (_,_,fs)) = all redundantElem fs
---     redundantElem e' = any id [(splitDirectories e) `isPrefixOf` (splitDirectories e') | e <- fs]
+simplifyDupes :: [(Hash, DupeSet)] -> [(Hash, DupeSet)]
+simplifyDupes [] = []
+simplifyDupes (d@(_, (_,_,fs)):ds) = d : filter (not . redundantSet) ds
+  where
+    redundantSet (_, (_,_,fs)) = all redundantElem fs
+    redundantElem e' = any id [(splitDirectories e) `isPrefixOf` (splitDirectories e') | e <- HS.toList fs]
 
 -- TODO orderDupePaths :: [FilePath] -> [FilePath]
 --      should order by least path components, then shortest name, then maybe alphabetical
@@ -110,7 +108,7 @@ simplifyDupes = undefined
 -- sorts paths by shallowest (fewest dirs down), then length of filename,
 -- then finally alphabetical
 -- TODO is it inefficient enough to slow down the dupes command? rewrite if so
-sortDupePaths :: (Hash, DupeList) -> (Hash, DupeList)
+sortDupePaths :: (Hash, DupeSet) -> (Hash, DupeList)
 sortDupePaths = undefined
 -- sortDupePaths (h, (i, t, ps)) = (h, (i, t, sortBy myCompare ps))
 --   where
@@ -124,8 +122,8 @@ sortDupePaths = undefined
 --                          else if l1 < l2 then LT
 --                          else compare p1 p2
 
+hasDupes :: (Hash, DupeSet) -> Bool
 hasDupes = undefined
--- hasDupes :: (Hash, DupeSet) -> Bool
 -- hasDupes (_, (nfiles, _, paths)) = HM.size paths > 1 && nfiles > 0
 
 -- TODO use this as the basis for the dedup repl
