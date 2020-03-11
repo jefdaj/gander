@@ -108,18 +108,17 @@ simplifyDupes (d@(_, (_,_,fs)):ds) = d : filter (not . redundantSet) ds
 -- then finally alphabetical
 -- TODO is it inefficient enough to slow down the dupes command? rewrite if so
 sortDupePaths :: (Hash, DupeSet) -> (Hash, DupeList)
-sortDupePaths = undefined
--- sortDupePaths (h, (i, t, ps)) = (h, (i, t, sortBy myCompare ps))
---   where
---     myCompare p1 p2 = let d1 = length $ splitDirectories p1
---                           d2 = length $ splitDirectories p2
---                           l1 = length p1
---                           l2 = length p2
---                       in if      d1 > d2 then GT
---                          else if d1 < d2 then LT
---                          else if l1 > l2 then GT
---                          else if l1 < l2 then LT
---                          else compare p1 p2
+sortDupePaths (h, (i, t, ps)) = (h, (i, t, sortBy myCompare $ HS.toList ps))
+  where
+    myCompare p1 p2 = let d1 = length $ splitDirectories p1
+                          d2 = length $ splitDirectories p2
+                          l1 = length p1
+                          l2 = length p2
+                      in if      d1 > d2 then GT
+                         else if d1 < d2 then LT
+                         else if l1 > l2 then GT
+                         else if l1 < l2 then LT
+                         else compare p1 p2
 
 hasDupes :: (Hash, DupeSet) -> Bool
 hasDupes (_, (nfiles, _, paths)) = HS.size paths > 1 && nfiles > 0
