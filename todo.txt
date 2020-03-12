@@ -16,7 +16,8 @@ features:
     make maps immediately rather than using fromListWith in DupeMap?
     does reading hashes take too much memory? if so try https://hackage.haskell.org/package/streaming-utils
     parallel strategies instead of monad-parallel? want only as many threads as cores
-    try pruning bytestrings as suggested
+    prune bytestrings as suggested
+    convert directory.tree to bytestrings too?
 
 timing data:
   time gander hash ~/nixpkgs/ +RTS -p > test-hashes.txt
