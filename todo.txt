@@ -1,22 +1,27 @@
 features:
+  sort dupe sets before printing! can't compare/diff otherwise
   precompiled binary release for mac + linux
-  efficiency:
+  hash efficiency:
     strict strings/bytestrings for hashes?
+    would doing strict tree operations speed it up?
+      no! prevents streaming hashes
+    what about strict tree constructors?
+      small benefit? actually decreases performance a bit so far
+    parallel strategies instead of monad-parallel? want only as many threads as cores
+    convert directory.tree to bytestrings too?
+  dupes efficiency:
     better map in dupemap is probably important on big datasets
       data.map.strict or .lazy don't seem to help on small examples
         according to https://wiki.haskell.org/GHC/Memory_Footprint,
           there should be a savings of ~4.5 vs 6
       judy arrays? require Word keys, so no
       bytestring-trie?
-    would doing strict tree operations speed it up?
-      no! prevents streaming hashes
-    what about strict tree constructors?
-      small benefit? actually decreases performance a bit so far
     use filterMap instead of any lists when finding lost files
     make maps immediately rather than using fromListWith in DupeMap?
-    does reading hashes take too much memory? if so try https://hackage.haskell.org/package/streaming-utils
-    parallel strategies instead of monad-parallel? want only as many threads as cores
-    try pruning bytestrings as suggested
+    does reading hashes take too much memory?
+      if so try https://hackage.haskell.org/package/streaming-utils
+    prune bytestrings as suggested
+    save hashes.bin too and read it instead when possible
 
 timing data:
   time gander hash ~/nixpkgs/ +RTS -p > test-hashes.txt
