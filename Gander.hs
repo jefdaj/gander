@@ -28,6 +28,7 @@ main = do
              else return $ exclude defaultConfig
   let cfg = Config
         { annex   = getArg args $ argument "annex"
+        , bin     = getArg args $ shortOption 'b'
         , verbose = flag 'v'
         , force   = flag 'f'
         , check   = flag 'c'
