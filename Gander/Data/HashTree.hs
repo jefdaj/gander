@@ -111,7 +111,7 @@ buildTree beVerbose excludes path = do
 buildTree' :: Bool -> DT.AnchoredDirTree FilePath -> IO HashTree
 buildTree' _ (a DT.:/ (DT.Failed n e )) = error $ (a </> n) ++ ": " ++ show e
 buildTree' v (_ DT.:/ (DT.File n f)) = do
-  h <- unsafeInterleaveIO $ hashFile v f
+  !h <- unsafeInterleaveIO $ hashFile v f
   return File { name = n, hash = h }
 buildTree' v (a DT.:/ (DT.Dir n cs)) = do
   let root = a </> n

@@ -368,9 +368,10 @@ unsafeMapM _    []  = return []
 unsafeMapM f (x:xs) = unsafeInterleaveIO io
   where
     io = do
-        y  <- f x
-        ys <- unsafeMapM f xs
-        return (y:ys)
+        !y  <- f x
+        !ys <- unsafeMapM f xs
+        let !ys' = y:ys
+        return ys'
 
 
 -- using unsafeInterleaveIO to get "lazy" traversal:
