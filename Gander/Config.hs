@@ -10,6 +10,7 @@ module Gander.Config
 -- TODO remove from non-Cmd modules
 data Config = Config
   { annex   :: Maybe FilePath
+  , bin     :: Maybe FilePath
   , verbose :: Bool
   , force   :: Bool
   , check   :: Bool
@@ -21,6 +22,7 @@ data Config = Config
 defaultConfig :: Config
 defaultConfig = Config
   { annex   = Nothing
+  , bin     = Nothing
   , verbose = True
   , force   = False
   , check   = True
