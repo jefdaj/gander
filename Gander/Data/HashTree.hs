@@ -180,7 +180,7 @@ typeP = do
 
 hashP :: Parser Hash
 hashP = do
-  h <- take 64 -- TODO any need to sanitize these?
+  h <- take digestLength -- TODO any need to sanitize these?
   _ <- char ' '
   return $ Hash h
 
