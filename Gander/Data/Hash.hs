@@ -6,6 +6,7 @@
 
 module Gander.Data.Hash
   ( Hash(..)
+  , digestLength
   , prettyHash
   , hashBytes
   -- , hashBytesStreaming
