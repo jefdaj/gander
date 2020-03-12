@@ -6,6 +6,7 @@
 
 module Gander.Data.Hash
   ( Hash(..)
+  , digestLength
   , prettyHash
   , hashBytes
   -- , hashBytesStreaming
@@ -24,6 +25,7 @@ import Crypto.Hash.Algorithms
 import Crypto.Hash.IO
 
 import qualified Data.ByteString.Char8 as B
+import qualified Data.ByteString.Base64 as B64
 import qualified Data.ByteString.Lazy.Char8 as L
 import qualified Data.ByteString.Streaming.Char8 as Q
 -- import Data.Byteable      (toBytes)
@@ -48,22 +50,24 @@ instance Hashable Hash
   where
     hashWithSalt n h = hashWithSalt n (unHash h)
 
+digestLength :: Int
+digestLength = 20
+
 -- TODO actual Pretty instance
 -- TODO how many chars to display? git uses two groups of 7 like this
 -- prettyHash (Hash h) = firstN h ++ "..." ++ lastN h
 prettyHash :: Hash -> B.ByteString
-prettyHash = firstN . unHash
-  where
-    nChars = 8
-    firstN = B.take nChars
-    -- lastN  = reverse . take nChars . reverse
+prettyHash = B.take digestLength . unHash
 
 -- this works, but can probably be made faster...
 -- hashBytes :: B.ByteString -> B.ByteString
 -- hashBytes = B.pack . show . (hash :: B.ByteString -> CH.Digest CH.SHA256)
 
+compress :: B.ByteString -> B.ByteString
+compress = B.take digestLength . B64.encode
+
 hashBytes :: B.ByteString -> Hash
-hashBytes = Hash . B.pack . show . (CH.hash :: B.ByteString -> CH.Digest CH.SHA256)
+hashBytes = Hash . compress . B.pack . show . (CH.hash :: B.ByteString -> CH.Digest CH.SHA256)
 
 -- TODO would digestFromByteString be faster?
 -- TODO bug! digests come out unreadable :(
@@ -74,7 +78,7 @@ hashBytesStreaming bs = do
       chunked = Q.toChunks $ Q.fromLazy bs
   S.mapM_ (hashMutableUpdate ctx) chunked
   final <- hashMutableFinalize ctx
-  return $ Hash $ B.pack $ show final
+  return $ Hash $ compress $ B.pack $ show final
 
 hashString :: String -> Hash
 hashString = hashBytes . B.pack
@@ -92,7 +96,7 @@ hashSymlink path = do
       link <- readSymbolicLink path
       return $ Just $ if ".git/annex/objects/" `isInfixOf` link
                       && "SHA256E-" `isPrefixOf` (takeBaseName link)
-        then Hash $ B.pack $ last $ splitOn "--" $ head $ splitOn "." $ takeBaseName link
+        then Hash $ compress $ B.pack $ last $ splitOn "--" $ head $ splitOn "." $ takeBaseName link
         else hashString link -- TODO should this be a user-facing error instead?
 
 -- see: https://stackoverflow.com/a/30537010

@@ -1,25 +1,25 @@
-{ mkDerivation, ansi-terminal, attoparsec, base, byteable
-, bytestring, cryptonite, directory, directory-tree, docopt
-, filepath, Glob, hashable, hspec, monad-parallel, pretty-simple
-, process, QuickCheck, split, stdenv, streaming
+{ mkDerivation, ansi-terminal, attoparsec, base, base64-bytestring
+, byteable, bytestring, cryptonite, directory, directory-tree
+, docopt, filepath, Glob, hashable, hspec, monad-parallel
+, pretty-simple, process, QuickCheck, split, stdenv, streaming
 , streaming-bytestring, unix, unordered-containers
 }:
 mkDerivation {
   pname = "Gander";
-  version = "0.1.3.0";
+  version = "0.1.4.0";
   src = ./.;
   isLibrary = true;
   isExecutable = true;
   enableSeparateDataOutput = true;
   libraryHaskellDepends = [
-    ansi-terminal attoparsec base byteable bytestring cryptonite
-    directory directory-tree docopt filepath Glob hashable
+    ansi-terminal attoparsec base base64-bytestring byteable bytestring
+    cryptonite directory directory-tree docopt filepath Glob hashable
     monad-parallel pretty-simple process split streaming
     streaming-bytestring unix unordered-containers
   ];
   executableHaskellDepends = [
-    ansi-terminal attoparsec base byteable bytestring cryptonite
-    directory directory-tree docopt filepath Glob hashable
+    ansi-terminal attoparsec base base64-bytestring byteable bytestring
+    cryptonite directory directory-tree docopt filepath Glob hashable
     monad-parallel pretty-simple process split streaming
     streaming-bytestring unix unordered-containers
   ];
