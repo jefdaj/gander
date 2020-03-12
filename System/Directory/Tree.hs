@@ -1,4 +1,5 @@
 {-# LANGUAGE CPP               #-}
+{-# LANGUAGE BangPatterns      #-}
 --------------------------------------------------------------------
 -- |
 -- Module    : System.Directory.Tree
@@ -169,12 +170,12 @@ import Control.Applicative
 -- Strings representing a file's contents or anything else you can think of.
 -- We catch any IO errors in the Failed constructor. an Exception can be
 -- converted to a String with 'show'.
-data DirTree a = Failed { name :: FileName,
-                          err  :: IOException     }
-               | Dir    { name     :: FileName,
+data DirTree a = Failed { name :: !FileName,
+                          err  :: !IOException     }
+               | Dir    { name     :: !FileName,
                           contents :: [DirTree a] }
-               | File   { name :: FileName,
-                          file :: a               }
+               | File   { name :: !FileName,
+                          file :: !a               }
                  deriving Show
 
 
@@ -209,10 +210,11 @@ instance (Ord a,Eq a) => Ord (DirTree a) where
 -- absolute or relative path. This lets us give the DirTree a context, while
 -- still letting us store only directory and file /names/ (not full paths) in
 -- the DirTree. (uses an infix constructor; don't be scared)
-data AnchoredDirTree a = (:/) { anchor :: FilePath, dirTree :: DirTree a }
+data AnchoredDirTree a = (:/) { anchor :: !FilePath, dirTree :: DirTree a }
                      deriving (Show, Ord, Eq)
 
 
+-- TODO can this be converted to B.ByteString?
 -- | an element in a FilePath:
 type FileName = String
 
@@ -366,9 +368,10 @@ unsafeMapM _    []  = return []
 unsafeMapM f (x:xs) = unsafeInterleaveIO io
   where
     io = do
-        y  <- f x
-        ys <- unsafeMapM f xs
-        return (y:ys)
+        !y  <- f x
+        !ys <- unsafeMapM f xs
+        let !ys' = y:ys
+        return ys'
 
 
 -- using unsafeInterleaveIO to get "lazy" traversal:
