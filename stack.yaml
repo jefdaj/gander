@@ -4,5 +4,5 @@ packages:
 extra-deps:
 - bytestring-trie-0.2.5.0
 nix:
-  enable: true # works, but too heavy to justify unless you use it already
+  enable: false # works, but too heavy to justify unless you use it already
   pure: false
