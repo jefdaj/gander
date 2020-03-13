@@ -17,6 +17,7 @@ module Gander.Data
   , listAllFiles
   , listLostFiles
   , printTree
+  , writeBinTree
   , readOrBuildTree
   , readTree
   , renameRoot

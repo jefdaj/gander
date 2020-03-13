@@ -22,6 +22,7 @@ library
                        byteable,
                        base64-bytestring,
                        bytestring,
+                       safe-exceptions,
                        streaming,
                        streaming-bytestring,
                        unordered-containers,
@@ -36,6 +37,8 @@ library
                        pretty-simple,
                        process,
                        split,
+                       store,
+                       th-utilities,
                        unix
   exposed-modules:     Gander.Cmd,
                        Gander.Cmd.Init,
@@ -74,6 +77,7 @@ executable gander
                        byteable,
                        base64-bytestring,
                        bytestring,
+                       safe-exceptions,
                        streaming,
                        streaming-bytestring,
                        unordered-containers,
@@ -88,6 +92,8 @@ executable gander
                        pretty-simple,
                        process,
                        split,
+                       store,
+                       th-utilities,
                        unix
   other-modules:       Gander.Cmd,
                        Gander.Cmd.Init,

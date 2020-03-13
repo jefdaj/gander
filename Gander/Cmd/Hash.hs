@@ -22,7 +22,12 @@ import System.FilePath  ((</>))
 -- this works, but add doesn't. so what changed?
 cmdHash :: Config -> FilePath -> IO ()
 cmdHash cfg target = case annex cfg of
-  Nothing -> buildTree (verbose cfg) (exclude cfg) target >>= printTree
+  Nothing -> do
+    t <- buildTree (verbose cfg) (exclude cfg) target
+    printTree t
+    case bin cfg of
+      Nothing -> return ()
+      Just p -> writeBinTree p t
   Just dir -> do
     new <- buildTree (verbose cfg) (exclude cfg) target
     updateAnnexHashes cfg new
@@ -31,16 +36,21 @@ cmdHash cfg target = case annex cfg of
 
 updateAnnexHashes :: Config -> HashTree -> IO ()
 updateAnnexHashes cfg new = do
-  let aPath  = fromJust $ annex cfg
-      hashes = aPath </> "hashes.txt"
+  let aPath   = fromJust $ annex cfg
+      hashes  = aPath </> "hashes.txt"
+      bHashes = aPath </> "hashes.bin"
   log cfg "updating hashes.txt"
   exists <- doesFileExist hashes
   when exists $ do -- TODO only when verbose?
     old <- readTree hashes
     printDeltas $ diff old new -- just nice to verify this looks right
   B.writeFile hashes $ serializeTree new
-  out <- runGit aPath ["add", "hashes.txt"]
-  log cfg out
+  -- TODO listen to config here? or always do it?
+  writeBinTree bHashes new
+  out1 <- runGit aPath ["add", "hashes.txt"]
+  log cfg out1
+  out2 <- runGit aPath ["add", "hashes.bin"]
+  log cfg out2
 
 guardStatus :: Config -> FilePath -> IO ()
 guardStatus = undefined
