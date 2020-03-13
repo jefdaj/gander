@@ -1,4 +1,6 @@
 {-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module Gander.Data.HashTree
   ( HashTree(..)
@@ -8,6 +10,7 @@ module Gander.Data.HashTree
   , readOrBuildTree
   , renameRoot
   , printTree
+  , writeBinTree
   , prettyHashLine
   , serializeTree
   , flattenTree
@@ -55,6 +58,10 @@ import Prelude hiding (take)
 import Data.Attoparsec.ByteString.Char8 hiding (match, D)
 import Data.Attoparsec.Combinator
 
+import Data.Store             (encode, decodeIO, Store(..))
+import Control.Exception.Safe (catchAny)
+import TH.Derive
+
 -- import Text.Regex.Do.Split  (split)
 -- import Text.Regex.Do.TypeDo (Body(..), Pattern(..))
 
@@ -87,6 +94,11 @@ data HashTree
 instance Eq HashTree where
   t1 == t2 = hash t1 == hash t2
 
+-- https://hackage.haskell.org/package/store-0.7.2/docs/Data-Store-TH.html
+$($(derive [d|
+    instance Deriving (Store HashTree)
+    |]))
+
 excludeGlobs :: [String]
              -> (DT.AnchoredDirTree FilePath -> DT.AnchoredDirTree FilePath)
 excludeGlobs excludes (a DT.:/ tree) = (a DT.:/ DT.filterDir keep tree)
@@ -96,8 +108,11 @@ excludeGlobs excludes (a DT.:/ tree) = (a DT.:/ DT.filterDir keep tree)
     keep (DT.File n _) = noneMatch excludes n
     keep _ = True
 
+-- try to read as binary, and fall back to text if it fails
 readTree :: FilePath -> IO HashTree
-readTree = fmap deserializeTree . B.readFile
+readTree path = catchAny
+                  (B.readFile path >>= decodeIO)
+                  (\_ -> fmap deserializeTree $ B.readFile path)
 
 -- TODO are contents sorted? they probably should be for stable hashes
 buildTree :: Bool -> [String] -> FilePath -> IO HashTree
@@ -161,6 +176,9 @@ printTree = mapM_ printLine . flattenTree
   where
     -- TODO don't flush every line
     printLine l = (putStrLn $ B.unpack $ prettyHashLine l) >> hFlush stdout
+
+writeBinTree :: FilePath -> HashTree -> IO ()
+writeBinTree path tree = B.writeFile path $ encode tree
 
 flattenTree :: HashTree -> [HashLine]
 flattenTree = flattenTree' ""

@@ -21,7 +21,7 @@ features:
     does reading hashes take too much memory?
       if so try https://hackage.haskell.org/package/streaming-utils
     prune bytestrings as suggested
-    save hashes.bin too and read it instead when possible
+    x save hashes.bin too and read it instead when possible
 
 timing data:
   time gander hash ~/nixpkgs/ +RTS -p > test-hashes.txt

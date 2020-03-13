@@ -1,4 +1,6 @@
 {-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 -- TODO hashHashes should be hashDir
 -- TODO should it also hash filenames?
@@ -37,6 +39,9 @@ import System.Directory   (pathIsSymbolicLink)
 import System.Posix.Files (readSymbolicLink)
 import Data.Hashable      (Hashable(..))
 
+import TH.Derive
+import Data.Store (Store(..))
+
 {- Checksum (sha256sum?) of a file or folder.
  - For files, should match the corresponding git-annex key.
  - TODO would storing it in a more efficient way help?
@@ -49,6 +54,11 @@ newtype Hash = Hash { unHash :: B.ByteString }
 instance Hashable Hash
   where
     hashWithSalt n h = hashWithSalt n (unHash h)
+
+-- https://hackage.haskell.org/package/store-0.7.2/docs/Data-Store-TH.html
+$($(derive [d|
+    instance Deriving (Store Hash)
+    |]))
 
 digestLength :: Int
 digestLength = 20
