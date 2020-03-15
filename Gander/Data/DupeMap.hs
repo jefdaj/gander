@@ -1,17 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
-
-{-
- - But regardless of data structure, one of the most crucial things to do is to
- - prune your bytestrings! By default, ByteStrings seek to share the underlying
- - byte array no matter how you slice and dice them; and by default that's a
- - good thing. However, when you're reading hundreds of Mbs, chopping them into
- - little pieces —most of which are equal— and storing them in a data
- - structure, you don't want to accidentally keep holding on to every byte
- - array you ever touched! If you use bytestring-trie, it does this pruning for
- - you automatically. If you use HashMap or something, then you'll want to
- - write a thin wrapper around the API in order to ByteString.copy keys before
- - inserting them into the map.
- -}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE FlexibleContexts #-}
 
 module Gander.Data.DupeMap
   ( DupeSet
@@ -30,16 +19,34 @@ module Gander.Data.DupeMap
   )
   where
 
+import qualified Data.HashTable.ST.Cuckoo as C
+import qualified Data.HashTable.Class     as H
+import qualified Data.HashSet             as S
+import Control.Monad.ST
+
+{-
+ - But regardless of data structure, one of the most crucial things to do is to
+ - prune your bytestrings! By default, ByteStrings seek to share the underlying
+ - byte array no matter how you slice and dice them; and by default that's a
+ - good thing. However, when you're reading hundreds of Mbs, chopping them into
+ - little pieces —most of which are equal— and storing them in a data
+ - structure, you don't want to accidentally keep holding on to every byte
+ - array you ever touched! If you use bytestring-trie, it does this pruning for
+ - you automatically. If you use HashMap or something, then you'll want to
+ - write a thin wrapper around the API in order to ByteString.copy keys before
+ - inserting them into the map.
+ -}
+
 -- TODO are the paths getting messed up somewhere in here?
 -- like this: myfirstdedup/home/user/gander/demo/myfirstdedup/unsorted/backup/backup
 
 import qualified Data.ByteString.Char8 as B
 import qualified Data.HashMap.Strict   as M
-import qualified Data.HashSet          as S
+-- import qualified Data.HashSet          as S
 
 import Gander.Data.Hash
 import Gander.Data.HashTree
-import Gander.Util (dropDir)
+-- import Gander.Util (dropDir)
 
 import Data.List       (sort, sortBy, isPrefixOf)
 import Data.Ord        (comparing)
@@ -54,26 +61,66 @@ type DupeList = (Int, TreeType, [FilePath]) -- TODO move to Cmd/Dupes.hs?
 {- A map from file/dir hash to a list of duplicate file paths.
  - Could be rewritten to contain links to HashTrees if that helps.
  -}
-type DupeMap = M.HashMap Hash DupeSet
+-- type DupeMap = M.HashMap Hash DupeSet
+
 -- type DupeMap = :ashMap Hash (Int, TreeType, [FilePath])
 -- toList that to get :: [(Hash, (Int, TreeType, [FilePath]))]
 
 -- TODO does this need to drop the top component?
+-- pathsByHash :: HashTree -> DupeMap
+-- pathsByHash = M.fromListWith mergeDupeSets . map dropDirs' . pathsByHash' ""
+--   where
+--     dropDirs (i, t, ps) = (i, t, S.map dropDir ps)
+--     dropDirs' (h, l) = (h, dropDirs l)
+
+-- new ST-based mutable maps --
+
+-- first attempt: use old DupeMap for everything but create it using ST
+-- TODO then try to use *only* the ST hashmaps
+
+-- TODO remove DupeMap type?
+type DupeMap     = M.HashMap Hash DupeSet
+type HashTable s = C.HashTable s Hash DupeSet
+
+-- TODO would this be a lot more efficient if we remove the H.toList M.fromList stuff?
+-- TODO what about if we guess the approximate size first?
+-- TODO what about if we make it from the serialized hashes instead of a tree?
 pathsByHash :: HashTree -> DupeMap
-pathsByHash = M.fromListWith mergeDupeSets . map dropDirs' . pathsByHash' ""
-  where
-    dropDirs (i, t, ps) = (i, t, S.map dropDir ps)
-    dropDirs' (h, l) = (h, dropDirs l)
+pathsByHash t = M.fromList $ runST $ H.toList =<< (do
+  ht <- H.newSized 1 -- TODO what's with the size thing? maybe use H.new instead
+  addToDupeMap ht t
+  return ht)
+
+-- inserts all nodes from a tree into an existing dupemap in ST s
+addToDupeMap :: HashTable s -> HashTree -> ST s ()
+addToDupeMap ht t = addToDupeMap' ht "" t
+
+-- same, but start from a given root path
+addToDupeMap' :: HashTable s -> FilePath -> HashTree -> ST s ()
+addToDupeMap' ht dir (File n h      ) = insertDupeSet ht h (1, F, S.singleton (dir </> n))
+addToDupeMap' ht dir (Dir  n h cs fs) = do
+  insertDupeSet ht h (fs, D, S.singleton (dir </> n))
+  mapM_ (addToDupeMap' ht (dir </> n)) cs
+
+-- inserts one node into an existing dupemap in ST s
+insertDupeSet :: HashTable s -> Hash -> DupeSet -> ST s ()
+insertDupeSet ht h d2 = do
+  existing <- H.lookup ht h
+  case existing of
+    Nothing -> H.insert ht h d2
+    Just d1 -> H.insert ht h $ mergeDupeSets d1 d2
+
+-- pathsByHash t = runST $ 
 
 -- TODO make maps immediately instead of intermediate lists here?
 mergeDupeSets :: DupeSet -> DupeSet -> DupeSet
 mergeDupeSets (n1, t, l1) (n2, _, l2) = (n1 + n2, t, S.union l1 l2)
 
-pathsByHash' :: FilePath -> HashTree -> [(Hash, DupeSet)]
-pathsByHash' dir (File n h      ) = [(h, (1, F, S.singleton (dir </> n)))]
-pathsByHash' dir (Dir  n h cs fs) = cPaths ++ [(h, (fs, D, S.singleton (dir </> n)))]
-  where
-    cPaths = concatMap (pathsByHash' $ dir </> n) cs
+-- pathsByHash' :: FilePath -> HashTree -> [(Hash, DupeSet)]
+-- pathsByHash' dir (File n h      ) = [(h, (1, F, S.singleton (dir </> n)))]
+-- pathsByHash' dir (Dir  n h cs fs) = cPaths ++ [(h, (fs, D, S.singleton (dir </> n)))]
+--   where
+--     cPaths = concatMap (pathsByHash' $ dir </> n) cs
 
 -- TODO warning: so far it lists anything annexed as a dup
 
