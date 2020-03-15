@@ -39,6 +39,7 @@ library
                        process,
                        split,
                        store,
+                       text,
                        th-utilities,
                        unix
   exposed-modules:     Gander.Cmd,
@@ -95,6 +96,7 @@ executable gander
                        process,
                        split,
                        store,
+                       text,
                        th-utilities,
                        unix
   other-modules:       Gander.Cmd,
