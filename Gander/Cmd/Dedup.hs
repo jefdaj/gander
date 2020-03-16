@@ -9,6 +9,7 @@ import Gander.Cmd.Hash (updateAnnexHashes)
 import Gander.Util     (userSaysYes)
 import Gander.Run      (runGitMv, runGitRm, runGitCommit)
 import Control.Monad.ST
+import qualified Data.ByteString.Char8 as B
 
 import qualified Data.HashSet as S
 
@@ -51,7 +52,7 @@ dedupLoop cfg path ignored tree = do
     Nothing -> dedupLoop cfg path ignored' tree
     Just keep -> do
       -- let keep'  = dropDir keep
-      let paths' = S.map (makeRelative aPath) paths
+      let paths' = S.map (\p -> makeRelative aPath $ B.unpack p) paths
       dedupGroup cfg aPath paths' keep -- at this point everything is relative to annex
       -- let tree' = tree -- TODO need to update tree to remove non-keepers!
       -- TODO use filename as part of commit? have to shorten/sanitize
@@ -87,7 +88,7 @@ userPicks sorted (n, t, paths) = do
   clear
   -- let paths' = map Dir' paths
   let nDupes = length paths :: Int
-      paths' = S.toList paths
+      paths' = map B.unpack $ S.toList paths
   -- putStrLn $ "usePicks paths: '" ++ show paths ++ "'"
   putStrLn $ "These " ++ show nDupes ++ " are duplicates:"
   listDupes 20 paths'

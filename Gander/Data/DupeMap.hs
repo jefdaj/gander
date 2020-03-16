@@ -55,8 +55,8 @@ import System.FilePath ((</>), splitDirectories)
 -- TODO can Foldable or Traversable simplify these?
 
 -- note that most of the functions use (Hash, DupeSet) instead of plain DupeSet
-type DupeSet  = (Int, TreeType, S.HashSet FilePath)
-type DupeList = (Int, TreeType, [FilePath]) -- TODO move to Cmd/Dupes.hs?
+type DupeSet  = (Int, TreeType, S.HashSet B.ByteString)
+type DupeList = (Int, TreeType, [B.ByteString]) -- TODO move to Cmd/Dupes.hs?
 
 {- A map from file/dir hash to a list of duplicate file paths.
  - Could be rewritten to contain links to HashTrees if that helps.
@@ -98,9 +98,9 @@ addToDupeMap ht t = addToDupeMap' ht "" t
 
 -- same, but start from a given root path
 addToDupeMap' :: DupeTable s -> FilePath -> HashTree -> ST s ()
-addToDupeMap' ht dir (File n h      ) = insertDupeSet ht h (1, F, S.singleton (dir </> n))
+addToDupeMap' ht dir (File n h      ) = insertDupeSet ht h (1, F, S.singleton (B.pack (dir </> n)))
 addToDupeMap' ht dir (Dir  n h cs fs) = do
-  insertDupeSet ht h (fs, D, S.singleton (dir </> n))
+  insertDupeSet ht h (fs, D, S.singleton (B.pack (dir </> n)))
   mapM_ (addToDupeMap' ht (dir </> n)) cs
 
 -- inserts one node into an existing dupemap in ST s
@@ -163,7 +163,7 @@ simplifyDupes [] = []
 simplifyDupes (d@(_, (_,_,fs)):ds) = d : filter (not . redundantSet) ds
   where
     redundantSet (_, (_,_,fs')) = all redundantElem fs'
-    redundantElem e' = any id [(splitDirectories e) `isPrefixOf` (splitDirectories e') | e <- S.toList fs]
+    redundantElem e' = any id [(splitDirectories e) `isPrefixOf` (splitDirectories $ B.unpack e') | e <- map B.unpack (S.toList fs)]
 
 -- TODO orderDupePaths :: [FilePath] -> [FilePath]
 --      should order by least path components, then shortest name, then maybe alphabetical
@@ -174,10 +174,10 @@ simplifyDupes (d@(_, (_,_,fs)):ds) = d : filter (not . redundantSet) ds
 sortDupePaths :: (Hash, DupeSet) -> (Hash, DupeList)
 sortDupePaths (h, (i, t, ps)) = (h, (i, t, sortBy myCompare $ S.toList ps))
   where
-    myCompare p1 p2 = let d1 = length $ splitDirectories p1
-                          d2 = length $ splitDirectories p2
-                          l1 = length p1
-                          l2 = length p2
+    myCompare p1 p2 = let d1 = length $ splitDirectories $ B.unpack p1
+                          d2 = length $ splitDirectories $ B.unpack p2
+                          l1 = length $ B.unpack p1
+                          l2 = length $ B.unpack p2
                       in if      d1 > d2 then GT
                          else if d1 < d2 then LT
                          else if l1 > l2 then GT
@@ -197,7 +197,7 @@ printDupes groups = mapM_ printGroup $ groups
       ++ " have hash " ++ B.unpack (prettyHash h) ++ ":"
     printGroup (h, (n, t, paths)) = mapM_ putStrLn
                              $ [explain t h n (length paths)]
-                             ++ sort paths ++ [""]
+                             ++ sort (map B.unpack paths) ++ [""]
 
 -----------------------------
 -- info about copy numbers --
