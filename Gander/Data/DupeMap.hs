@@ -89,6 +89,7 @@ pathsByHash :: HashTree -> ST s (DupeTable s)
 pathsByHash t = do
   ht <- H.newSized 1 -- TODO what's with the size thing? maybe use H.new instead
   addToDupeMap ht t
+  H.mapM_ (\(k,_) -> H.mutate ht k removeNonDupes) ht
   return ht
 
 -- inserts all nodes from a tree into an existing dupemap in ST s
@@ -138,7 +139,7 @@ sortDescLength = map unDecorate . sortBy (comparing score) . map decorate
 -- dupesByNFiles :: DupeMap -> [(Hash, DupeSet)]
 dupesByNFiles :: DupeTable s -> ST s [(Hash, DupeSet)]
 dupesByNFiles dt = do
-  H.mapM_ (\(k,_) -> H.mutate dt k removeNonDupes    ) dt -- TODO do this in pathsByHash?
+  -- H.mapM_ (\(k,_) -> H.mutate dt k removeNonDupes    ) dt -- TODO do this in pathsByHash?
   undefined
   -- H.fromList dt -- TODO don't use this here?
   -- TODO sortDescLength
