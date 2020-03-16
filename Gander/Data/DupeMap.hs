@@ -80,30 +80,30 @@ type DupeList = (Int, TreeType, [FilePath]) -- TODO move to Cmd/Dupes.hs?
 
 -- TODO remove DupeMap type?
 type DupeMap     = M.HashMap Hash DupeSet
-type HashTable s = C.HashTable s Hash DupeSet
+type DupeTable s = C.HashTable s Hash DupeSet
 
 -- TODO would this be a lot more efficient if we remove the H.toList M.fromList stuff?
 -- TODO what about if we guess the approximate size first?
 -- TODO what about if we make it from the serialized hashes instead of a tree?
-pathsByHash :: HashTree -> DupeMap
-pathsByHash t = M.fromList $ runST $ H.toList =<< (do
+pathsByHash :: HashTree -> ST s (DupeTable s)
+pathsByHash t = do
   ht <- H.newSized 1 -- TODO what's with the size thing? maybe use H.new instead
   addToDupeMap ht t
-  return ht)
+  return ht
 
 -- inserts all nodes from a tree into an existing dupemap in ST s
-addToDupeMap :: HashTable s -> HashTree -> ST s ()
+addToDupeMap :: DupeTable s -> HashTree -> ST s ()
 addToDupeMap ht t = addToDupeMap' ht "" t
 
 -- same, but start from a given root path
-addToDupeMap' :: HashTable s -> FilePath -> HashTree -> ST s ()
+addToDupeMap' :: DupeTable s -> FilePath -> HashTree -> ST s ()
 addToDupeMap' ht dir (File n h      ) = insertDupeSet ht h (1, F, S.singleton (dir </> n))
 addToDupeMap' ht dir (Dir  n h cs fs) = do
   insertDupeSet ht h (fs, D, S.singleton (dir </> n))
   mapM_ (addToDupeMap' ht (dir </> n)) cs
 
 -- inserts one node into an existing dupemap in ST s
-insertDupeSet :: HashTable s -> Hash -> DupeSet -> ST s ()
+insertDupeSet :: DupeTable s -> Hash -> DupeSet -> ST s ()
 insertDupeSet ht h d2 = do
   existing <- H.lookup ht h
   case existing of
@@ -125,6 +125,8 @@ mergeDupeSets (n1, t, l1) (n2, _, l2) = (n1 + n2, t, S.union l1 l2)
 -- TODO warning: so far it lists anything annexed as a dup
 
 -- see https://mail.haskell.org/pipermail/beginners/2009-June/001867.html
+-- TODO or is this the bottleneck?
+--      could use mapM_ to perform this in place
 sortDescLength :: [(Hash, DupeSet)] -> [(Hash, DupeSet)]
 sortDescLength = map unDecorate . sortBy (comparing score) . map decorate
   where
@@ -132,8 +134,22 @@ sortDescLength = map unDecorate . sortBy (comparing score) . map decorate
     unDecorate (_, (h, l)) = (h, l)
     score (n, _) = negate n -- sorts by descending number of files
 
-dupesByNFiles :: DupeMap -> [(Hash, DupeSet)]
-dupesByNFiles = sortDescLength . filter hasDupes . M.toList
+-- TODO this is now the worst bottleneck?
+-- dupesByNFiles :: DupeMap -> [(Hash, DupeSet)]
+dupesByNFiles :: DupeTable s -> ST s [(Hash, DupeSet)]
+dupesByNFiles dt = do
+  H.mapM_ (\(k,_) -> H.mutate dt k removeNonDupes    ) dt -- TODO do this in pathsByHash?
+  undefined
+  -- H.fromList dt -- TODO don't use this here?
+  -- TODO sortDescLength
+  -- sortDescLength . H.mutate removeNonDupes . H.toList
+
+-- rewrite of `filter hasDupes` for use with H.mutate
+removeNonDupes :: Maybe DupeSet -> (Maybe DupeSet, ())
+removeNonDupes Nothing = (Nothing, ())
+removeNonDupes (Just v@(nfiles, _, paths)) = (if S.size paths > 1 && nfiles > 0
+                                                then Just v
+                                                else Nothing, ())
 
 {- Assumes a pre-sorted list as provided by dupesByNFiles.
  - Removes lists whose elements are all inside elements of the first list.
@@ -204,10 +220,11 @@ anotherCopy h mainMap subMap = nMain > nSub
     (Just nSub ) = fmap (\(n,_,_) -> n) $ M.lookup h subMap
 
 allDupes :: HashTree -> HashTree -> Bool
-allDupes mainTree subTree = all safeToRmHash $ M.keys subDupes
+-- allDupes mainTree subTree = all safeToRmHash $ undefined subDupes
+allDupes mainTree subTree = undefined safeToRmHash $ undefined subDupes
   where
-    mainDupes = pathsByHash mainTree
-    subDupes  = pathsByHash subTree
+    mainDupes = undefined $ pathsByHash mainTree
+    subDupes  = undefined $ pathsByHash subTree
     safeToRmHash h = anotherCopy h mainDupes subDupes
 
 -- for warning the user when their action will delete the last copy of a file
@@ -218,7 +235,7 @@ listLostFiles before after = filesLost
   where
     hashesBefore = pathsByHash before
     hashesAfter  = pathsByHash after
-    hashesLost   = M.difference hashesBefore hashesAfter
+    hashesLost   = undefined hashesBefore hashesAfter
     filesLost    = sort $ S.toList $ S.unions $ M.elems
                  $ M.map (\(_,_,fs) -> fs)
                  $ M.filter (\(_,t,_) -> t == F) hashesLost
