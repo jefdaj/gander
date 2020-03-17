@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE FlexibleContexts #-}
 
 module Main where
 
@@ -52,15 +53,36 @@ testHT = H.fromList $ Prelude.map
 testHTL :: [(Hash, DupeSet)]
 testHTL = runST $ H.toList =<< testHT
 
-array1 :: Array D Ix1 DupeSet
-array1 = makeArray Par (Sz1 $ length testDS) (testDS !!)
+-- TODO is this reasonable?
+type MyVector = Array N Ix1 DupeSet
 
-mkArrayFromHT :: C.HashTable s Hash DupeSet -> ST s (Array D Ix1 DupeSet)
-mkArrayFromHT = undefined
+vec1 :: MyVector
+vec1 = makeArray Par (Sz1 $ length testDS) (testDS !!)
 
--- TODO array2 from the testHT
-array2 :: ST s (Array D Ix1 DupeSet)
-array2 = undefined
+-- TODO why does it have to be DL?
+vec2 :: Array DL Ix1 Int
+vec2 = iterateN (Sz1 $ length testDS) succ 0
+
+vec3 :: Array D Ix1 (Int, B.ByteString)
+vec3 = makeArray Par (Sz1 $ length testDS) (tmp !!)
+  where
+   tmp = Prelude.map (\(Hash h, (n, _)) -> (n, h)) $ runST $ H.toList =<< testHT
+
+vec3s :: Array N Ix1 (Int, B.ByteString)
+vec3s = quicksort $ compute vec3
+
+-- tests getting the indexes of a hash table
+
+-- TODO any way to get the hashtable size directly?
+mkVecFromHT :: Int -> C.HashTable s Hash DupeSet -> ST s MyVector
+mkVecFromHT n ht = do
+  let vec :: MyVector
+      vec = makeArray Par (Sz1 n) (const (0, undefined))
+  undefined
+
+-- TODO vec2 from the testHT
+-- vec :: ST s (Array N Ix1 DupeSet)
+-- vec = undefined
 
 main :: IO ()
 main = undefined
