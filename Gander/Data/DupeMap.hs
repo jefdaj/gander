@@ -175,9 +175,17 @@ dupesByNFiles (n, dt) = do
   -- let sortArr = A.makeVectorR A.B A.Par (A.Sz1 $ length keys)
   --                 (\i -> let h = keys !! i
   --                        in (h, fromJust $ runST $ H.lookup dt h))
-  let sortArr = A.makeVectorR A.B A.Par (A.Sz1 $ length keys) (const 0)
+  -- let sortArr = A.makeVectorR A.B A.Par (A.Sz1 $ length keys) (const 0)
   -- forM_ keys $ \k -> do
     
+  -- TODO undefined -> Nothing? not sure if needed
+  -- let decorated = A.makeVectorR A.B A.Par (A.Sz1 $ length keys) (const (0, undefined))
+
+  -- this assumes that nextByIndex wraps around, which seems reasonable?
+  -- oh wait, do we start at 0?
+  -- let decorateNext = (const (0, undefined))
+  let decorateNext = (const (0, undefined))
+  let decorated = A.iterateN (A.Sz1 n) decorateNext
 
   -- H.mapM_ (\(k,_) -> H.mutate dt k removeNonDupes    ) dt -- TODO do this in pathsByHash?
   undefined
