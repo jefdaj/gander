@@ -8,6 +8,7 @@ memory optimization:
   0. start from real hash data
   1. profile to figure out which step is consuming the most
        surprisingly, a loooot of (:), probably inside DupeMap somewhere?
+       does pathsByHash increase usage because of FilePaths? Would ByteStrings reduce it?
   2a. if HashTree, think about removing it and going straight from hashes -> dupemap
   2b. if DupeMap, maybe optimize with bytestring-trie or judy array
 
