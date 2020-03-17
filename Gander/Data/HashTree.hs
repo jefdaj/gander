@@ -68,6 +68,8 @@ import TH.Derive
 -- for distinguishing beween files and dirs
 data TreeType = F | D deriving (Eq, Read, Show)
 
+$($(derive [d| instance Deriving (Store TreeType) |]))
+
 type IndentLevel = Int
 
 type HashLine = (TreeType, IndentLevel, Hash, FilePath)
@@ -111,8 +113,10 @@ excludeGlobs excludes (a DT.:/ tree) = (a DT.:/ DT.filterDir keep tree)
 -- try to read as binary, and fall back to text if it fails
 readTree :: FilePath -> IO HashTree
 readTree path = catchAny
-                  (B.readFile path >>= decodeIO)
-                  (\_ -> fmap deserializeTree $ B.readFile path)
+  (do
+     (hs :: [HashLine]) <- decodeIO bs =<< B.readFile path
+     return $ snd $ head $ foldr accTrees [] hs)
+  (\_ -> fmap deserializeTree $ B.readFile path)
 
 -- TODO are contents sorted? they probably should be for stable hashes
 buildTree :: Bool -> [String] -> FilePath -> IO HashTree
@@ -178,7 +182,7 @@ printTree = mapM_ printLine . flattenTree
     printLine l = (putStrLn $ B.unpack $ prettyHashLine l) >> hFlush stdout
 
 writeBinTree :: FilePath -> HashTree -> IO ()
-writeBinTree path tree = B.writeFile path $ encode tree
+writeBinTree path tree = B.writeFile path $ encode $ flattenTree tree
 
 flattenTree :: HashTree -> [HashLine]
 flattenTree = flattenTree' ""
