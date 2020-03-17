@@ -52,6 +52,8 @@ import Data.List       (sort, sortBy, isPrefixOf)
 import Data.Ord        (comparing)
 import System.FilePath ((</>), splitDirectories)
 
+import qualified Data.Massiv.Array as A
+
 -- TODO can Foldable or Traversable simplify these?
 
 -- note that most of the functions use (Hash, DupeSet) instead of plain DupeSet
@@ -86,22 +88,50 @@ type DupeTable s = C.HashTable s Hash DupeSet
 -- TODO what about if we guess the approximate size first?
 -- TODO what about if we make it from the serialized hashes instead of a tree?
 pathsByHash :: HashTree -> ST s (DupeTable s)
-pathsByHash t = do
-  ht <- H.newSized 1 -- TODO what's with the size thing? maybe use H.new instead
-  addToDupeMap ht t
-  H.mapM_ (\(k,_) -> H.mutate ht k removeNonDupes) ht
+pathsByHash t@(File _ _    ) = pathsByHash' t 1
+pathsByHash t@(Dir  _ _ _ n) = pathsByHash' t n
+
+pathsByHash' :: HashTree -> Int -> ST s (DupeTable s)
+pathsByHash' t n0 = do
+  ht <- H.newSized n0 -- n0 helps start with a reasonably-sized table
+  n <- addToDupeMap ht t -- TODO should this return the number of keys too?
+  H.mapM_ (\(k,_) -> H.mutate ht k removeNonDupes) ht -- TODO remove?
+  -- this should work, but hasn't been tested yet and might perform badly
+  -- if it does work but performs badly, try Massiv.Array with quicksort
+  let keys = H.foldM (\a (k,v) -> return (k:a)) [] ht
+      arr1 = A.iterateN (A.Sz1 n) undefined 
   return ht
 
+-- TODO want to be able to quicksort the array, so...
+--        array has to be mutable
+--          could use tuples with the U (Unbox) type
+--          or tuples with type B/N (Boxed), with or without strict evaluation
+--        elements need an Ord instance: (Int, ByteString) (aka nfiles, hash)
+--          but can the bytestring be used?
+--      want addToDupeMap to also count elements
+--      want to create a second array afterward with hashtable elements?
+--
+-- overall idea:
+--   make dupetable from tree (TODO or from hashes directly?)
+--     also keep track of length for the first array?
+--   make array of hashes from the table keys, decorated with nfiles
+--   quicksort the array
+--   make array of dupesets ordered by the hashes
+--   return only the last array
+
 -- inserts all nodes from a tree into an existing dupemap in ST s
-addToDupeMap :: DupeTable s -> HashTree -> ST s ()
+addToDupeMap :: DupeTable s -> HashTree -> ST s Int
 addToDupeMap ht t = addToDupeMap' ht "" t
 
 -- same, but start from a given root path
-addToDupeMap' :: DupeTable s -> FilePath -> HashTree -> ST s ()
-addToDupeMap' ht dir (File n h      ) = insertDupeSet ht h (1, F, S.singleton (B.pack (dir </> n)))
+addToDupeMap' :: DupeTable s -> FilePath -> HashTree -> ST s Int
+addToDupeMap' ht dir (File n h      ) = do
+  insertDupeSet ht h (1, F, S.singleton (B.pack (dir </> n)))
+  return 1
 addToDupeMap' ht dir (Dir  n h cs fs) = do
   insertDupeSet ht h (fs, D, S.singleton (B.pack (dir </> n)))
   mapM_ (addToDupeMap' ht (dir </> n)) cs
+  return fs
 
 -- inserts one node into an existing dupemap in ST s
 insertDupeSet :: DupeTable s -> Hash -> DupeSet -> ST s ()
