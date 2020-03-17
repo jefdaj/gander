@@ -16,6 +16,6 @@ cmdDupes cfg path = do
   -- TODO rewrite sorting with lower memory usage
   -- let dupes = runST $ dupesByNFiles =<< pathsByHash tree
   -- printDupes $ map sortDupePaths $ simplifyDupes dupes
-  let !dupes = runST $ H.toList =<< pathsByHash tree
+  let !dupes = runST $ (H.toList . snd) =<< pathsByHash tree
       !dupes' = map (\(k, (a,b,c)) -> (k, (a, b, S.toList c))) dupes
   printDupes dupes'
