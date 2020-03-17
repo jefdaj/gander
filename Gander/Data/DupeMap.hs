@@ -49,6 +49,7 @@ import Gander.Data.HashTree
 -- import Gander.Util (dropDir)
 
 import Data.List       (sort, sortBy, isPrefixOf)
+import Data.Maybe      (fromJust)
 import Data.Ord        (comparing)
 import System.FilePath ((</>), splitDirectories)
 
@@ -87,20 +88,20 @@ type DupeTable s = C.HashTable s Hash DupeSet
 -- TODO would this be a lot more efficient if we remove the H.toList M.fromList stuff?
 -- TODO what about if we guess the approximate size first?
 -- TODO what about if we make it from the serialized hashes instead of a tree?
-pathsByHash :: HashTree -> ST s (DupeTable s)
+pathsByHash :: HashTree -> ST s (Int, DupeTable s)
 pathsByHash t@(File _ _    ) = pathsByHash' t 1
 pathsByHash t@(Dir  _ _ _ n) = pathsByHash' t n
 
-pathsByHash' :: HashTree -> Int -> ST s (DupeTable s)
+pathsByHash' :: HashTree -> Int -> ST s (Int, DupeTable s)
 pathsByHash' t n0 = do
-  ht <- H.newSized n0 -- n0 helps start with a reasonably-sized table
-  n <- addToDupeMap ht t -- TODO should this return the number of keys too?
+  ht <- H.newSized n0 -- n0 is a reasonable guess (TODO double it?)
+  addToDupeMap ht t -- ... but n is the real size we need
   H.mapM_ (\(k,_) -> H.mutate ht k removeNonDupes) ht -- TODO remove?
   -- this should work, but hasn't been tested yet and might perform badly
   -- if it does work but performs badly, try Massiv.Array with quicksort
-  let keys = H.foldM (\a (k,v) -> return (k:a)) [] ht
-      arr1 = A.iterateN (A.Sz1 n) undefined 
-  return ht
+  -- let keys = H.foldM (\a (k,v) -> return (k:a)) [] ht
+  len <- H.foldM (\n _ -> return (n+1)) (0 :: Int) ht
+  return (len, ht)
 
 -- TODO want to be able to quicksort the array, so...
 --        array has to be mutable
@@ -120,18 +121,15 @@ pathsByHash' t n0 = do
 --   return only the last array
 
 -- inserts all nodes from a tree into an existing dupemap in ST s
-addToDupeMap :: DupeTable s -> HashTree -> ST s Int
+addToDupeMap :: DupeTable s -> HashTree -> ST s ()
 addToDupeMap ht t = addToDupeMap' ht "" t
 
 -- same, but start from a given root path
-addToDupeMap' :: DupeTable s -> FilePath -> HashTree -> ST s Int
-addToDupeMap' ht dir (File n h      ) = do
-  insertDupeSet ht h (1, F, S.singleton (B.pack (dir </> n)))
-  return 1
+addToDupeMap' :: DupeTable s -> FilePath -> HashTree -> ST s ()
+addToDupeMap' ht dir (File n h      ) = insertDupeSet ht h (1, F, S.singleton (B.pack (dir </> n)))
 addToDupeMap' ht dir (Dir  n h cs fs) = do
   insertDupeSet ht h (fs, D, S.singleton (B.pack (dir </> n)))
   mapM_ (addToDupeMap' ht (dir </> n)) cs
-  return fs
 
 -- inserts one node into an existing dupemap in ST s
 insertDupeSet :: DupeTable s -> Hash -> DupeSet -> ST s ()
@@ -167,13 +165,28 @@ sortDescLength = map unDecorate . sortBy (comparing score) . map decorate
 
 -- TODO this is now the worst bottleneck?
 -- dupesByNFiles :: DupeMap -> [(Hash, DupeSet)]
-dupesByNFiles :: DupeTable s -> ST s [(Hash, DupeSet)]
-dupesByNFiles dt = do
+-- TODO remove the n here unless you can get by without the keys list
+dupesByNFiles :: (Int, DupeTable s) -> ST s [(Hash, DupeSet)]
+dupesByNFiles (n, dt) = do
+  keys <- H.foldM (\a (k,v) -> return (k:a)) [] dt
+  -- let sortArr = A.iterateN (A.Sz1 (length keys)) (\i -> (keys !! i, H.lookup) 0
+
+  -- this one won't let you do lookup inside it, apparently
+  -- let sortArr = A.makeVectorR A.B A.Par (A.Sz1 $ length keys)
+  --                 (\i -> let h = keys !! i
+  --                        in (h, fromJust $ runST $ H.lookup dt h))
+  let sortArr = A.makeVectorR A.B A.Par (A.Sz1 $ length keys) (const 0)
+  -- forM_ keys $ \k -> do
+    
+
   -- H.mapM_ (\(k,_) -> H.mutate dt k removeNonDupes    ) dt -- TODO do this in pathsByHash?
   undefined
   -- H.fromList dt -- TODO don't use this here?
   -- TODO sortDescLength
   -- sortDescLength . H.mutate removeNonDupes . H.toList
+
+  -- let len  = runST $ H.foldM (\n _ -> return (n+1)) (0 :: Int) ht
+      -- arr1 = A.iterateN (A.Sz1 len) undefined 
 
 -- rewrite of `filter hasDupes` for use with H.mutate
 removeNonDupes :: Maybe DupeSet -> (Maybe DupeSet, ())
