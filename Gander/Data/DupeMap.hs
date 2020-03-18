@@ -24,16 +24,12 @@ import Control.Monad.ST
 -- import Data.Hashable (Hashable(..))
 -- import Control.DeepSeq
 
--- import qualified Data.ByteString.Char8    as B
+import qualified Data.ByteString.Char8    as B
 import qualified Data.HashSet             as S
 import qualified Data.HashTable.Class     as H
 import qualified Data.HashTable.ST.Cuckoo as C
 import qualified Data.List                as L
 import qualified Data.Massiv.Array        as A
-
-import Data.Text.Encoding (decodeUtf8)
-import qualified Data.Text    as T
-import qualified Data.Text.IO as T
 
 {-
  - But regardless of data structure, one of the most crucial things to do is to
@@ -51,7 +47,6 @@ import qualified Data.Text.IO as T
 -- TODO are the paths getting messed up somewhere in here?
 -- like this: myfirstdedup/home/user/gander/demo/myfirstdedup/unsorted/backup/backup
 
-import qualified Data.ByteString.Char8 as B
 import qualified Data.HashMap.Strict   as M
 -- import qualified Data.HashSet          as S
 
@@ -229,18 +224,18 @@ printDupes groups = mapM_ printGroup groups
   where
 
     printGroup :: DupeList -> IO ()
-    printGroup (n, t, paths) = mapM_ T.putStrLn
-                             $ [explainGroup t n (length paths) `T.append` ":"]
-                             ++ sort (map decodeUtf8 paths) ++ [""]
+    printGroup (n, t, paths) = mapM_ B.putStrLn
+                             $ [explainGroup t n (length paths) `B.append` ":"]
+                             ++ sort paths ++ [""]
 
-    explainGroup :: TreeType -> Int -> Int -> T.Text
-    explainGroup F fs _ = T.intercalate " " $
-      [ "# deduping these"  , T.pack (show fs)
-      , "files would remove", T.pack (show (fs-1))
+    explainGroup :: TreeType -> Int -> Int -> B.ByteString
+    explainGroup F fs _ = B.intercalate " " $
+      [ "# deduping these"  , B.pack (show fs)
+      , "files would remove", B.pack (show (fs-1))
       ]
-    explainGroup D fs ds = T.intercalate " " $
-      [ "# deduping these" , T.pack (show ds)
-      , "dirs would remove", T.pack (show (fs-(fs `div` ds)))
+    explainGroup D fs ds = B.intercalate " " $
+      [ "# deduping these" , B.pack (show ds)
+      , "dirs would remove", B.pack (show (fs-(fs `div` ds)))
       , "files"
       ]
 
