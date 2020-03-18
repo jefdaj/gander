@@ -1,28 +1,35 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE RankNTypes #-}
 
 module Gander.Data.DupeMap
   ( DupeSet
   , DupeMap
   , allDupes
   , dupesByNFiles
-  , hasDupes
+  -- , hasDupes
   , listAllFiles
   , listLostFiles
   , mergeDupeSets
   , pathsByHash
   , printDupes
-  , simplifyDupes
-  , sortDupePaths
+  -- , simplifyDupes
+  -- , sortDupePaths
   , sortDescLength
   )
   where
 
-import qualified Data.HashTable.ST.Cuckoo as C
-import qualified Data.HashTable.Class     as H
-import qualified Data.HashSet             as S
 import Control.Monad.ST
+-- import Data.Hashable (Hashable(..))
+-- import Control.DeepSeq
+
+-- import qualified Data.ByteString.Char8    as B
+import qualified Data.HashSet             as S
+import qualified Data.HashTable.Class     as H
+import qualified Data.HashTable.ST.Cuckoo as C
+import qualified Data.List                as L
+import qualified Data.Massiv.Array        as A
 
 {-
  - But regardless of data structure, one of the most crucial things to do is to
@@ -89,7 +96,8 @@ pathsByHash :: HashTree -> ST s (DupeTable s)
 pathsByHash t = do
   ht <- H.newSized 1 -- TODO what's with the size thing? maybe use H.new instead
   addToDupeMap ht t
-  H.mapM_ (\(k,_) -> H.mutate ht k removeNonDupes) ht
+  -- TODO try putting it back and compare overall speed
+  -- H.mapM_ (\(k,_) -> H.mutate ht k removeNonDupes) ht
   return ht
 
 -- inserts all nodes from a tree into an existing dupemap in ST s
@@ -135,22 +143,38 @@ sortDescLength = map unDecorate . sortBy (comparing score) . map decorate
     unDecorate (_, (h, l)) = (h, l)
     score (n, _) = negate n -- sorts by descending number of files
 
--- TODO this is now the worst bottleneck?
--- dupesByNFiles :: DupeMap -> [(Hash, DupeSet)]
-dupesByNFiles :: DupeTable s -> ST s [(Hash, DupeSet)]
-dupesByNFiles dt = do
-  -- H.mapM_ (\(k,_) -> H.mutate dt k removeNonDupes    ) dt -- TODO do this in pathsByHash?
-  undefined
-  -- H.fromList dt -- TODO don't use this here?
-  -- TODO sortDescLength
-  -- sortDescLength . H.mutate removeNonDupes . H.toList
+-- dupes :: forall s. C.HashTable s Hash DupeSet -> ST s [DupeSet]
+-- dupes = H.foldM (\vs (_, v@(n,_,_)) -> return $ if n < (-1) then (v:vs) else vs) []
 
+-- dupesTmp :: forall s. C.HashTable s Hash DupeSet -> [DupeSet]
+-- dupesTmp ht = runST $ dupes =<< ht
+
+-- TODO include hashes too, just to print them?
+-- dupesByNFiles :: DupeTable s -> [DupeSet]
+-- dupesByNFiles dt = undefined
+
+-- TODO is this reasonable?
+type DupeSetVec   = A.Array A.N A.Ix1 DupeSet
+-- type HashScoreVec = A.Array A.N A.Ix1 (Int, TreeType, B.ByteString)
+
+dupesByNFiles :: (forall s. ST s (DupeTable s)) -> [DupeList]
+dupesByNFiles ht = simplifyDupes $ Prelude.map fixElem sortedL
+  where
+    dupes    = H.foldM (\vs (_, v@(n,_,_)) -> return $ if n < (-1) then (v:vs) else vs) []
+    sets     = runST $ dupes =<< ht
+    unsorted = A.fromList A.Par sets :: DupeSetVec
+    sorted   = A.quicksort $ A.compute unsorted :: DupeSetVec
+    sortedL  = A.toList sorted
+    fixElem (n, t, fs) = (negate n, t, L.sort $ S.toList fs)
+
+-- TODO could this be faster than quicksorting everything even though single threaded?
+-- usage: H.mapM_ (\(k,_) -> H.mutate dt k removeNonDupes) dt
 -- rewrite of `filter hasDupes` for use with H.mutate
-removeNonDupes :: Maybe DupeSet -> (Maybe DupeSet, ())
-removeNonDupes Nothing = (Nothing, ())
-removeNonDupes (Just v@(nfiles, _, paths)) = (if S.size paths > 1 && nfiles > 0
-                                                then Just v
-                                                else Nothing, ())
+-- removeNonDupes :: Maybe DupeSet -> (Maybe DupeSet, ())
+-- removeNonDupes Nothing = (Nothing, ())
+-- removeNonDupes (Just v@(nfiles, _, paths)) = (if S.size paths > 1 && nfiles > 0
+--                                                 then Just v
+--                                                 else Nothing, ())
 
 {- Assumes a pre-sorted list as provided by dupesByNFiles.
  - Removes lists whose elements are all inside elements of the first list.
@@ -158,12 +182,14 @@ removeNonDupes (Just v@(nfiles, _, paths)) = (if S.size paths > 1 && nfiles > 0
  - and the next is dir1/file.txt, dir2/file.txt, dir3/file.txt
  - ... then the second set is redundant and confusing to show.
  -}
-simplifyDupes :: [(Hash, DupeSet)] -> [(Hash, DupeSet)]
+simplifyDupes :: [DupeList] -> [DupeList]
 simplifyDupes [] = []
-simplifyDupes (d@(_, (_,_,fs)):ds) = d : filter (not . redundantSet) ds
+simplifyDupes (d@((_,_,fs)):ds) = d : filter (not . redundantSet) ds
   where
-    redundantSet (_, (_,_,fs')) = all redundantElem fs'
-    redundantElem e' = any id [(splitDirectories e) `isPrefixOf` (splitDirectories $ B.unpack e') | e <- map B.unpack (S.toList fs)]
+    redundantSet ((_,_,fs')) = all redundant fs'
+    redundant e' = any id [(splitDirectories e)
+                           `isPrefixOf`
+                           (splitDirectories $ B.unpack e') | e <- map B.unpack fs]
 
 -- TODO orderDupePaths :: [FilePath] -> [FilePath]
 --      should order by least path components, then shortest name, then maybe alphabetical
@@ -171,32 +197,33 @@ simplifyDupes (d@(_, (_,_,fs)):ds) = d : filter (not . redundantSet) ds
 -- sorts paths by shallowest (fewest dirs down), then length of filename,
 -- then finally alphabetical
 -- TODO is it inefficient enough to slow down the dupes command? rewrite if so
-sortDupePaths :: (Hash, DupeSet) -> (Hash, DupeList)
-sortDupePaths (h, (i, t, ps)) = (h, (i, t, sortBy myCompare $ S.toList ps))
-  where
-    myCompare p1 p2 = let d1 = length $ splitDirectories $ B.unpack p1
-                          d2 = length $ splitDirectories $ B.unpack p2
-                          l1 = length $ B.unpack p1
-                          l2 = length $ B.unpack p2
-                      in if      d1 > d2 then GT
-                         else if d1 < d2 then LT
-                         else if l1 > l2 then GT
-                         else if l1 < l2 then LT
-                         else compare p1 p2
+-- sortDupePaths :: (Hash, DupeSet) -> (Hash, DupeList)
+-- sortDupePaths (h, (i, t, ps)) = (h, (i, t, sortBy myCompare $ S.toList ps))
+--   where
+--     myCompare p1 p2 = let d1 = length $ splitDirectories $ B.unpack p1
+--                           d2 = length $ splitDirectories $ B.unpack p2
+--                           l1 = length $ B.unpack p1
+--                           l2 = length $ B.unpack p2
+--                       in if      d1 > d2 then GT
+--                          else if d1 < d2 then LT
+--                          else if l1 > l2 then GT
+--                          else if l1 < l2 then LT
+--                          else compare p1 p2
 
-hasDupes :: (Hash, DupeSet) -> Bool
-hasDupes (_, (nfiles, _, paths)) = S.size paths > 1 && nfiles > 0
+-- hasDupes :: (Hash, DupeSet) -> Bool
+-- hasDupes (_, (nfiles, _, paths)) = S.size paths > 1 && nfiles > 0
 
 -- TODO use this as the basis for the dedup repl
-printDupes :: [(Hash, DupeList)] -> IO ()
+printDupes :: [DupeList] -> IO ()
 printDupes groups = mapM_ printGroup $ groups
   where
-    explain t h fs ds = (if t == F
+    explain t fs ds = (if t == F
       then "# " ++ show fs ++ " files"
-      else "# " ++ show ds ++ " dirs (" ++ show (div fs ds) ++ " files each, " ++ show fs ++ " total)")
-      ++ " have hash " ++ B.unpack (prettyHash h) ++ ":"
-    printGroup (h, (n, t, paths)) = mapM_ putStrLn
-                             $ [explain t h n (length paths)]
+      else "# " ++ show ds ++ " dirs ("
+                ++ show (div fs ds) ++ " files each, "
+                ++ show fs ++ " total)") ++ ":"
+    printGroup (n, t, paths) = mapM_ putStrLn
+                             $ [explain t n (length paths)]
                              ++ sort (map B.unpack paths) ++ [""]
 
 -----------------------------

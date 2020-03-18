@@ -45,8 +45,8 @@ module Gander.Data
   , pathsByHash
   , mergeDupeSets
   , printDupes
-  , simplifyDupes
-  , sortDupePaths
+  -- , simplifyDupes
+  -- , sortDupePaths
   )
   where
 
