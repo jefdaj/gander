@@ -1,7 +1,7 @@
 The "Git ANnex DEdupeR" deduplicates files and folders using git-annex.
 
 Usage:
-  gander [-vc]  hash   <path> [-e <exclude>] [-b <bin>]
+  gander [-vc]  hash   <path> [-e <exclude>] [-t <txt>] [-b <bin>]
   gander [-vc]  diff   <old> <new>
   gander [-vc]  dupes  <hashes>
   gander [-vfc] annex  <src> <dest>
@@ -23,6 +23,7 @@ Options:
   -c, --check    Afterwards, re-hash to check that all files are as expected.
   -e <exclude>   Read a list of globs and exclude any files matching it.
                  If none given, the list defaults to [".git*"]
+  -t <txt>       Stream output to a text file rather than stdout.
   -b <bin>       Before exit, write a binary <hashes> file for fast reloading.
                  Text will still stream to stdout as usual.
 

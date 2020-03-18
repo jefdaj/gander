@@ -13,6 +13,7 @@ module Gander.Data.HashTree
   , writeBinTree
   , prettyHashLine
   , serializeTree
+  , writeTree
   , flattenTree
   , deserializeTree
   , hashContents
@@ -188,6 +189,9 @@ printTree = mapM_ printLine . flattenTree
   where
     -- TODO don't flush every line
     printLine l = (putStrLn $ B.unpack $ prettyHashLine l) >> hFlush stdout
+
+writeTree :: FilePath -> HashTree -> IO ()
+writeTree path tree = B.writeFile path $ serializeTree tree
 
 writeBinTree :: FilePath -> HashTree -> IO ()
 writeBinTree path tree = B.writeFile path $ encode tree

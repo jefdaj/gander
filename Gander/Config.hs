@@ -11,6 +11,7 @@ module Gander.Config
 data Config = Config
   { annex   :: Maybe FilePath
   , bin     :: Maybe FilePath
+  , txt     :: Maybe FilePath
   , verbose :: Bool
   , force   :: Bool
   , check   :: Bool
@@ -23,6 +24,7 @@ defaultConfig :: Config
 defaultConfig = Config
   { annex   = Nothing
   , bin     = Nothing
+  , txt     = Nothing
   , verbose = True
   , force   = False
   , check   = True
