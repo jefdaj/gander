@@ -24,7 +24,9 @@ cmdHash :: Config -> FilePath -> IO ()
 cmdHash cfg target = case annex cfg of
   Nothing -> do
     t <- buildTree (verbose cfg) (exclude cfg) target
-    printTree t
+    case txt cfg of
+      Nothing -> printTree t
+      Just p  -> writeTree p t
     case bin cfg of
       Nothing -> return ()
       Just p -> writeBinTree p t

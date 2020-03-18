@@ -29,6 +29,7 @@ main = do
   let cfg = Config
         { annex   = getArg args $ argument "annex"
         , bin     = getArg args $ shortOption 'b'
+        , txt     = getArg args $ shortOption 't'
         , verbose = flag 'v'
         , force   = flag 'f'
         , check   = flag 'c'
