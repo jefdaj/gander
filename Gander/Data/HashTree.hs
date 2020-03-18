@@ -5,7 +5,7 @@
 module Gander.Data.HashTree
   ( HashTree(..)
   , TreeType(..)
-  -- , keepPath
+  , keepPath
   , readTree
   , buildTree
   , readOrBuildTree
@@ -111,11 +111,11 @@ $($(derive [d|
 
 excludeGlobs :: [String]
              -> (DT.AnchoredDirTree FilePath -> DT.AnchoredDirTree FilePath)
-excludeGlobs excludes (a DT.:/ tree) = (a DT.:/ DT.filterDir keep tree)
+excludeGlobs excludes (a DT.:/ tree) = (a DT.:/ DT.filterDir (keep a) tree)
   where
-    keep (DT.Dir  n _) = keepPath (map compile excludes) n
-    keep (DT.File n _) = keepPath (map compile excludes) n
-    keep _ = True
+    keep a (DT.Dir  n _) = keepPath (map compile excludes) (a </> n)
+    keep a (DT.File n _) = keepPath (map compile excludes) (a </> n)
+    keep _ _ = True
 
 keepPath :: [Pattern] -> FilePath -> Bool
 keepPath excludes path = not $ any (\ptn -> matchWith opts ptn path) excludes
