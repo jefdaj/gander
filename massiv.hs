@@ -1,7 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE RankNTypes #-}
 
 module Main where
 
@@ -61,6 +60,9 @@ testHT = H.fromList $ Prelude.map
 -- is this the only way to get testHT out of ST?
 testHTL :: [(Hash, DupeSet)]
 testHTL = runST $ H.toList =<< testHT
+
+testHTL2 :: (forall s. ST s (C.HashTable s Hash DupeSet)) -> [(Hash, DupeSet)]
+testHTL2 ht = runST $ H.toList =<< ht
 
 -- TODO is this reasonable?
 type DupeSetVec   = A.Array A.N A.Ix1 DupeSet
