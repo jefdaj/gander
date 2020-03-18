@@ -119,10 +119,12 @@ excludeGlobs excludes (a DT.:/ tree) = (a DT.:/ DT.filterDir keep tree)
 -- try to read as binary, and fall back to text if it fails
 readTree :: FilePath -> IO HashTree
 readTree path = catchAny
-  (do
-     (hs :: [HashLine]) <- decodeIO =<< B.readFile path
-     return $ snd $ head $ foldr accTrees [] hs)
-  (\_ -> fmap deserializeTree $ B.readFile path)
+                  (B.readFile path >>= decodeIO)
+                  (\_ -> fmap deserializeTree $ B.readFile path)
+--   (do
+--      (hs :: [HashLine]) <- decodeIO =<< B.readFile path
+--      return $ snd $ head $ foldr accTrees [] hs)
+--   (\_ -> fmap deserializeTree $ B.readFile path)
 
 -- TODO are contents sorted? they probably should be for stable hashes
 buildTree :: Bool -> [String] -> FilePath -> IO HashTree
@@ -188,7 +190,7 @@ printTree = mapM_ printLine . flattenTree
     printLine l = (putStrLn $ B.unpack $ prettyHashLine l) >> hFlush stdout
 
 writeBinTree :: FilePath -> HashTree -> IO ()
-writeBinTree path tree = B.writeFile path $ encode $ flattenTree tree
+writeBinTree path tree = B.writeFile path $ encode tree
 
 flattenTree :: HashTree -> [HashLine]
 flattenTree = flattenTree' ""
