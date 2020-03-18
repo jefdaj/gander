@@ -31,6 +31,10 @@ import qualified Data.HashTable.ST.Cuckoo as C
 import qualified Data.List                as L
 import qualified Data.Massiv.Array        as A
 
+import Data.Text.Encoding (decodeUtf8)
+import qualified Data.Text    as T
+import qualified Data.Text.IO as T
+
 {-
  - But regardless of data structure, one of the most crucial things to do is to
  - prune your bytestrings! By default, ByteStrings seek to share the underlying
@@ -221,15 +225,24 @@ simplifyDupes (d@((_,_,fs)):ds) = d : filter (not . redundantSet) ds
 -- TODO subtract one group when saying how many dupes in a dir,
 --      and 1 when saying how many in a file. because it's about how much you would save
 printDupes :: [DupeList] -> IO ()
-printDupes groups = mapM_ printGroup $ groups
+printDupes groups = mapM_ printGroup groups
   where
-    explain t fs ds = (if t == F
-      then "# deduping these " ++ show fs ++ " files would remove " ++ show (fs-1)
-      else "# deduping these " ++ show ds ++ " dirs would remove "
-                ++ show (fs-(fs `div` ds)) ++ " files") ++ ":"
-    printGroup (n, t, paths) = mapM_ putStrLn
-                             $ [explain t n (length paths)]
-                             ++ sort (map B.unpack paths) ++ [""]
+
+    printGroup :: DupeList -> IO ()
+    printGroup (n, t, paths) = mapM_ T.putStrLn
+                             $ [explainGroup t n (length paths) `T.append` ":"]
+                             ++ sort (map decodeUtf8 paths) ++ [""]
+
+    explainGroup :: TreeType -> Int -> Int -> T.Text
+    explainGroup F fs _ = T.intercalate " " $
+      [ "# deduping these"  , T.pack (show fs)
+      , "files would remove", T.pack (show (fs-1))
+      ]
+    explainGroup D fs ds = T.intercalate " " $
+      [ "# deduping these" , T.pack (show ds)
+      , "dirs would remove", T.pack (show (fs-(fs `div` ds)))
+      , "files"
+      ]
 
 -----------------------------
 -- info about copy numbers --
