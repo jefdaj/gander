@@ -16,7 +16,7 @@ module Gander.Data.DupeMap
   , printDupes
   -- , simplifyDupes
   -- , sortDupePaths
-  , sortDescLength
+  -- , sortDescLength
   )
   where
 
@@ -55,8 +55,9 @@ import Gander.Data.Hash
 import Gander.Data.HashTree
 -- import Gander.Util (dropDir)
 
-import Data.List       (sort, sortBy, isPrefixOf)
-import Data.Ord        (comparing)
+-- import Data.List       (sort, sortBy, isPrefixOf)
+import Data.List       (sort, isPrefixOf)
+-- import Data.Ord        (comparing)
 import System.FilePath ((</>), splitDirectories)
 
 -- TODO can Foldable or Traversable simplify these?
@@ -136,12 +137,12 @@ mergeDupeSets (n1, t, l1) (n2, _, l2) = (n1 + n2, t, S.union l1 l2)
 -- see https://mail.haskell.org/pipermail/beginners/2009-June/001867.html
 -- TODO or is this the bottleneck?
 --      could use mapM_ to perform this in place
-sortDescLength :: [(Hash, DupeSet)] -> [(Hash, DupeSet)]
-sortDescLength = map unDecorate . sortBy (comparing score) . map decorate
-  where
-    decorate (h, l@(n, _, _)) = (n, (h, l))
-    unDecorate (_, (h, l)) = (h, l)
-    score (n, _) = negate n -- sorts by descending number of files
+-- sortDescLength :: [(Hash, DupeSet)] -> [(Hash, DupeSet)]
+-- sortDescLength = map unDecorate . sortBy (comparing score) . map decorate
+--   where
+--     decorate (h, l@(n, _, _)) = (n, (h, l))
+--     unDecorate (_, (h, l)) = (h, l)
+--     score (n, _) = negate n -- sorts by descending number of files
 
 -- dupes :: forall s. C.HashTable s Hash DupeSet -> ST s [DupeSet]
 -- dupes = H.foldM (\vs (_, v@(n,_,_)) -> return $ if n < (-1) then (v:vs) else vs) []
@@ -160,12 +161,15 @@ type DupeSetVec   = A.Array A.N A.Ix1 DupeSet
 dupesByNFiles :: (forall s. ST s (DupeTable s)) -> [DupeList]
 dupesByNFiles ht = simplifyDupes $ Prelude.map fixElem sortedL
   where
-    dupes    = H.foldM (\vs (_, v@(n,_,_)) -> return $ if n < (-1) then (v:vs) else vs) []
     sets     = runST $ dupes =<< ht
     unsorted = A.fromList A.Par sets :: DupeSetVec
     sorted   = A.quicksort $ A.compute unsorted :: DupeSetVec
     sortedL  = A.toList sorted
     fixElem (n, t, fs) = (negate n, t, L.sort $ S.toList fs)
+    dupes = H.foldM (\vs (_, (n,t,fs)) ->
+              return $ if length fs > 1
+                then ((negate n,t,fs):vs)
+                else vs) []
 
 -- TODO could this be faster than quicksorting everything even though single threaded?
 -- usage: H.mapM_ (\(k,_) -> H.mutate dt k removeNonDupes) dt
@@ -186,7 +190,7 @@ simplifyDupes :: [DupeList] -> [DupeList]
 simplifyDupes [] = []
 simplifyDupes (d@((_,_,fs)):ds) = d : filter (not . redundantSet) ds
   where
-    redundantSet ((_,_,fs')) = all redundant fs'
+    redundantSet (_,_,fs') = all redundant fs'
     redundant e' = any id [(splitDirectories e)
                            `isPrefixOf`
                            (splitDirectories $ B.unpack e') | e <- map B.unpack fs]
@@ -214,14 +218,15 @@ simplifyDupes (d@((_,_,fs)):ds) = d : filter (not . redundantSet) ds
 -- hasDupes (_, (nfiles, _, paths)) = S.size paths > 1 && nfiles > 0
 
 -- TODO use this as the basis for the dedup repl
+-- TODO subtract one group when saying how many dupes in a dir,
+--      and 1 when saying how many in a file. because it's about how much you would save
 printDupes :: [DupeList] -> IO ()
 printDupes groups = mapM_ printGroup $ groups
   where
     explain t fs ds = (if t == F
-      then "# " ++ show fs ++ " files"
-      else "# " ++ show ds ++ " dirs ("
-                ++ show (div fs ds) ++ " files each, "
-                ++ show fs ++ " total)") ++ ":"
+      then "# deduping these " ++ show fs ++ " files would remove " ++ show (fs-1)
+      else "# deduping these " ++ show ds ++ " dirs would remove "
+                ++ show (fs-(fs `div` ds)) ++ " files") ++ ":"
     printGroup (n, t, paths) = mapM_ putStrLn
                              $ [explain t n (length paths)]
                              ++ sort (map B.unpack paths) ++ [""]
