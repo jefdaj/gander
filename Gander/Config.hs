@@ -26,5 +26,5 @@ defaultConfig = Config
   , verbose = True
   , force   = False
   , check   = True
-  , exclude = ["hashes.txt", ".git*", ".*.sw*", "._DS_Store", "*.plist"]
+  , exclude = ["hashes.*", ".git*", ".*.sw*", "._DS_Store", "*.plist"]
   }

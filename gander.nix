@@ -31,6 +31,7 @@ mkDerivation {
   description = "The \"Git ANnex DEdupeR\"";
   license = stdenv.lib.licenses.lgpl3;
 
-  enableLibraryProfiling = true;
-  enableExecutableProfiling = true;
+  # set true to enable graphing with +RTS -hr etc.
+  enableLibraryProfiling = false;
+  enableExecutableProfiling = false;
 }
