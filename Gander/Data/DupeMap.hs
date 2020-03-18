@@ -160,15 +160,23 @@ type DupeSetVec   = A.Array A.N A.Ix1 DupeSet
 dupesByNFiles :: (forall s. ST s (DupeTable s)) -> [DupeList]
 dupesByNFiles ht = simplifyDupes $ Prelude.map fixElem sortedL
   where
-    sets     = runST $ dupes =<< ht
+    sets     = runST $ scoreSets =<< ht
     unsorted = A.fromList A.Par sets :: DupeSetVec
     sorted   = A.quicksort $ A.compute unsorted :: DupeSetVec
     sortedL  = A.toList sorted
     fixElem (n, t, fs) = (negate n, t, L.sort $ S.toList fs)
-    dupes = H.foldM (\vs (_, (n,t,fs)) ->
-              return $ if length fs > 1
-                then ((negate n,t,fs):vs)
-                else vs) []
+
+{- This does a few things:
+ - * removes singleton sets (no duplicates)
+ - * adjusts the int scores from "n files in set" to "n files saved by dedup"
+ - * negates scores so quicksort will put them in descending order
+ -}
+scoreSets :: C.HashTable s Hash DupeSet -> ST s [DupeSet]
+scoreSets = H.foldM (\vs (_, v@(_,t,fs)) ->
+  return $ if length fs > 1 then ((negate $ score v,t,fs):vs) else vs) []
+  where
+    score (n, D, fs) = n - (n `div` length fs)
+    score (n, F, _ ) = n - 1
 
 -- TODO could this be faster than quicksorting everything even though single threaded?
 -- usage: H.mapM_ (\(k,_) -> H.mutate dt k removeNonDupes) dt
@@ -229,13 +237,13 @@ printDupes groups = mapM_ printGroup groups
                              ++ sort paths ++ [""]
 
     explainGroup :: TreeType -> Int -> Int -> B.ByteString
-    explainGroup F fs _ = B.intercalate " " $
+    explainGroup F n fs = B.intercalate " " $
       [ "# deduping these"  , B.pack (show fs)
-      , "files would remove", B.pack (show (fs-1))
+      , "files would remove", B.pack (show n )
       ]
-    explainGroup D fs ds = B.intercalate " " $
+    explainGroup D n ds = B.intercalate " " $
       [ "# deduping these" , B.pack (show ds)
-      , "dirs would remove", B.pack (show (fs-(fs `div` ds)))
+      , "dirs would remove", B.pack (show n )
       , "files"
       ]
 
