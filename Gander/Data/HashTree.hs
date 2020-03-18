@@ -5,6 +5,7 @@
 module Gander.Data.HashTree
   ( HashTree(..)
   , TreeType(..)
+  -- , keepPath
   , readTree
   , buildTree
   , readOrBuildTree
@@ -51,12 +52,12 @@ import Data.Either          (fromRight)
 import Data.Ord             (compare)
 import System.Directory     (doesFileExist, doesDirectoryExist)
 import System.FilePath      ((</>), splitPath, joinPath)
-import System.FilePath.Glob (compile, match)
+import System.FilePath.Glob (compile, matchWith, Pattern, MatchOptions(..))
 import System.IO            (hFlush, stdout, withFile, IOMode(..))
 import System.IO.Unsafe     (unsafeInterleaveIO)
 
 import Prelude hiding (take)
-import Data.Attoparsec.ByteString.Char8 hiding (match, D)
+import Data.Attoparsec.ByteString.Char8 hiding (D)
 import Data.Attoparsec.Combinator
 
 import Data.Store             (encode, decodeIO, Store(..))
@@ -112,10 +113,18 @@ excludeGlobs :: [String]
              -> (DT.AnchoredDirTree FilePath -> DT.AnchoredDirTree FilePath)
 excludeGlobs excludes (a DT.:/ tree) = (a DT.:/ DT.filterDir keep tree)
   where
-    noneMatch ps s = not $ any (\p -> match (compile p) s) ps
-    keep (DT.Dir  n _) = noneMatch excludes n
-    keep (DT.File n _) = noneMatch excludes n
+    keep (DT.Dir  n _) = keepPath (map compile excludes) n
+    keep (DT.File n _) = keepPath (map compile excludes) n
     keep _ = True
+
+keepPath :: [Pattern] -> FilePath -> Bool
+keepPath excludes path = not $ any (\ptn -> matchWith opts ptn path) excludes
+  where
+    opts = MatchOptions
+             { matchDotsImplicitly = True
+             , ignoreCase          = False
+             , ignoreDotSlash      = True
+             }
 
 -- try to read as binary, and fall back to text if it fails
 readTree :: FilePath -> IO HashTree
