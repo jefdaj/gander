@@ -66,7 +66,7 @@ import TH.Derive
 -- import Text.Regex.Do.TypeDo (Body(..), Pattern(..))
 
 -- for distinguishing beween files and dirs
-data TreeType = F | D deriving (Eq, Read, Show)
+data TreeType = D | F deriving (Eq, Read, Show)
 
 $($(derive [d| instance Deriving (Store TreeType) |]))
 
@@ -114,7 +114,7 @@ excludeGlobs excludes (a DT.:/ tree) = (a DT.:/ DT.filterDir keep tree)
 readTree :: FilePath -> IO HashTree
 readTree path = catchAny
   (do
-     (hs :: [HashLine]) <- decodeIO bs =<< B.readFile path
+     (hs :: [HashLine]) <- decodeIO =<< B.readFile path
      return $ snd $ head $ foldr accTrees [] hs)
   (\_ -> fmap deserializeTree $ B.readFile path)
 
