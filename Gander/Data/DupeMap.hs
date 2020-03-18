@@ -14,6 +14,7 @@ module Gander.Data.DupeMap
   , mergeDupeSets
   , pathsByHash
   , printDupes
+  , writeDupes
   -- , simplifyDupes
   -- , sortDupePaths
   -- , sortDescLength
@@ -228,20 +229,26 @@ simplifyDupes (d@((_,_,fs)):ds) = d : filter (not . redundantSet) ds
 -- TODO subtract one group when saying how many dupes in a dir,
 --      and 1 when saying how many in a file. because it's about how much you would save
 printDupes :: [DupeList] -> IO ()
-printDupes groups = mapM_ printGroup groups
+printDupes groups = B.putStrLn $ explainDupes groups
+
+writeDupes :: FilePath -> [DupeList] -> IO ()
+writeDupes path groups = B.writeFile path $ explainDupes groups
+
+explainDupes :: [DupeList] -> B.ByteString
+explainDupes = B.unlines . map explainGroup
   where
 
-    printGroup :: DupeList -> IO ()
-    printGroup (n, t, paths) = mapM_ B.putStrLn
-                             $ [explainGroup t n (length paths) `B.append` ":"]
-                             ++ sort paths ++ [""]
+    explainGroup :: DupeList -> B.ByteString
+    explainGroup (n, t, paths) = B.unlines
+      $ [header t n (length paths) `B.append` ":"]
+      ++ sort paths ++ [""]
 
-    explainGroup :: TreeType -> Int -> Int -> B.ByteString
-    explainGroup F n fs = B.intercalate " " $
+    header :: TreeType -> Int -> Int -> B.ByteString
+    header F n fs = B.intercalate " " $
       [ "# deduping these"  , B.pack (show fs)
       , "files would remove", B.pack (show n )
       ]
-    explainGroup D n ds = B.intercalate " " $
+    header D n ds = B.intercalate " " $
       [ "# deduping these" , B.pack (show ds)
       , "dirs would remove", B.pack (show n )
       , "files"
