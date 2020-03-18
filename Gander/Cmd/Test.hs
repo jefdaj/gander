@@ -6,7 +6,6 @@ import Prelude hiding (log)
 import Gander.Util        (log)
 import Text.Pretty.Simple (pPrint)
 import Gander.Config      (Config(..))
-import Control.Monad.ST
 
 cmdTest :: Config -> FilePath -> IO ()
 cmdTest cfg path = do
@@ -36,8 +35,7 @@ testSerialization _ tree1 = do
 
 testDupes :: Config -> HashTree -> IO ()
 testDupes _ tree = do
-  let tmp = runST $ dupesByNFiles =<< pathsByHash tree
-  let ds = map sortDupePaths $ simplifyDupes tmp
+  let ds = dupesByNFiles $ pathsByHash tree
   -- explain "making dupemap from hashtree:" $ pPrint m
   explain "using dupemap to report duplicates:" $ printDupes ds
 

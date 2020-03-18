@@ -8,7 +8,6 @@ import Gander.Data
 import Gander.Cmd.Hash (updateAnnexHashes)
 import Gander.Util     (userSaysYes)
 import Gander.Run      (runGitMv, runGitRm, runGitCommit)
-import Control.Monad.ST
 import qualified Data.ByteString.Char8 as B
 
 import qualified Data.HashSet as S
@@ -40,8 +39,12 @@ clear = clearScreen >> cursorUp 1000
 dedupLoop :: Config -> FilePath -> [Hash] -> HashTree -> IO ()
 dedupLoop cfg path ignored tree = do
   let aPath       = fromJust $ annex cfg
-      dupes       = runST $ dupesByNFiles =<< pathsByHash tree -- TODO toList here?
-      dupesToSort = filter (\(h,_) -> not $ h `elem` ignored) dupes -- :: [(Hash, DupeSet)]
+      dupes       = dupesByNFiles $ pathsByHash tree
+
+      -- TODO rewrite this to use paths rather than hashes?
+      -- TODO or, put back the (hash, dupelist) pairs
+      dupesToSort = filter (\(h,_) -> not $ h `elem` ignored) $ undefined dupes
+
   when (null dupesToSort) (clear >> putStrLn "no duplicates. congrats!" >> exitSuccess)
   let (h1, ds)    = head dupesToSort -- TODO should these be just the plain paths?
       (_,_,paths) = ds

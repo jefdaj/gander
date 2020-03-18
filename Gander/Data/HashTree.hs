@@ -62,11 +62,17 @@ import Data.Store             (encode, decodeIO, Store(..))
 import Control.Exception.Safe (catchAny)
 import TH.Derive
 
+import Control.DeepSeq
+
 -- import Text.Regex.Do.Split  (split)
 -- import Text.Regex.Do.TypeDo (Body(..), Pattern(..))
 
 -- for distinguishing beween files and dirs
-data TreeType = D | F deriving (Eq, Read, Show)
+data TreeType = D | F
+  deriving (Eq, Read, Show, Ord)
+
+instance NFData TreeType
+  where rnf = const () -- TODO is this valid?
 
 $($(derive [d| instance Deriving (Store TreeType) |]))
 
