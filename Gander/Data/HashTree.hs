@@ -52,7 +52,7 @@ import Data.Ord             (compare)
 import System.Directory     (doesFileExist, doesDirectoryExist)
 import System.FilePath      ((</>), splitPath, joinPath)
 import System.FilePath.Glob (compile, match)
-import System.IO            (hFlush, stdout)
+import System.IO            (hFlush, stdout, withFile, IOMode(..))
 import System.IO.Unsafe     (unsafeInterleaveIO)
 
 import Prelude hiding (take)
@@ -181,8 +181,8 @@ renameRoot newName tree = tree { name = newName }
 
 -- TODO can Foldable or Traversable simplify these?
 -- TODO need to handle unicode here?
-serializeTree :: HashTree -> B.ByteString
-serializeTree = B.unlines . map prettyHashLine . flattenTree
+serializeTree :: HashTree -> [B.ByteString]
+serializeTree = map prettyHashLine . flattenTree
 
 printTree :: HashTree -> IO ()
 printTree = mapM_ printLine . flattenTree
@@ -190,8 +190,11 @@ printTree = mapM_ printLine . flattenTree
     -- TODO don't flush every line
     printLine l = (putStrLn $ B.unpack $ prettyHashLine l) >> hFlush stdout
 
+-- this uses a handle for streaming output, which turns out to be important for memory usage
+-- TODO rename writeHashes? this is a confusing way to say that
 writeTree :: FilePath -> HashTree -> IO ()
-writeTree path tree = B.writeFile path $ serializeTree tree
+writeTree path tree = withFile path WriteMode $ \h ->
+  mapM_ (B.hPutStrLn h) (serializeTree tree)
 
 writeBinTree :: FilePath -> HashTree -> IO ()
 writeBinTree path tree = B.writeFile path $ encode tree

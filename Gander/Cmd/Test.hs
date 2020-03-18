@@ -6,6 +6,7 @@ import Prelude hiding (log)
 import Gander.Util        (log)
 import Text.Pretty.Simple (pPrint)
 import Gander.Config      (Config(..))
+import qualified Data.ByteString.Char8 as B
 
 cmdTest :: Config -> FilePath -> IO ()
 cmdTest cfg path = do
@@ -21,9 +22,9 @@ explain msg fn = putStrLn msg >> fn >> putStrLn ""
 testSerialization :: Config -> HashTree -> IO ()
 testSerialization _ tree1 = do
   explain "making hashtree:" $ pPrint tree1
-  let str1  = serializeTree tree1
+  let str1  = B.unlines $ serializeTree tree1
       tree2 = deserializeTree str1
-      str2  = serializeTree tree2
+      str2  = B.unlines $ serializeTree tree2
   let tests = [tree1 == tree2, show tree1 == show tree1, str1 == str2]
   if (all id tests) then do
     explain "round-tripped hashtree to string:" $ printTree tree1
