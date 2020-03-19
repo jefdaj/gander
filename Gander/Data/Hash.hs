@@ -26,6 +26,7 @@ import qualified Streaming.Prelude as S
 import Crypto.Hash.Algorithms
 import Crypto.Hash.IO
 
+import qualified Data.Text as T
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Base64 as B64
 import qualified Data.ByteString.Lazy.Char8 as L
@@ -47,7 +48,7 @@ import Data.Store (Store(..))
  - TODO would storing it in a more efficient way help?
  - TODO would adding timestamps or number of files help?
  -}
-newtype Hash = Hash { unHash :: B.ByteString }
+newtype Hash = Hash { unHash :: T.Text }
   deriving (Eq, Read, Show, Ord)
 
 -- This is unrelated to Gander's hashing. It's required to use Data.HashMap
@@ -67,14 +68,17 @@ digestLength = 20
 -- TODO how many chars to display? git uses two groups of 7 like this
 -- prettyHash (Hash h) = firstN h ++ "..." ++ lastN h
 prettyHash :: Hash -> B.ByteString
-prettyHash = B.take digestLength . unHash
+-- prettyHash = B.take digestLength . unHash
+prettyHash = B.pack . T.unpack . unHash
 
 -- this works, but can probably be made faster...
 -- hashBytes :: B.ByteString -> B.ByteString
 -- hashBytes = B.pack . show . (hash :: B.ByteString -> CH.Digest CH.SHA256)
 
-compress :: B.ByteString -> B.ByteString
-compress = B.take digestLength . B64.encode
+-- there's nothing more compressed about Text; it's just convenient for
+-- drafting the changes to put the functions here at first
+compress :: B.ByteString -> T.Text
+compress = T.take digestLength . T.pack . B.unpack . B64.encode
 
 hashBytes :: B.ByteString -> Hash
 hashBytes = Hash . compress . B.pack . show . (CH.hash :: B.ByteString -> CH.Digest CH.SHA256)
