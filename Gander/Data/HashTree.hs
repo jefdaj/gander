@@ -29,8 +29,6 @@ module Gander.Data.HashTree
 
 -- TODO would be better to adapt AnchoredDirTree with a custom node type than re-implement stuff
 
--- import Debug.Trace
-
 import Gander.Data.Hash
 
 -- import qualified Data.ByteString as B
@@ -52,7 +50,7 @@ import Data.Either          (fromRight)
 import Data.Ord             (compare)
 import System.Directory     (doesFileExist, doesDirectoryExist)
 import System.FilePath      ((</>), splitPath, joinPath)
-import System.FilePath.Glob (compile, matchWith, Pattern, MatchOptions(..))
+import System.FilePath.Glob (matchWith, Pattern, MatchOptions(..))
 import System.IO            (hFlush, stdout, withFile, IOMode(..))
 import System.IO.Unsafe     (unsafeInterleaveIO)
 
@@ -109,13 +107,13 @@ $($(derive [d|
     instance Deriving (Store HashTree)
     |]))
 
-excludeGlobs :: [String]
+excludeGlobs :: [Pattern]
              -> (DT.AnchoredDirTree FilePath -> DT.AnchoredDirTree FilePath)
 excludeGlobs excludes (a DT.:/ tree) = (a DT.:/ DT.filterDir (keep a) tree)
   where
-    keep a (DT.Dir  n _) = keepPath (map compile excludes) (a </> n)
-    keep a (DT.File n _) = keepPath (map compile excludes) (a </> n)
-    keep _ _ = True
+    keep a (DT.Dir  n _) = keepPath excludes (a </> n)
+    keep a (DT.File n _) = keepPath excludes (a </> n)
+    keep a b = True
 
 keepPath :: [Pattern] -> FilePath -> Bool
 keepPath excludes path = not $ any (\ptn -> matchWith opts ptn path) excludes
@@ -137,23 +135,26 @@ readTree path = catchAny
 --   (\_ -> fmap deserializeTree $ B.readFile path)
 
 -- TODO are contents sorted? they probably should be for stable hashes
-buildTree :: Bool -> [String] -> FilePath -> IO HashTree
+buildTree :: Bool -> [Pattern] -> FilePath -> IO HashTree
 buildTree beVerbose excludes path = do
   -- putStrLn $ "buildTree path: '" ++ path ++ "'"
   tree <- DT.readDirectoryWithL return path -- TODO need to rename root here?
   -- putStrLn $ show tree
-  buildTree' beVerbose $ excludeGlobs excludes tree
+  buildTree' beVerbose excludes tree
 
 -- TODO oh no, does AnchoredDirTree fail on cyclic symlinks?
-buildTree' :: Bool -> DT.AnchoredDirTree FilePath -> IO HashTree
-buildTree' _ (a DT.:/ (DT.Failed n e )) = error $ (a </> n) ++ ": " ++ show e
-buildTree' v (_ DT.:/ (DT.File n f)) = do
+buildTree' :: Bool -> [Pattern] -> DT.AnchoredDirTree FilePath -> IO HashTree
+-- TODO catch and re-throw errors with better description and/or handle them here
+buildTree' _ _  (a DT.:/ (DT.Failed n e )) = error $ (a </> n) ++ ": " ++ show e
+buildTree' v es (_ DT.:/ (DT.File n f)) = do
+  -- TODO how to exclude these?
   !h <- unsafeInterleaveIO $ hashFile v f
   return File { name = n, hash = h }
-buildTree' v (a DT.:/ (DT.Dir n cs)) = do
+buildTree' v es d@(a DT.:/ (DT.Dir n _)) = do
   let root = a </> n
-      hashSubtree t = unsafeInterleaveIO $ buildTree' v $ root DT.:/ t
-  subTrees <- forM cs hashSubtree
+      hashSubtree t = unsafeInterleaveIO $ buildTree' v es $ root DT.:/ t
+      (_ DT.:/ (DT.Dir _ cs')) = excludeGlobs es d -- TODO operate on only the cs part
+  subTrees <- forM cs' hashSubtree
   -- sorting by hash is better in that it catches file renames,
   -- but sorting by name is better in that it lets you stream hashes to stdout.
   -- so we do both: name when building the tree, then hash when computing dir hashes
@@ -172,12 +173,12 @@ hashContents = hashBytes . B.unlines . sort . map (unHash . hash)
 -- If passed a file this assumes it contains hashes and builds a tree of them;
 -- If passed a dir it will scan it first and then build the tree.
 -- TODO don't assume??
-readOrBuildTree :: Bool -> [String] -> FilePath -> IO HashTree
-readOrBuildTree verbose exclude path = do
+readOrBuildTree :: Bool -> [Pattern] -> FilePath -> IO HashTree
+readOrBuildTree verbose excludes path = do
   isDir  <- doesDirectoryExist path
   isFile <- doesFileExist      path
   if      isFile then readTree path
-  else if isDir then buildTree verbose exclude path
+  else if isDir then buildTree verbose excludes path
   else error $ "No such file: '" ++ path ++ "'"
 
 -- for comparing two trees without getting hung up on different overall names

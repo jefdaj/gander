@@ -14,6 +14,7 @@ import System.Console.Docopt (docoptFile, parseArgsOrExit,
                               shortOption, command, argument)
 import System.Environment    (getArgs)
 import System.FilePath       ((</>))
+import System.FilePath.Glob (compile)
 
 main :: IO ()
 main = do
@@ -24,7 +25,7 @@ main = do
       short n = getArgOrExitWith ptns args $ shortOption n
       flag  n = isPresent args $ shortOption n
   eList <- if (flag 'e')
-             then short 'e' >>= readFile >>= return . lines
+             then short 'e' >>= readFile >>= return . map compile . lines
              else return $ exclude defaultConfig
   let cfg = Config
         { annex   = getArg args $ argument "annex"
