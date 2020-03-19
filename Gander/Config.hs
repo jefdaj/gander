@@ -4,6 +4,8 @@ module Gander.Config
   )
   where
 
+import System.FilePath.Glob (compile, Pattern)
+
 {- Parsed command line args
  - TODO add other stuff from usage.txt, or revise that
  -}
@@ -15,7 +17,7 @@ data Config = Config
   , verbose :: Bool
   , force   :: Bool
   , check   :: Bool
-  , exclude :: [String]
+  , exclude :: [Pattern]
   }
   deriving (Read, Show)
 
@@ -28,5 +30,5 @@ defaultConfig = Config
   , verbose = True
   , force   = False
   , check   = True
-  , exclude = ["hashes.*", ".git*", ".*.sw*", "._DS_Store", "*.plist"]
+  , exclude = map compile ["hashes.*", ".git*", ".*.sw*", "._DS_Store", "*.plist"]
   }
