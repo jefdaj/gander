@@ -53,7 +53,7 @@ import qualified Data.HashMap.Strict   as M
 
 import Gander.Data.Hash
 import Gander.Data.HashTree
--- import Gander.Util (dropDir)
+import Gander.Util (n2p)
 
 -- import Data.List       (sort, sortBy, isPrefixOf)
 import Data.List       (sort, isPrefixOf)
@@ -107,10 +107,10 @@ addToDupeMap ht t = addToDupeMap' ht "" t
 
 -- same, but start from a given root path
 addToDupeMap' :: DupeTable s -> FilePath -> HashTree -> ST s ()
-addToDupeMap' ht dir (File n h      ) = insertDupeSet ht h (1, F, S.singleton (B.pack (dir </> n)))
+addToDupeMap' ht dir (File n h      ) = insertDupeSet ht h (1, F, S.singleton (B.pack (dir </> n2p n)))
 addToDupeMap' ht dir (Dir  n h cs fs) = do
-  insertDupeSet ht h (fs, D, S.singleton (B.pack (dir </> n)))
-  mapM_ (addToDupeMap' ht (dir </> n)) cs
+  insertDupeSet ht h (fs, D, S.singleton (B.pack (dir </> n2p n)))
+  mapM_ (addToDupeMap' ht (dir </> n2p n)) cs
 
 -- inserts one node into an existing dupemap in ST s
 insertDupeSet :: DupeTable s -> Hash -> DupeSet -> ST s ()
@@ -260,8 +260,8 @@ explainDupes = B.unlines . map explainGroup
 
 -- TODO is this actually helpful?
 listAllFiles :: FilePath -> HashTree -> [(Hash, FilePath)]
-listAllFiles anchor (File n h     ) = [(h, anchor </> n)]
-listAllFiles anchor (Dir  n _ cs _) = concatMap (listAllFiles $ anchor </> n) cs
+listAllFiles anchor (File n h     ) = [(h, anchor </> n2p n)]
+listAllFiles anchor (Dir  n _ cs _) = concatMap (listAllFiles $ anchor </> n2p n) cs
 
 
 -- TODO rewrite allDupes by removing the subtree first then testing membership

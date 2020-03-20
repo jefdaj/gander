@@ -11,6 +11,9 @@ module Gander.Util
   , withAnnex
   , isAnnexSymlink
   , isNonAnnexSymlink
+  , FileName
+  , n2p
+  , p2n
   )
   where
 
@@ -26,6 +29,9 @@ import System.FilePath       (pathSeparator, splitPath, joinPath, takeDirectory,
 -- import System.Path.NameManip (guess_dotdot, absolute_path)
 import System.IO        (hFlush, stdout)
 import System.Posix.Files (getSymbolicLinkStatus, isSymbolicLink, readSymbolicLink)
+
+import qualified Data.ByteString.Char8 as B
+import qualified Data.ByteString.Short as BS
 
 pathComponents :: FilePath -> [FilePath]
 pathComponents f = filter (not . null)
@@ -120,3 +126,15 @@ isNonAnnexSymlink path = do
       link <- readSymbolicLink path
       return $ not $ (".git/annex/objects/" `isInfixOf` link)
                   && ("SHA256E-" `isPrefixOf` (takeBaseName link))
+
+-- from System.Directory.Tree --
+
+-- | an element in a FilePath:
+type FileName = BS.ShortByteString
+
+
+n2p :: FileName -> FilePath
+n2p = B.unpack . BS.fromShort
+
+p2n :: FilePath -> FileName
+p2n = BS.toShort . B.pack
