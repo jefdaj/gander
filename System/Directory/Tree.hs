@@ -146,7 +146,8 @@ CHANGES:
 
 -- A hack to prevent symlink cycles, which only works for gander's particular use case
 import Gander.Util (isNonAnnexSymlink, n2p, p2n)
-import qualified Data.ByteString.Short as BS
+-- import qualified Data.ByteString.Short as BS
+import qualified Data.Text as T
 
 import System.Directory
 import System.FilePath
@@ -217,7 +218,7 @@ data AnchoredDirTree a = (:/) { anchor :: !FilePath, dirTree :: DirTree a }
 
 
 -- | an element in a FilePath:
-type FileName = BS.ShortByteString
+type FileName = T.Text
 
 
 instance Functor DirTree where
