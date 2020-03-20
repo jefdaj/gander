@@ -145,7 +145,8 @@ CHANGES:
 -}
 
 -- A hack to prevent symlink cycles, which only works for gander's particular use case
-import Gander.Util (isNonAnnexSymlink)
+import Gander.Util (isNonAnnexSymlink, n2p, p2n)
+import qualified Data.ByteString.Short as BS
 
 import System.Directory
 import System.FilePath
@@ -215,9 +216,8 @@ data AnchoredDirTree a = (:/) { anchor :: !FilePath, dirTree :: DirTree a }
                      deriving (Show, Ord, Eq)
 
 
--- TODO can this be converted to B.ByteString?
 -- | an element in a FilePath:
-type FileName = String
+type FileName = BS.ShortByteString
 
 
 instance Functor DirTree where
@@ -301,9 +301,9 @@ writeDirectory = writeDirectoryWith writeFile
 writeDirectoryWith :: (FilePath -> a -> IO b) -> AnchoredDirTree a -> IO (AnchoredDirTree b)
 writeDirectoryWith f (b:/t) = (b:/) <$> write' b t
     where write' b' (File n a) = handleDT n $
-              File n <$> f (b'</>n) a
+              File n <$> f (b'</>n2p n) a
           write' b' (Dir n cs) = handleDT n $
-              do let bas = b'</>n
+              do let bas = b'</>n2p n
                  createDirectoryIfMissing True bas
                  Dir n <$> mapM (write' bas) cs
           write' _ (Failed n e) = return $ Failed n e
@@ -357,14 +357,16 @@ buildWith' bf' f p =
 
 -- IO function passed to our builder and finally executed here:
 buildAtOnce' :: Builder a
-buildAtOnce' f p = handleDT n $
+buildAtOnce' f p = handleDT n' $
            do isFile <- doesFileExist p
               isLinkToSkip <- isNonAnnexSymlink p
               if isFile || isLinkToSkip -- TODO any more elegant way to do this??
-                 then  File n <$> f p
+                 then  File n' <$> f p
                  else do cs <- getDirsFiles p
-                         Dir n <$> T.mapM (buildAtOnce' f . combine p) cs
-     where n = topDir p
+                         Dir n' <$> T.mapM (buildAtOnce' f . combine p) cs
+     where
+       n  = topDir p
+       n' = p2n n
 
 
 unsafeMapM :: (a -> IO b) -> [a] -> IO [b]
@@ -381,35 +383,36 @@ unsafeMapM f (x:xs) = unsafeInterleaveIO io
 
 -- using unsafeInterleaveIO to get "lazy" traversal:
 buildLazilyUnsafe' :: Builder a
-buildLazilyUnsafe' f p = handleDT n $
+buildLazilyUnsafe' f p = handleDT n' $
            do isFile <- doesFileExist p
               isLinkToSkip <- isNonAnnexSymlink p
               if isFile || isLinkToSkip -- TODO any more elegant way to do this??
-                 then  File n <$> f p
+                 then  File n' <$> f p
                  else do
                      files <- getDirsFiles p
 
                      -- HERE IS THE UNSAFE LINE:
                      dirTrees <- unsafeMapM (rec . combine p) files
 
-                     return (Dir n dirTrees)
+                     return (Dir n' dirTrees)
   where rec = buildLazilyUnsafe' f
         n = topDir p
+        n' = p2n n
 
 -- works like buildLazilyUnsafe' up to depth d, then switches to buildAtOnce
 buildLazilyUnsafeD :: Int -> Builder a
-buildLazilyUnsafeD d f p = handleDT n $
+buildLazilyUnsafeD d f p = handleDT (p2n n) $
            do isFile <- doesFileExist p
               isLinkToSkip <- isNonAnnexSymlink p
               if isFile || isLinkToSkip -- TODO any more elegant way to do this??
-                 then  File n <$> f p
+                 then  File (p2n n) <$> f p
                  else do
                      files <- getDirsFiles p
 
                      -- HERE IS THE UNSAFE LINE:
                      dirTrees <- unsafeMapM (rec . combine p) files
 
-                     return (Dir n dirTrees)
+                     return (Dir (p2n n) dirTrees)
   where rec = if d < 0 then buildLazilyUnsafeD (d-1) f else buildAtOnce' f
         n = topDir p
 
@@ -509,8 +512,6 @@ comparingConstr (Dir _ _)    (File _ _)   = LT
 comparingConstr t t'  = compare (name t) (name t')
 
 
-
-
 ---- OTHER ----
 
 {-# DEPRECATED free "Use record 'dirTree'" #-}
@@ -524,7 +525,7 @@ free = dirTree
 dropTo :: FileName -> AnchoredDirTree a -> Maybe (AnchoredDirTree a)
 dropTo n' (p :/ Dir n ds') = search ds'
     where search [] = Nothing
-          search (d:ds) | equalFilePath n' (name d) = Just ((p</>n) :/ d)
+          search (d:ds) | equalFilePath (n2p n') (n2p $ name d) = Just ((p</> n2p n) :/ d)
                         | otherwise = search ds
 dropTo _ _ = Nothing
 
@@ -584,8 +585,8 @@ isDirC _ = False
 -- strings, although 'writeDirectory' does a better job of this.
 zipPaths :: AnchoredDirTree a -> DirTree (FilePath, a)
 zipPaths (b :/ t) = zipP b t
-    where zipP p (File n a)   = File n (p</>n , a)
-          zipP p (Dir n cs)   = Dir n $ map (zipP $ p</>n) cs
+    where zipP p (File n a)   = File n (p</>n2p n , a)
+          zipP p (Dir n cs)   = Dir n $ map (zipP $ p</>n2p n) cs
           zipP _ (Failed n e) = Failed n e
 
 
