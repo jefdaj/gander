@@ -44,6 +44,7 @@ module System.Directory.Tree (
        , readDirectory
        , readDirectoryWith
        , readDirectoryWithL
+       , readDirectoryWithLD -- turns strict after max recursion depth
        , writeDirectory
        , writeDirectoryWith
 
@@ -175,7 +176,7 @@ data DirTree a = Failed { name :: !FileName,
                | Dir    { name     :: !FileName,
                           contents :: [DirTree a] }
                | File   { name :: !FileName,
-                          file :: !a               }
+                          file :: !a               } -- no effect on memory
                  deriving Show
 
 
@@ -280,6 +281,9 @@ readDirectoryWith f p = buildWith' buildAtOnce' f p
 readDirectoryWithL :: (FilePath -> IO a) -> FilePath -> IO (AnchoredDirTree a)
 readDirectoryWithL f p = buildWith' buildLazilyUnsafe' f p
 
+readDirectoryWithLD :: Int -> (FilePath -> IO a) -> FilePath -> IO (AnchoredDirTree a)
+readDirectoryWithLD d f p = buildWith' (buildLazilyUnsafeD d) f p
+
 
 -- | write a DirTree of strings to disk. Clobbers files of the same name.
 -- Doesn't affect files in the directories (if any already exist) with
@@ -367,6 +371,7 @@ unsafeMapM :: (a -> IO b) -> [a] -> IO [b]
 unsafeMapM _    []  = return []
 unsafeMapM f (x:xs) = unsafeInterleaveIO io
   where
+    -- strictness has no effect on memory?
     io = do
         !y  <- f x
         !ys <- unsafeMapM f xs
@@ -389,6 +394,23 @@ buildLazilyUnsafe' f p = handleDT n $
 
                      return (Dir n dirTrees)
   where rec = buildLazilyUnsafe' f
+        n = topDir p
+
+-- works like buildLazilyUnsafe' up to depth d, then switches to buildAtOnce
+buildLazilyUnsafeD :: Int -> Builder a
+buildLazilyUnsafeD d f p = handleDT n $
+           do isFile <- doesFileExist p
+              isLinkToSkip <- isNonAnnexSymlink p
+              if isFile || isLinkToSkip -- TODO any more elegant way to do this??
+                 then  File n <$> f p
+                 else do
+                     files <- getDirsFiles p
+
+                     -- HERE IS THE UNSAFE LINE:
+                     dirTrees <- unsafeMapM (rec . combine p) files
+
+                     return (Dir n dirTrees)
+  where rec = if d < 0 then buildLazilyUnsafeD (d-1) f else buildAtOnce' f
         n = topDir p
 
 
