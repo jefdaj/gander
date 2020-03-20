@@ -215,7 +215,7 @@ data AnchoredDirTree a = (:/) { anchor :: !FilePath, dirTree :: DirTree a }
                      deriving (Show, Ord, Eq)
 
 
--- TODO can this be converted to Text/ByteString?
+-- TODO can this be converted to B.ByteString?
 -- | an element in a FilePath:
 type FileName = String
 
