@@ -81,13 +81,13 @@ $($(derive [d| instance Deriving (Store TreeType) |]))
 
 type IndentLevel = Int
 
-type HashLine = (TreeType, IndentLevel, Hash, FilePath)
+type HashLine = (TreeType, IndentLevel, Hash, B.ByteString)
 
 -- TODO actual Pretty instance
 -- note: p can have weird characters, so it should be handled only as ByteString
 prettyHashLine :: HashLine -> B.ByteString
 prettyHashLine (t, n, Hash h, p) = B.unwords
-  [B.pack $ show t, B.pack $ show n, B.pack $ T.unpack h, B.pack $ p]
+  [B.pack $ show t, B.pack $ show n, B.pack $ T.unpack h, p]
 
 {- A tree of file names matching (a subdirectory of) the annex,
  - where each dir and file node contains a hash of its contents.
@@ -98,8 +98,8 @@ prettyHashLine (t, n, Hash h, p) = B.unwords
 --   deriving (Eq, Read, Show)
 --   TODO rename name -> path?
 data HashTree
-  = File { name :: !FilePath, hash :: !Hash }
-  | Dir  { name :: !FilePath, hash :: Hash, contents :: [HashTree], nFiles :: Int }
+  = File { name :: !T.Text, hash :: !Hash }
+  | Dir  { name :: !T.Text, hash :: Hash, contents :: [HashTree], nFiles :: Int }
   deriving (Read, Show, Ord) -- TODO switch to hash-based equality after testing
 
 -- TODO disable this while testing to ensure deep equality?
@@ -112,7 +112,7 @@ $($(derive [d|
     |]))
 
 excludeGlobs :: [Pattern]
-             -> (DT.AnchoredDirTree FilePath -> DT.AnchoredDirTree FilePath)
+             -> (DT.AnchoredDirTree T.Text -> DT.AnchoredDirTree T.Text)
 excludeGlobs excludes (a DT.:/ tree) = (a DT.:/ DT.filterDir (keep a) tree)
   where
     keep a (DT.Dir  n _) = keepPath excludes (a </> n)
@@ -144,7 +144,7 @@ buildTree beVerbose excludes path = do
   -- putStrLn $ "buildTree path: '" ++ path ++ "'"
   -- TODO attempt building lazily only to a certain depth... 10?
   -- tree <- DT.readDirectoryWithLD 10 return path -- TODO need to rename root here?
-  tree <- DT.readDirectoryWithL return path -- TODO need to rename root here?
+  tree <- DT.readDirectoryWithL (return . T.pack) path -- TODO need to rename root here?
   -- putStrLn $ show tree
   buildTree' beVerbose 0 excludes tree
 
@@ -153,19 +153,19 @@ lazyDirDepth :: Int
 lazyDirDepth = 5
 
 -- TODO oh no, does AnchoredDirTree fail on cyclic symlinks?
-buildTree' :: Bool -> Int -> [Pattern] -> DT.AnchoredDirTree FilePath -> IO HashTree
+buildTree' :: Bool -> Int -> [Pattern] -> DT.AnchoredDirTree T.Text -> IO HashTree
 -- TODO catch and re-throw errors with better description and/or handle them here
 buildTree' _ _ _  (a DT.:/ (DT.Failed n e )) = error $ (a </> n) ++ ": " ++ show e
 buildTree' v depth es (_ DT.:/ (DT.File n f)) = do
   -- TODO how to exclude these?
-  !h <- unsafeInterleaveIO $ hashFile v f
+  !h <- unsafeInterleaveIO $ hashFile v $ T.unpack f
   -- seems not to help with memory usage?
   -- return $ (\x -> hash x `seq` name x `seq` x) $ File { name = n, hash = h }
   -- return File { name = n, hash = h }
   return $ (if depth < lazyDirDepth
               then id
               else (\x -> hash x `seq` name x `seq` x))
-         $ File { name = n, hash = h }
+         $ File { name = T.pack n, hash = h }
 
 buildTree' v depth es d@(a DT.:/ (DT.Dir n _)) = do
   let root = a </> n
@@ -189,7 +189,7 @@ buildTree' v depth es d@(a DT.:/ (DT.Dir n _)) = do
               then id
               else (\r -> (hash r `seq` nFiles r `seq` hash r) `seq` r))
          $ Dir
-            { name     = n
+            { name     = T.pack n
             , contents = cs''
             , hash     = hashContents cs''
             , nFiles   = sum $ map countFiles cs''
@@ -211,7 +211,7 @@ readOrBuildTree verbose excludes path = do
 
 -- for comparing two trees without getting hung up on different overall names
 renameRoot :: String -> HashTree -> HashTree
-renameRoot newName tree = tree { name = newName }
+renameRoot newName tree = tree { name = T.pack newName }
 
 -------------------------------------
 -- serialize and deserialize trees --
@@ -244,11 +244,11 @@ flattenTree = flattenTree' ""
 -- TODO need to handle unicode here?
 -- TODO does this affect memory usage?
 flattenTree' :: FilePath -> HashTree -> [HashLine]
-flattenTree' dir (File n h     ) = [(F, length (splitPath dir), h, n)]
+flattenTree' dir (File n h     ) = [(F, length (splitPath dir), h, B.pack $ T.unpack n)]
 flattenTree' dir (Dir  n h cs _) = subtrees ++ [wholeDir]
   where
-    subtrees = concatMap (flattenTree' $ dir </> n) cs
-    wholeDir = (D, length (splitPath dir), h, n)
+    subtrees = concatMap (flattenTree' $ dir </> (T.unpack n)) cs
+    wholeDir = (D, length (splitPath dir), h, B.pack $ T.unpack n)
 
 typeP :: Parser TreeType
 typeP = do
@@ -266,8 +266,8 @@ hashP = do
 breakP :: Parser ()
 breakP = endOfLine >> choice [typeP >> return (), endOfInput]
 
-nameP :: Parser FilePath
-nameP = manyTill anyChar $ lookAhead breakP
+nameP :: Parser B.ByteString
+nameP = fmap B.pack $ manyTill anyChar $ lookAhead breakP
 
 indentP :: Parser IndentLevel
 indentP = do
@@ -275,7 +275,7 @@ indentP = do
   -- TODO char ' ' here?
   return $ read n
 
-lineP :: Parser (TreeType, IndentLevel, Hash, FilePath)
+lineP :: Parser (TreeType, IndentLevel, Hash, B.ByteString)
 lineP = do
   t <- typeP
   i <- indentP
@@ -283,16 +283,16 @@ lineP = do
   p <- nameP
   return (t, i, h, p)
 
-linesP :: Parser [(TreeType, IndentLevel, Hash, FilePath)]
+linesP :: Parser [(TreeType, IndentLevel, Hash, B.ByteString)]
 linesP = sepBy' lineP endOfLine
 
-fileP :: Parser [(TreeType, IndentLevel, Hash, FilePath)]
+fileP :: Parser [(TreeType, IndentLevel, Hash, B.ByteString)]
 fileP = linesP <* endOfLine <* endOfInput
 
 -- TODO use bytestring the whole time rather than converting
 -- TODO should this propogate the Either?
 -- TODO any more elegant way to make the parsing strict?
-parseHashes :: B.ByteString -> [(TreeType, IndentLevel, Hash, FilePath)]
+parseHashes :: B.ByteString -> [(TreeType, IndentLevel, Hash, B.ByteString)]
 parseHashes = fromRight [] . parseOnly fileP
 
 -- TODO error on null string/lines?
@@ -310,11 +310,11 @@ countFiles (Dir  _ _ _ n) = n
  - levels, and when it comes across a dir it uses the indents to determine
  - which files are children to put inside it vs which are siblings.
  -}
-accTrees :: (TreeType, IndentLevel, Hash, FilePath) -> [(Int, HashTree)] -> [(Int, HashTree)]
+accTrees :: (TreeType, IndentLevel, Hash, B.ByteString) -> [(Int, HashTree)] -> [(Int, HashTree)]
 accTrees (t, indent, h, p) cs = case t of
-  F -> cs ++ [(indent, File p h)]
+  F -> cs ++ [(indent, File (T.pack $ B.unpack p) h)]
   D -> let (children, siblings) = partition (\(i, _) -> i > indent) cs
-           dir = Dir p h (map snd children)
+           dir = Dir (T.pack $ B.unpack p) h (map snd children)
                          (sum $ map (countFiles . snd) children)
        in siblings ++ [(indent, dir)]
 
@@ -337,13 +337,13 @@ treeContainsPath :: HashTree -> FilePath -> Bool
 treeContainsPath tree path = isJust $ dropTo tree path
 
 dropTo :: HashTree -> FilePath -> Maybe HashTree
-dropTo t@(File f1 _     ) f2 = if f1 == f2 then Just t else Nothing
+dropTo t@(File f1 _     ) f2 = if f1 == T.pack f2 then Just t else Nothing
 dropTo t@(Dir  f1 _ cs _) f2
-  | f1 == f2 = Just t
+  | f1 == T.pack f2 = Just t
   | length (pathComponents f2) < 2 = Nothing
   | otherwise = let n   = head $ pathComponents f2
                     f2' = joinPath $ tail $ pathComponents f2
-                in if f1 /= n
+                in if f1 /= (T.pack n)
                   then Nothing
                   else msum $ map (\c -> dropTo c f2') cs
 
@@ -361,7 +361,7 @@ treeContainsHash (Dir  _ h1 cs _) h2
 
 wrapInEmptyDir :: FilePath -> HashTree -> HashTree
 wrapInEmptyDir n t = do
-  Dir { name = n, hash = h, contents = cs, nFiles = nFiles t }
+  Dir { name = T.pack n, hash = h, contents = cs, nFiles = nFiles t }
   where
     cs = [t]
     h = hashContents cs
@@ -379,12 +379,12 @@ addSubTree _ _ path | null (pathComponents path) = error "can't insert tree at n
 addSubTree main sub path = main { hash = h', contents = cs', nFiles = n' }
   where
     comps  = pathComponents path
-    p1     = head comps
+    p1     = T.pack $ head comps
     path'  = joinPath $ tail comps
     h'     = hashContents cs'
     cs'    = sortBy (compare `on` name) $ filter (\c -> name c /= p1) (contents main) ++ [newSub]
     n'     = nFiles main + nFiles newSub - case oldSub of { Nothing -> 0; Just s -> nFiles s; }
-    sub'   = sub { name = last comps }
+    sub'   = sub { name = T.pack $ last comps }
     oldSub = find (\c -> name c == p1) (contents main)
     newSub = if length comps == 1
                then sub'
