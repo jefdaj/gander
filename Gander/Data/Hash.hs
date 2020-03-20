@@ -26,10 +26,10 @@ import qualified Streaming.Prelude as S
 import Crypto.Hash.Algorithms
 import Crypto.Hash.IO
 
-import qualified Data.Text as T
 import qualified Data.ByteString.Char8 as B
+import qualified Data.ByteString.Short as BS
 import qualified Data.ByteString.Base64 as B64
-import qualified Data.ByteString.Lazy.Char8 as L
+import qualified Data.ByteString.Lazy.Char8 as BL
 import qualified Data.ByteString.Streaming.Char8 as Q
 -- import Data.Byteable      (toBytes)
 -- import Data.Char          (ord)
@@ -47,9 +47,9 @@ import Data.Store (Store(..))
  - For files, should match the corresponding git-annex key.
  - TODO would storing it in a more efficient way help?
  - TODO would adding timestamps or number of files help?
- - note: Text is needed here because ByteStrings cause a space leak
+ - note: regular bytestrings here cause memory fragmentation/space leaks
  -}
-newtype Hash = Hash { unHash :: T.Text }
+newtype Hash = Hash { unHash :: BS.ShortByteString }
   deriving (Eq, Read, Show, Ord)
 
 -- This is unrelated to Gander's hashing. It's required to use Data.HashMap
@@ -69,8 +69,7 @@ digestLength = 20
 -- TODO how many chars to display? git uses two groups of 7 like this
 -- prettyHash (Hash h) = firstN h ++ "..." ++ lastN h
 prettyHash :: Hash -> B.ByteString
--- prettyHash = B.take digestLength . unHash
-prettyHash = B.pack . T.unpack . unHash
+prettyHash = BS.fromShort . unHash
 
 -- this works, but can probably be made faster...
 -- hashBytes :: B.ByteString -> B.ByteString
@@ -78,8 +77,8 @@ prettyHash = B.pack . T.unpack . unHash
 
 -- there's nothing more compressed about Text; it's just convenient for
 -- drafting the changes to put the functions here at first
-compress :: B.ByteString -> T.Text
-compress = T.take digestLength . T.pack . B.unpack . B64.encode
+compress :: B.ByteString -> BS.ShortByteString
+compress = BS.toShort . B.take digestLength . B64.encode
 
 -- TODO no need to B.copy here?
 hashBytes :: B.ByteString -> Hash
@@ -87,7 +86,7 @@ hashBytes = Hash . compress . B.pack . show . (CH.hash :: B.ByteString -> CH.Dig
 
 -- TODO would digestFromByteString be faster?
 -- TODO bug! digests come out unreadable :(
-hashBytesStreaming :: L.ByteString -> IO Hash
+hashBytesStreaming :: BL.ByteString -> IO Hash
 hashBytesStreaming bs = do
   ctx <- hashMutableInitWith SHA256
   let chunked :: Stream (Of B.ByteString) IO ()
@@ -126,7 +125,7 @@ hashSymlink path = do
 -- TODO show when verbose?
 hashFileContentsStreaming :: FilePath -> IO Hash
 -- hashFileContentsStreaming path = withFile path ReadMode $ \h -> hashBytes Q.fromHandle h
-hashFileContentsStreaming path = L.readFile path >>= hashBytesStreaming
+hashFileContentsStreaming path = BL.readFile path >>= hashBytesStreaming
 --   ctx <- hashMutableInitWith SHA256
 --   let chunked :: Stream (Of B.ByteString) IO ()
 --       chunked = Q.toChunks $ Q.fromHandle h
