@@ -22,7 +22,6 @@ module Gander.Data.Delta
 
 -- import Gander.Config
 import Gander.Data.HashTree
-import qualified Data.Text as T
 import qualified Data.ByteString.Char8 as B
 
 import Control.Monad       (when, foldM)
@@ -61,19 +60,19 @@ diff = diff' ""
 diff' :: FilePath -> HashTree -> HashTree -> [Delta]
 diff' a t1@(File f1 h1) t2@(File f2 h2)
   | f1 == f2 && h1 == h2 = []
-  | f1 /= f2 && h1 == h2 = [Mv (a </> T.unpack f1) (a </> T.unpack f2)]
-  | f1 == f2 && h1 /= h2 = [Edit (if a == T.unpack f1 then T.unpack f1 else a </> T.unpack f1) t2]
+  | f1 /= f2 && h1 == h2 = [Mv (a </> f1) (a </> f2)]
+  | f1 == f2 && h1 /= h2 = [Edit (if a == f1 then f1 else a </> f1) t2]
   | otherwise = error $ "error in diff': " ++ show t1 ++ " " ++ show t2
-diff' a (File _ _) t2@(Dir  d _ _ _) = [Rm a, Add (a </> T.unpack d) t2]
+diff' a (File _ _) t2@(Dir  d _ _ _) = [Rm a, Add (a </> d) t2]
 -- TODO wait is this a Mv?
-diff' a (Dir  d _ _ _) t2@(File _ _) = [Rm (a </> T.unpack d), Add (a </> T.unpack d) t2]
+diff' a (Dir  d _ _ _) t2@(File _ _) = [Rm (a </> d), Add (a </> d) t2]
 diff' a t1@(Dir _ h1 os _) (Dir _ h2 ns _)
   | h1 == h2 = []
   | otherwise = fixMoves t1 $ rms ++ adds ++ edits
   where
-    adds  = [Add (a </> T.unpack (name x)) x | x <- ns, not $ name x `elem` map name os]
-    rms   = [Rm  (a </> T.unpack (name x))   | x <- os, not $ name x `elem` map name ns]
-    edits = concat [diff' (a </> T.unpack (name o)) o n | o <- os, n <- ns,
+    adds  = [Add (a </> name x) x | x <- ns, not $ name x `elem` map name os]
+    rms   = [Rm  (a </> name x)   | x <- os, not $ name x `elem` map name ns]
+    edits = concat [diff' (a </> name o) o n | o <- os, n <- ns,
                                                o /= n, name o == name n]
 
 -- given two Deltas, are they a matching Rm and Add that together make a Mv?
