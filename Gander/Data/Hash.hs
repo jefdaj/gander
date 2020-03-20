@@ -47,6 +47,7 @@ import Data.Store (Store(..))
  - For files, should match the corresponding git-annex key.
  - TODO would storing it in a more efficient way help?
  - TODO would adding timestamps or number of files help?
+ - note: Text is needed here because ByteStrings cause a space leak
  -}
 newtype Hash = Hash { unHash :: T.Text }
   deriving (Eq, Read, Show, Ord)
@@ -80,6 +81,7 @@ prettyHash = B.pack . T.unpack . unHash
 compress :: B.ByteString -> T.Text
 compress = T.take digestLength . T.pack . B.unpack . B64.encode
 
+-- TODO no need to B.copy here?
 hashBytes :: B.ByteString -> Hash
 hashBytes = Hash . compress . B.pack . show . (CH.hash :: B.ByteString -> CH.Digest CH.SHA256)
 

@@ -42,7 +42,9 @@ import Gander.Util (pathComponents)
 import qualified System.Directory.Tree as DT
 
 import Control.Monad        (msum)
-import Control.Monad.Parallel (forM)
+-- import Control.Monad.Parallel (forM) -- no effect on memory usage (for annex links at least)
+import qualified Control.Monad.Parallel as P
+import qualified Control.Monad          as M
 import Data.List            (find, delete, sort)
 import Data.Maybe           (isJust)
 import Data.Function        (on)
@@ -82,10 +84,10 @@ type IndentLevel = Int
 type HashLine = (TreeType, IndentLevel, Hash, FilePath)
 
 -- TODO actual Pretty instance
--- TODO need to handle unicode here?
+-- note: p can have weird characters, so it should be handled only as ByteString
 prettyHashLine :: HashLine -> B.ByteString
-prettyHashLine (t, n, Hash h, p) = B.pack $ T.unpack $ T.unwords
-  [T.pack $ show t, T.pack $ show n, h, T.pack $ p]
+prettyHashLine (t, n, Hash h, p) = B.unwords
+  [B.pack $ show t, B.pack $ show n, B.pack $ T.unpack h, B.pack $ p]
 
 {- A tree of file names matching (a subdirectory of) the annex,
  - where each dir and file node contains a hash of its contents.
@@ -96,8 +98,8 @@ prettyHashLine (t, n, Hash h, p) = B.pack $ T.unpack $ T.unwords
 --   deriving (Eq, Read, Show)
 --   TODO rename name -> path?
 data HashTree
-  = File { name :: FilePath, hash :: Hash }
-  | Dir  { name :: FilePath, hash :: Hash, contents :: [HashTree], nFiles :: Int }
+  = File { name :: !FilePath, hash :: !Hash }
+  | Dir  { name :: !FilePath, hash :: Hash, contents :: [HashTree], nFiles :: Int }
   deriving (Read, Show, Ord) -- TODO switch to hash-based equality after testing
 
 -- TODO disable this while testing to ensure deep equality?
@@ -140,34 +142,58 @@ readTree path = catchAny
 buildTree :: Bool -> [Pattern] -> FilePath -> IO HashTree
 buildTree beVerbose excludes path = do
   -- putStrLn $ "buildTree path: '" ++ path ++ "'"
+  -- TODO attempt building lazily only to a certain depth... 10?
+  -- tree <- DT.readDirectoryWithLD 10 return path -- TODO need to rename root here?
   tree <- DT.readDirectoryWithL return path -- TODO need to rename root here?
   -- putStrLn $ show tree
-  buildTree' beVerbose excludes tree
+  buildTree' beVerbose 0 excludes tree
+
+-- TODO take this as a command-line argument
+lazyDirDepth :: Int
+lazyDirDepth = 5
 
 -- TODO oh no, does AnchoredDirTree fail on cyclic symlinks?
-buildTree' :: Bool -> [Pattern] -> DT.AnchoredDirTree FilePath -> IO HashTree
+buildTree' :: Bool -> Int -> [Pattern] -> DT.AnchoredDirTree FilePath -> IO HashTree
 -- TODO catch and re-throw errors with better description and/or handle them here
-buildTree' _ _  (a DT.:/ (DT.Failed n e )) = error $ (a </> n) ++ ": " ++ show e
-buildTree' v es (_ DT.:/ (DT.File n f)) = do
+buildTree' _ _ _  (a DT.:/ (DT.Failed n e )) = error $ (a </> n) ++ ": " ++ show e
+buildTree' v depth es (_ DT.:/ (DT.File n f)) = do
   -- TODO how to exclude these?
   !h <- unsafeInterleaveIO $ hashFile v f
-  return File { name = n, hash = h }
-buildTree' v es d@(a DT.:/ (DT.Dir n _)) = do
+  -- seems not to help with memory usage?
+  -- return $ (\x -> hash x `seq` name x `seq` x) $ File { name = n, hash = h }
+  -- return File { name = n, hash = h }
+  return $ (if depth < lazyDirDepth
+              then id
+              else (\x -> hash x `seq` name x `seq` x))
+         $ File { name = n, hash = h }
+
+buildTree' v depth es d@(a DT.:/ (DT.Dir n _)) = do
   let root = a </> n
-      hashSubtree t = unsafeInterleaveIO $ buildTree' v es $ root DT.:/ t
+      -- bang t has no effect on memory usage
+      hashSubtree t = unsafeInterleaveIO $ buildTree' v (depth+1) es $ root DT.:/ t
       (_ DT.:/ (DT.Dir _ cs')) = excludeGlobs es d -- TODO operate on only the cs part
-  subTrees <- forM cs' hashSubtree
+
+  -- this works, but doesn't affect memory usage:
+  -- subTrees <- (if depth > 10 then M.forM else P.forM) cs' hashSubtree
+
+  subTrees <- P.forM cs' hashSubtree
+
   -- sorting by hash is better in that it catches file renames,
   -- but sorting by name is better in that it lets you stream hashes to stdout.
   -- so we do both: name when building the tree, then hash when computing dir hashes
-  let csByN = sortBy (compare `on` name) subTrees
-      csByH = sortBy (compare `on` hash) subTrees
-  return Dir
-    { name     = n
-    , contents = csByN
-    , hash     = hashContents csByH
-    , nFiles   = sum $ map countFiles csByN
-    }
+  let cs'' = sortBy (compare `on` name) subTrees
+      -- csByH = sortBy (compare `on` hash) subTrees -- no memory difference
+
+  -- use lazy evaluation up to 5 levels deep, then strict
+  return $ (if depth < lazyDirDepth
+              then id
+              else (\r -> (hash r `seq` nFiles r `seq` hash r) `seq` r))
+         $ Dir
+            { name     = n
+            , contents = cs''
+            , hash     = hashContents cs''
+            , nFiles   = sum $ map countFiles cs''
+            }
 
 hashContents :: [HashTree] -> Hash
 hashContents = hashBytes . B.pack . T.unpack . T.unlines . sort . map (unHash . hash)
@@ -193,6 +219,7 @@ renameRoot newName tree = tree { name = newName }
 
 -- TODO can Foldable or Traversable simplify these?
 -- TODO need to handle unicode here?
+-- TODO does map evaluation influence memory usage?
 serializeTree :: HashTree -> [B.ByteString]
 serializeTree = map prettyHashLine . flattenTree
 
@@ -215,6 +242,7 @@ flattenTree :: HashTree -> [HashLine]
 flattenTree = flattenTree' ""
 
 -- TODO need to handle unicode here?
+-- TODO does this affect memory usage?
 flattenTree' :: FilePath -> HashTree -> [HashLine]
 flattenTree' dir (File n h     ) = [(F, length (splitPath dir), h, n)]
 flattenTree' dir (Dir  n h cs _) = subtrees ++ [wholeDir]
