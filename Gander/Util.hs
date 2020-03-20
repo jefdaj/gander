@@ -32,8 +32,9 @@ import System.FilePath       (pathSeparator, splitPath, joinPath, takeDirectory,
 import System.IO        (hFlush, stdout)
 import System.Posix.Files (getSymbolicLinkStatus, isSymbolicLink, readSymbolicLink)
 
-import qualified Data.ByteString.Char8 as B
-import qualified Data.ByteString.Short as BS
+-- import qualified Data.ByteString.Char8 as B
+-- import qualified Data.ByteString.Short as BS
+import qualified Data.Text as T
 
 pathComponents :: FilePath -> [FilePath]
 pathComponents f = filter (not . null)
@@ -132,10 +133,10 @@ isNonAnnexSymlink path = do
 -- from System.Directory.Tree --
 
 -- | an element in a FilePath:
-type FileName = BS.ShortByteString
+type FileName = T.Text
 
 n2p :: FileName -> FilePath
-n2p = B.unpack . BS.fromShort
+n2p = T.unpack
 
 p2n :: FilePath -> FileName
-p2n = BS.toShort . B.pack
+p2n = T.pack

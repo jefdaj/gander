@@ -33,6 +33,7 @@ import Gander.Data.Hash
 
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Short as BS
+import qualified Data.Text.Encoding as T
 -- import qualified Data.ByteString.Streaming.Char8 as Q
 -- import qualified Data.ByteString.Lazy.Char8 as BL
 -- import qualified Data.ByteString.Char8 as B
@@ -86,7 +87,7 @@ type HashLine = (TreeType, IndentLevel, Hash, FileName)
 -- note: p can have weird characters, so it should be handled only as ByteString
 prettyHashLine :: HashLine -> B.ByteString
 prettyHashLine (t, n, h, p) = B.unwords
-  [B.pack $ show t, B.pack $ show n, prettyHash h, BS.fromShort p]
+  [B.pack $ show t, B.pack $ show n, prettyHash h, T.encodeUtf8 p]
 
 {- A tree of file names matching (a subdirectory of) the annex,
  - where each dir and file node contains a hash of its contents.
