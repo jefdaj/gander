@@ -31,9 +31,8 @@ module Gander.Data.HashTree
 
 import Gander.Data.Hash
 
--- import qualified Data.ByteString as B
-import qualified Data.Text as T
 import qualified Data.ByteString.Char8 as B
+import qualified Data.ByteString.Short as BS
 -- import qualified Data.ByteString.Streaming.Char8 as Q
 -- import qualified Data.ByteString.Lazy.Char8 as BL
 -- import qualified Data.ByteString.Char8 as B
@@ -86,8 +85,8 @@ type HashLine = (TreeType, IndentLevel, Hash, FilePath)
 -- TODO actual Pretty instance
 -- note: p can have weird characters, so it should be handled only as ByteString
 prettyHashLine :: HashLine -> B.ByteString
-prettyHashLine (t, n, Hash h, p) = B.unwords
-  [B.pack $ show t, B.pack $ show n, B.pack $ T.unpack h, B.pack $ p]
+prettyHashLine (t, n, h, p) = B.unwords
+  [B.pack $ show t, B.pack $ show n, prettyHash h, B.pack $ p]
 
 {- A tree of file names matching (a subdirectory of) the annex,
  - where each dir and file node contains a hash of its contents.
@@ -196,7 +195,7 @@ buildTree' v depth es d@(a DT.:/ (DT.Dir n _)) = do
             }
 
 hashContents :: [HashTree] -> Hash
-hashContents = hashBytes . B.pack . T.unpack . T.unlines . sort . map (unHash . hash)
+hashContents = hashBytes . B.unlines . sort . map (BS.fromShort . unHash . hash)
 
 -- If passed a file this assumes it contains hashes and builds a tree of them;
 -- If passed a dir it will scan it first and then build the tree.
@@ -259,7 +258,7 @@ hashP :: Parser Hash
 hashP = do
   h <- take digestLength -- TODO any need to sanitize these?
   _ <- char ' '
-  return $ Hash $ T.pack $ B.unpack h
+  return $ Hash $ BS.toShort h
 
 -- like endOfLine, but make sure D/F comes next instead of the rest of a filename
 -- TODO uh, what if the filename contains "\n(D|F)\ "? pretty pathological
