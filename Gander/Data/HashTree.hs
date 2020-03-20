@@ -150,7 +150,7 @@ buildTree beVerbose excludes path = do
 
 -- TODO take this as a command-line argument
 lazyDirDepth :: Int
-lazyDirDepth = 5
+lazyDirDepth = 4
 
 -- TODO oh no, does AnchoredDirTree fail on cyclic symlinks?
 buildTree' :: Bool -> Int -> [Pattern] -> DT.AnchoredDirTree FilePath -> IO HashTree
