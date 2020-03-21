@@ -16,8 +16,16 @@ import System.Environment    (getArgs)
 import System.FilePath       ((</>))
 import System.FilePath.Glob (compile)
 
+import System.Environment (setEnv)
+import System.Locale.SetLocale
+
 main :: IO ()
 main = do
+
+  -- TODO which is/are really needed?
+  setEnv "LANG" "en_US.UTF-8"
+  _ <- setLocale LC_ALL $ Just "en_US.UTF-8"
+
   let ptns = [docoptFile|usage.txt|]
   args <- parseArgsOrExit ptns =<< getArgs
   let cmd   n = isPresent args $ command n
