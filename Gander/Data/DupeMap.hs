@@ -54,6 +54,20 @@ type DupeList = (Int, TreeType, [B.ByteString]) -- TODO move to Cmd/Dupes.hs?
 type DupeMap     = M.HashMap Hash DupeSet
 type DupeTable s = C.HashTable s Hash DupeSet
 
+--------------------------------
+-- DupeTable from hashes file --
+--------------------------------
+
+-- TODO is this a good idea? it would require losing the nfiles per dir thing
+
+-- TODO is this the right type signature for an stToIO action?
+-- dupesFromHashes :: FilePath -> DupeTable RealWorld
+-- dupesFromHashes = undefined
+
+-----------------------------
+-- DupeTable from HashTree --
+-----------------------------
+
 -- TODO what about if we guess the approximate size first?
 -- TODO what about if we make it from the serialized hashes instead of a tree?
 pathsByHash :: HashTree -> ST s (DupeTable s)
