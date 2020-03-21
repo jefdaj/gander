@@ -275,7 +275,7 @@ indentP = do
   -- TODO char ' ' here?
   return $ read n
 
-lineP :: Parser (TreeType, IndentLevel, Hash, FileName)
+lineP :: Parser HashLine
 lineP = do
   t <- typeP
   i <- indentP
@@ -283,16 +283,16 @@ lineP = do
   p <- nameP
   return (t, i, h, p)
 
-linesP :: Parser [(TreeType, IndentLevel, Hash, FileName)]
+linesP :: Parser [HashLine]
 linesP = sepBy' lineP endOfLine
 
-fileP :: Parser [(TreeType, IndentLevel, Hash, FileName)]
+fileP :: Parser [HashLine]
 fileP = linesP <* endOfLine <* endOfInput
 
 -- TODO use bytestring the whole time rather than converting
 -- TODO should this propogate the Either?
 -- TODO any more elegant way to make the parsing strict?
-parseHashes :: B.ByteString -> [(TreeType, IndentLevel, Hash, FileName)]
+parseHashes :: B.ByteString -> [HashLine]
 parseHashes = fromRight [] . parseOnly fileP
 
 -- TODO error on null string/lines?
@@ -310,7 +310,7 @@ countFiles (Dir  _ _ _ n) = n
  - levels, and when it comes across a dir it uses the indents to determine
  - which files are children to put inside it vs which are siblings.
  -}
-accTrees :: (TreeType, IndentLevel, Hash, FileName) -> [(Int, HashTree)] -> [(Int, HashTree)]
+accTrees :: HashLine -> [(Int, HashTree)] -> [(Int, HashTree)]
 accTrees (t, indent, h, p) cs = case t of
   F -> cs ++ [(indent, File p h)]
   D -> let (children, siblings) = partition (\(i, _) -> i > indent) cs
