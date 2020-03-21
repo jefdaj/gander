@@ -29,6 +29,8 @@ module Gander.Data.HashTree
 
 -- TODO would be better to adapt AnchoredDirTree with a custom node type than re-implement stuff
 
+import Debug.Trace
+
 import Gander.Data.Hash
 
 import qualified Data.ByteString.Char8 as B
@@ -316,7 +318,7 @@ countFiles (Dir  _ _ _ n) = n
 accTrees :: Maybe Int -> HashLine -> [(Int, HashTree)] -> [(Int, HashTree)]
 accTrees Nothing hl cs = accTrees' hl cs
 accTrees (Just d) hl@(_, indent, _, _) cs
-  | indent > d = cs
+  | indent > d = trace ("dropping hashline at indent " ++ show indent) cs
   | otherwise  = accTrees' hl cs
 
 accTrees' :: HashLine -> [(Int, HashTree)] -> [(Int, HashTree)]
