@@ -300,9 +300,7 @@ parseHashes = fromRight [] . parseOnly fileP
 -- TODO refactor so there's a proper buildTree function and this uses it
 -- TODO what about files with newlines in them? might need to split at \n(file|dir)
 deserializeTree :: Maybe Int -> B.ByteString -> HashTree
-deserializeTree md = case md of
-  Nothing -> snd . head . foldr accTrees [] . reverse . parseHashes
-  Just _  -> snd . head . foldr accTrees [] . reverse . parseHashes -- TODO write this
+deserializeTree md = snd . head . foldr (accTrees md) [] . reverse . parseHashes
 
 countFiles :: HashTree -> Int
 countFiles (File _ _    ) = 1
@@ -311,9 +309,18 @@ countFiles (Dir  _ _ _ n) = n
 {- This one is confusing! It accumulates a list of trees and their indent
  - levels, and when it comes across a dir it uses the indents to determine
  - which files are children to put inside it vs which are siblings.
+ -
+ - If a value for d (max depth) is given, any line with an indent above that
+ - will be dropped from the list to decrease memory usage.
  -}
-accTrees :: HashLine -> [(Int, HashTree)] -> [(Int, HashTree)]
-accTrees (t, indent, h, p) cs = case t of
+accTrees :: Maybe Int -> HashLine -> [(Int, HashTree)] -> [(Int, HashTree)]
+accTrees Nothing hl cs = accTrees' hl cs
+accTrees (Just d) hl@(_, indent, _, _) cs
+  | indent > d = cs
+  | otherwise  = accTrees' hl cs
+
+accTrees' :: HashLine -> [(Int, HashTree)] -> [(Int, HashTree)]
+accTrees' (t, indent, h, p) cs = case t of
   F -> cs ++ [(indent, File p h)]
   D -> let (children, siblings) = partition (\(i, _) -> i > indent) cs
            dir = Dir p h (map snd children)
