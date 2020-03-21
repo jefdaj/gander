@@ -129,10 +129,10 @@ keepPath excludes path = not $ any (\ptn -> matchWith opts ptn path) excludes
              }
 
 -- try to read as binary, and fall back to text if it fails
-readTree :: FilePath -> IO HashTree
-readTree path = catchAny
-                  (B.readFile path >>= decodeIO)
-                  (\_ -> fmap deserializeTree $ B.readFile path)
+readTree :: Maybe Int -> FilePath -> IO HashTree
+readTree md path = catchAny
+                    (B.readFile path >>= decodeIO)
+                    (\_ -> fmap (deserializeTree md) $ B.readFile path)
 --   (do
 --      (hs :: [HashLine]) <- decodeIO =<< B.readFile path
 --      return $ snd $ head $ foldr accTrees [] hs)
@@ -201,11 +201,11 @@ hashContents = hashBytes . B.unlines . sort . map (BS.fromShort . unHash . hash)
 -- If passed a file this assumes it contains hashes and builds a tree of them;
 -- If passed a dir it will scan it first and then build the tree.
 -- TODO don't assume??
-readOrBuildTree :: Bool -> [Pattern] -> FilePath -> IO HashTree
-readOrBuildTree verbose excludes path = do
+readOrBuildTree :: Bool -> Maybe Int -> [Pattern] -> FilePath -> IO HashTree
+readOrBuildTree verbose mmaxdepth excludes path = do
   isDir  <- doesDirectoryExist path
   isFile <- doesFileExist      path
-  if      isFile then readTree path
+  if      isFile then readTree mmaxdepth path
   else if isDir then buildTree verbose excludes path
   else error $ "No such file: '" ++ path ++ "'"
 
@@ -299,8 +299,10 @@ parseHashes = fromRight [] . parseOnly fileP
 -- TODO wtf why is reverse needed? remove that to save RAM
 -- TODO refactor so there's a proper buildTree function and this uses it
 -- TODO what about files with newlines in them? might need to split at \n(file|dir)
-deserializeTree :: B.ByteString -> HashTree
-deserializeTree = snd . head . foldr accTrees [] . reverse . parseHashes
+deserializeTree :: Maybe Int -> B.ByteString -> HashTree
+deserializeTree md = case md of
+  Nothing -> snd . head . foldr accTrees [] . reverse . parseHashes
+  Just _  -> snd . head . foldr accTrees [] . reverse . parseHashes -- TODO write this
 
 countFiles :: HashTree -> Int
 countFiles (File _ _    ) = 1
