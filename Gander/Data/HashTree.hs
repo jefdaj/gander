@@ -29,7 +29,7 @@ module Gander.Data.HashTree
 
 -- TODO would be better to adapt AnchoredDirTree with a custom node type than re-implement stuff
 
-import Debug.Trace
+-- import Debug.Trace
 
 import Gander.Data.Hash
 
@@ -48,7 +48,7 @@ import Control.Monad        (msum)
 import qualified Control.Monad.Parallel as P
 import qualified Control.Monad          as M
 import Data.List            (find, delete, sort)
-import Data.Maybe           (isJust)
+import Data.Maybe           (isJust, catMaybes)
 import Data.Function        (on)
 import Data.List            (partition, sortBy)
 import Data.Either          (fromRight)
@@ -60,7 +60,8 @@ import System.IO            (hFlush, stdout, withFile, IOMode(..))
 import System.IO.Unsafe     (unsafeInterleaveIO)
 
 import Prelude hiding (take)
-import Data.Attoparsec.ByteString.Char8 hiding (D)
+import Data.Attoparsec.ByteString.Char8 hiding (D, skipWhile)
+import Data.Attoparsec.ByteString (skipWhile)
 import Data.Attoparsec.Combinator
 
 import Data.Store             (encode, decodeIO, Store(..))
@@ -277,32 +278,47 @@ indentP = do
   -- TODO char ' ' here?
   return $ read n
 
-lineP :: Parser HashLine
-lineP = do
+-- TODO is there a cleaner syntax for this?
+lineP :: Maybe Int -> Parser (Maybe HashLine)
+lineP md = do
   t <- typeP
   i <- indentP
-  h <- hashP
-  p <- nameP
-  return (t, i, h, p)
+  case md of
+    Nothing -> parseTheRest t i
+    Just d -> do
+      if i > d
+        then do
+          skipWhile (not . isEndOfLine)
+          lookAhead breakP
+          return Nothing
+        else parseTheRest t i
+  where
+    parseTheRest t i = do
+      h <- hashP
+      p <- nameP
+      -- return $ trace ("finished: " ++ show (t, i, h, p)) $ Just (t, i, h, p)
+      return $ Just (t, i, h, p)
 
-linesP :: Parser [HashLine]
-linesP = sepBy' lineP endOfLine
+linesP :: Maybe Int -> Parser [HashLine]
+linesP md = do
+  hls <- sepBy' (lineP md) endOfLine
+  return $ catMaybes hls
 
-fileP :: Parser [HashLine]
-fileP = linesP <* endOfLine <* endOfInput
+fileP :: Maybe Int -> Parser [HashLine]
+fileP md = linesP md <* endOfLine <* endOfInput
 
 -- TODO use bytestring the whole time rather than converting
 -- TODO should this propogate the Either?
 -- TODO any more elegant way to make the parsing strict?
-parseHashes :: B.ByteString -> [HashLine]
-parseHashes = fromRight [] . parseOnly fileP
+parseHashes :: Maybe Int -> B.ByteString -> [HashLine]
+parseHashes md = fromRight [] . parseOnly (fileP md)
 
 -- TODO error on null string/lines?
 -- TODO wtf why is reverse needed? remove that to save RAM
 -- TODO refactor so there's a proper buildTree function and this uses it
 -- TODO what about files with newlines in them? might need to split at \n(file|dir)
 deserializeTree :: Maybe Int -> B.ByteString -> HashTree
-deserializeTree md = snd . head . foldr (accTrees md) [] . reverse . parseHashes
+deserializeTree md = snd . head . foldr accTrees [] . reverse . parseHashes md
 
 countFiles :: HashTree -> Int
 countFiles (File _ _    ) = 1
@@ -315,14 +331,14 @@ countFiles (Dir  _ _ _ n) = n
  - If a value for d (max depth) is given, any line with an indent above that
  - will be dropped from the list to decrease memory usage.
  -}
-accTrees :: Maybe Int -> HashLine -> [(Int, HashTree)] -> [(Int, HashTree)]
-accTrees Nothing hl cs = accTrees' hl cs
-accTrees (Just d) hl@(_, indent, _, _) cs
-  | indent > d = trace ("dropping hashline at indent " ++ show indent) cs
-  | otherwise  = accTrees' hl cs
+-- accTrees :: Maybe Int -> HashLine -> [(Int, HashTree)] -> [(Int, HashTree)]
+-- accTrees Nothing hl cs = accTrees' hl cs
+-- accTrees (Just d) hl@(_, indent, _, _) cs
+--   | indent > d = cs
+--   | otherwise  = accTrees' hl cs
 
-accTrees' :: HashLine -> [(Int, HashTree)] -> [(Int, HashTree)]
-accTrees' (t, indent, h, p) cs = case t of
+accTrees :: HashLine -> [(Int, HashTree)] -> [(Int, HashTree)]
+accTrees (t, indent, h, p) cs = case t of
   F -> cs ++ [(indent, File p h)]
   D -> let (children, siblings) = partition (\(i, _) -> i > indent) cs
            dir = Dir p h (map snd children)
