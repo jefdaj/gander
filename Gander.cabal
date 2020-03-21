@@ -98,6 +98,7 @@ executable gander
                        monad-parallel,
                        pretty-simple,
                        process,
+                       setlocale,
                        split,
                        store,
                        text,

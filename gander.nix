@@ -4,7 +4,7 @@
 , hspec, massiv, monad-parallel, pretty-simple, process, QuickCheck
 , safe-exceptions, split, stdenv, store, streaming
 , streaming-bytestring, text, th-utilities, unix
-, unordered-containers
+, unordered-containers, setlocale
 }:
 mkDerivation {
   pname = "Gander";
@@ -25,7 +25,7 @@ mkDerivation {
     cryptonite deepseq directory directory-tree docopt filepath Glob
     hashable hashtables massiv monad-parallel pretty-simple process
     safe-exceptions split store streaming streaming-bytestring text
-    th-utilities unix unordered-containers
+    th-utilities unix unordered-containers setlocale
   ];
   testHaskellDepends = [ base hspec QuickCheck ];
   description = "The \"Git ANnex DEdupeR\"";
