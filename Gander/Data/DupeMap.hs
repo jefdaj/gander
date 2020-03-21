@@ -32,32 +32,16 @@ import qualified Data.HashTable.ST.Cuckoo as C
 import qualified Data.List                as L
 import qualified Data.Massiv.Array        as A
 
-{-
- - But regardless of data structure, one of the most crucial things to do is to
- - prune your bytestrings! By default, ByteStrings seek to share the underlying
- - byte array no matter how you slice and dice them; and by default that's a
- - good thing. However, when you're reading hundreds of Mbs, chopping them into
- - little pieces —most of which are equal— and storing them in a data
- - structure, you don't want to accidentally keep holding on to every byte
- - array you ever touched! If you use bytestring-trie, it does this pruning for
- - you automatically. If you use HashMap or something, then you'll want to
- - write a thin wrapper around the API in order to ByteString.copy keys before
- - inserting them into the map.
- -}
-
 -- TODO are the paths getting messed up somewhere in here?
 -- like this: myfirstdedup/home/user/gander/demo/myfirstdedup/unsorted/backup/backup
 
-import qualified Data.HashMap.Strict   as M
--- import qualified Data.HashSet          as S
+import qualified Data.HashMap.Strict as M
 
 import Gander.Data.Hash
 import Gander.Data.HashTree
 import Gander.Util (n2p)
 
--- import Data.List       (sort, sortBy, isPrefixOf)
 import Data.List       (sort, isPrefixOf)
--- import Data.Ord        (comparing)
 import System.FilePath ((</>), splitDirectories)
 
 -- TODO can Foldable or Traversable simplify these?
@@ -66,31 +50,10 @@ import System.FilePath ((</>), splitDirectories)
 type DupeSet  = (Int, TreeType, S.HashSet B.ByteString)
 type DupeList = (Int, TreeType, [B.ByteString]) -- TODO move to Cmd/Dupes.hs?
 
-{- A map from file/dir hash to a list of duplicate file paths.
- - Could be rewritten to contain links to HashTrees if that helps.
- -}
--- type DupeMap = M.HashMap Hash DupeSet
-
--- type DupeMap = :ashMap Hash (Int, TreeType, [FilePath])
--- toList that to get :: [(Hash, (Int, TreeType, [FilePath]))]
-
--- TODO does this need to drop the top component?
--- pathsByHash :: HashTree -> DupeMap
--- pathsByHash = M.fromListWith mergeDupeSets . map dropDirs' . pathsByHash' ""
---   where
---     dropDirs (i, t, ps) = (i, t, S.map dropDir ps)
---     dropDirs' (h, l) = (h, dropDirs l)
-
--- new ST-based mutable maps --
-
--- first attempt: use old DupeMap for everything but create it using ST
--- TODO then try to use *only* the ST hashmaps
-
 -- TODO remove DupeMap type?
 type DupeMap     = M.HashMap Hash DupeSet
 type DupeTable s = C.HashTable s Hash DupeSet
 
--- TODO would this be a lot more efficient if we remove the H.toList M.fromList stuff?
 -- TODO what about if we guess the approximate size first?
 -- TODO what about if we make it from the serialized hashes instead of a tree?
 pathsByHash :: HashTree -> ST s (DupeTable s)
@@ -120,43 +83,11 @@ insertDupeSet ht h d2 = do
     Nothing -> H.insert ht h d2
     Just d1 -> H.insert ht h $ mergeDupeSets d1 d2
 
--- pathsByHash t = runST $ 
-
--- TODO make maps immediately instead of intermediate lists here?
 mergeDupeSets :: DupeSet -> DupeSet -> DupeSet
 mergeDupeSets (n1, t, l1) (n2, _, l2) = (n1 + n2, t, S.union l1 l2)
 
--- pathsByHash' :: FilePath -> HashTree -> [(Hash, DupeSet)]
--- pathsByHash' dir (File n h      ) = [(h, (1, F, S.singleton (dir </> n)))]
--- pathsByHash' dir (Dir  n h cs fs) = cPaths ++ [(h, (fs, D, S.singleton (dir </> n)))]
---   where
---     cPaths = concatMap (pathsByHash' $ dir </> n) cs
-
--- TODO warning: so far it lists anything annexed as a dup
-
--- see https://mail.haskell.org/pipermail/beginners/2009-June/001867.html
--- TODO or is this the bottleneck?
---      could use mapM_ to perform this in place
--- sortDescLength :: [(Hash, DupeSet)] -> [(Hash, DupeSet)]
--- sortDescLength = map unDecorate . sortBy (comparing score) . map decorate
---   where
---     decorate (h, l@(n, _, _)) = (n, (h, l))
---     unDecorate (_, (h, l)) = (h, l)
---     score (n, _) = negate n -- sorts by descending number of files
-
--- dupes :: forall s. C.HashTable s Hash DupeSet -> ST s [DupeSet]
--- dupes = H.foldM (\vs (_, v@(n,_,_)) -> return $ if n < (-1) then (v:vs) else vs) []
-
--- dupesTmp :: forall s. C.HashTable s Hash DupeSet -> [DupeSet]
--- dupesTmp ht = runST $ dupes =<< ht
-
--- TODO include hashes too, just to print them?
--- dupesByNFiles :: DupeTable s -> [DupeSet]
--- dupesByNFiles dt = undefined
-
 -- TODO is this reasonable?
-type DupeSetVec   = A.Array A.N A.Ix1 DupeSet
--- type HashScoreVec = A.Array A.N A.Ix1 (Int, TreeType, B.ByteString)
+type DupeSetVec = A.Array A.N A.Ix1 DupeSet
 
 dupesByNFiles :: (forall s. ST s (DupeTable s)) -> [DupeList]
 dupesByNFiles ht = simplifyDupes $ Prelude.map fixElem sortedL
@@ -202,9 +133,6 @@ simplifyDupes (d@((_,_,fs)):ds) = d : filter (not . redundantSet) ds
     redundant e' = any id [(splitDirectories e)
                            `isPrefixOf`
                            (splitDirectories $ B.unpack e') | e <- map B.unpack fs]
-
--- TODO orderDupePaths :: [FilePath] -> [FilePath]
---      should order by least path components, then shortest name, then maybe alphabetical
 
 -- sorts paths by shallowest (fewest dirs down), then length of filename,
 -- then finally alphabetical
@@ -285,7 +213,8 @@ allDupes mainTree subTree = undefined safeToRmHash $ undefined subDupes
 
 -- for warning the user when their action will delete the last copy of a file
 -- TODO also warn about directories, because sometimes they might care (Garageband files for example)
--- TODO make more efficient by restricting to hashes found in the removed subtree! (only used for Rm right?)
+-- TODO make more efficient by restricting to hashes found in the removed subtree!
+--      (only used for Rm right?)
 listLostFiles :: HashTree -> HashTree -> [FilePath]
 listLostFiles before after = filesLost
   where
