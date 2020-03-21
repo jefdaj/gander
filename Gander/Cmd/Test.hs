@@ -35,10 +35,10 @@ testSerialization cfg tree1 = do
     putStrLn "failed to round-trip the tree!"
 
 testDupes :: Config -> HashTree -> IO ()
-testDupes _ tree = do
+testDupes cfg tree = do
   let ds = dupesByNFiles $ pathsByHash tree
   -- explain "making dupemap from hashtree:" $ pPrint m
-  explain "using dupemap to report duplicates:" $ printDupes ds
+  explain "using dupemap to report duplicates:" $ printDupes (maxdepth cfg) ds
 
 testRm :: Config -> HashTree -> IO ()
 testRm cfg tree = case rmSubTree tree "./demo/backup" of
