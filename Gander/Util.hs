@@ -17,8 +17,6 @@ module Gander.Util
   )
   where
 
-import Debug.Trace
-
 import Gander.Config (Config(..))
 
 import Prelude hiding (log)
@@ -111,7 +109,7 @@ withAnnex cfg path fn = do
 -- TODO is this less efficient than putting all the logic in one function?
 isAnnexSymlink :: FilePath -> IO Bool
 isAnnexSymlink path = do
-  status <- getSymbolicLinkStatus $ trace ("isAnnexSymlink path: '" ++ path ++ "'") path
+  status <- getSymbolicLinkStatus path
   if not (isSymbolicLink status)
     then return False
     else do
@@ -122,7 +120,7 @@ isAnnexSymlink path = do
 -- We treat these as files rather than following to avoid infinite cycles
 isNonAnnexSymlink :: FilePath -> IO Bool
 isNonAnnexSymlink path = do
-  status <- getSymbolicLinkStatus $ trace ("getSymbolicLinkStatus path: '" ++ path ++ "'") path
+  status <- getSymbolicLinkStatus path
   if not (isSymbolicLink status)
     then return False
     else do
