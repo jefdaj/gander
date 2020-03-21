@@ -43,7 +43,7 @@ updateAnnexHashes cfg new = do
   log cfg "updating hashes.txt"
   exists <- doesFileExist hashes
   when exists $ do -- TODO only when verbose?
-    old <- readTree hashes
+    old <- readTree (maxdepth cfg) hashes
     printDeltas $ diff old new -- just nice to verify this looks right
   -- B.writeFile hashes $ serializeTree new
   writeTree hashes new

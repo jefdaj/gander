@@ -88,7 +88,7 @@ safeRunDeltas :: Config -> [Delta] -> String -> IO ()
 safeRunDeltas cfg deltas msg = do
   let aPath  = fromJust $ annex cfg
       hashes = aPath </> "hashes.txt"
-  before <- readTree hashes
+  before <- readTree (maxdepth cfg) hashes
   case simDeltas before deltas of
     Left e -> log cfg e
     Right expected -> do
