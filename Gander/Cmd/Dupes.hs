@@ -15,5 +15,5 @@ cmdDupes cfg path = do
   -- printDupes $ map sortDupePaths $ simplifyDupes dupes
   let ds = dupesByNFiles $ pathsByHash tree
   case txt cfg of
-    Nothing -> printDupes ds
-    Just p  -> writeDupes p ds
+    Nothing -> printDupes (maxdepth cfg) ds
+    Just p  -> writeDupes (maxdepth cfg) p ds
