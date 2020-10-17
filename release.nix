@@ -28,9 +28,9 @@ in
     buildInputs = with haskellPackages; [
       ghcid
       hlint       # or ormolu
-      niv
-      pkgs.cacert # needed for niv
-      pkgs.nix    # needed for niv
+      # niv
+      # pkgs.cacert # needed for niv
+      # pkgs.nix    # needed for niv
     ];
     withHoogle = true;
   };
