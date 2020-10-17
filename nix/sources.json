@@ -25,14 +25,14 @@
     },
     "nixpkgs": {
         "branch": "release-20.09",
-        "description": "DEPRECATED! This is an obsolete, read-only mirror of the NixOS/nixpkgs repository.",
-        "homepage": "https://github.com/NixOS/nixpkgs",
+        "description": "Nix Packages collection",
+        "homepage": "",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "9f8961a14bc982257908e7a7e482365ed41d40bb",
-        "sha256": "0k94l1p4vwr2vz7pjygcjxhsx2v2wjs491y1i3drrhxhssf584xy",
+        "rev": "a76fe1ec66a632c781d7e5ee196b96345e7d0dd4",
+        "sha256": "043d687cz2xnmm99177rfr9rdj628z8pfafls9i8v2qm6sgb1c1g",
         "type": "tarball",
-        "url": "https://github.com/NixOS/nixpkgs/archive/9f8961a14bc982257908e7a7e482365ed41d40bb.tar.gz",
+        "url": "https://github.com/NixOS/nixpkgs/archive/a76fe1ec66a632c781d7e5ee196b96345e7d0dd4.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     }
 }
