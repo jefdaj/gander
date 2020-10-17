@@ -6,13 +6,14 @@ in
 }:
 
 let
+  inherit (pkgs.haskell.lib) markUnbroken;
   haskellPackages = pkgs.haskell.packages.${compiler}.override {
     overrides = hpNew: hpOld: {
-      niv    = import sources.niv { };
-      scheduler = pkgs.haskell.lib.markUnbroken hpOld.scheduler;
-      massiv = pkgs.haskell.lib.markUnbroken hpOld.massiv;
-      docopt = pkgs.haskell.lib.markUnbroken (hpNew.callCabal2nix "docopt" sources.docopt {});
-      gander = hpNew.callCabal2nix "Gander" ./. { };
+      niv       = import sources.niv {};
+      scheduler = markUnbroken hpOld.scheduler;
+      massiv    = markUnbroken hpOld.massiv;
+      docopt    = markUnbroken (hpNew.callCabal2nix "docopt" sources.docopt {});
+      gander    = hpNew.callCabal2nix "gander" ./. {};
     };
   };
   project = haskellPackages.gander;
