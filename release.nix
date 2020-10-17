@@ -9,8 +9,9 @@ let
   haskellPackages = pkgs.haskell.packages.${compiler}.override {
     overrides = hpNew: hpOld: {
       niv    = import sources.niv { };
-      # docopt = import sources.docopt { };
-      docopt = hpNew.callCabal2nix "docopt" (import sources.docopt { }) {};
+      scheduler = pkgs.haskell.lib.markUnbroken hpOld.scheduler;
+      massiv = pkgs.haskell.lib.markUnbroken hpOld.massiv;
+      docopt = pkgs.haskell.lib.markUnbroken (hpNew.callCabal2nix "docopt" sources.docopt {});
       gander = hpNew.callCabal2nix "Gander" ./. { };
     };
   };
