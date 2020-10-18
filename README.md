@@ -193,7 +193,7 @@ that everything from them made it into the annex. Or re-hash the annex itself
 to check file integrity with `git annex fsck`.
 
 Here is what the whole process might look like in a very simple case
-where you have three duplicate text files each in two drives, `thumbdrive` and `WD My Book`:
+where you have three duplicate text files each in two drives, `thumbdrive` and `WD My Book`.
 First, start a repo:
 
 ```
