@@ -1,0 +1,38 @@
+{
+    "docopt": {
+        "branch": "master",
+        "description": "A command-line interface description language and parser that will make you smile",
+        "homepage": "http://docopt.org/",
+        "owner": "jefdaj",
+        "repo": "docopt.hs",
+        "rev": "cc6440551c4259d3546491c4828f2b61ab472d9e",
+        "sha256": "12g04q3g09zd9dr95i420z2sm69rh1j29nilnwrbm1b19sr2905n",
+        "type": "tarball",
+        "url": "https://github.com/jefdaj/docopt.hs/archive/cc6440551c4259d3546491c4828f2b61ab472d9e.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    },
+    "niv": {
+        "branch": "master",
+        "description": "Easy dependency management for Nix projects",
+        "homepage": "https://github.com/nmattia/niv",
+        "owner": "nmattia",
+        "repo": "niv",
+        "rev": "9d35b9e4837ab88517210b1701127612c260eccf",
+        "sha256": "0q50xhnm8g2yfyakrh0nly4swyygxpi0a8cb9gp65wcakcgvzvdh",
+        "type": "tarball",
+        "url": "https://github.com/nmattia/niv/archive/9d35b9e4837ab88517210b1701127612c260eccf.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    },
+    "nixpkgs": {
+        "branch": "release-20.09",
+        "description": "Nix Packages collection",
+        "homepage": "",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "a76fe1ec66a632c781d7e5ee196b96345e7d0dd4",
+        "sha256": "043d687cz2xnmm99177rfr9rdj628z8pfafls9i8v2qm6sgb1c1g",
+        "type": "tarball",
+        "url": "https://github.com/NixOS/nixpkgs/archive/a76fe1ec66a632c781d7e5ee196b96345e7d0dd4.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    }
+}
