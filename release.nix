@@ -36,6 +36,18 @@ let
       # Referenced from: /Volumes/PIPETTOR/./gander
       # Reason: image not found
       #
+      # Similarly, on linux it builds but ldd says there are still linked libraries:
+      # ldd result/bin/gander 
+      #   linux-vdso.so.1 (0x00007ffc2a168000)
+      #   libm.so.6 => /nix/store/wx1vk75bpdr65g6xwxbj4rw0pk04v5j3-glibc-2.27/lib/libm.so.6 (0x00007f8d53450000)
+      #   libpthread.so.0 => /nix/store/wx1vk75bpdr65g6xwxbj4rw0pk04v5j3-glibc-2.27/lib/libpthread.so.0 (0x00007f8d5342f000)
+      #   librt.so.1 => /nix/store/wx1vk75bpdr65g6xwxbj4rw0pk04v5j3-glibc-2.27/lib/librt.so.1 (0x00007f8d53425000)
+      #   libutil.so.1 => /nix/store/wx1vk75bpdr65g6xwxbj4rw0pk04v5j3-glibc-2.27/lib/libutil.so.1 (0x00007f8d53420000)
+      #   libdl.so.2 => /nix/store/wx1vk75bpdr65g6xwxbj4rw0pk04v5j3-glibc-2.27/lib/libdl.so.2 (0x00007f8d5341b000)
+      #   libgmp.so.10 => /nix/store/sisy13ic6giv9yn0fyl2n9cpm84xscvx-gmp-6.1.2/lib/libgmp.so.10 (0x00007f8d53383000)
+      #   libffi.so.6 => /nix/store/13k46bsrkqczmy5vxsqbvvs58jkmha9z-libffi-3.2.1/lib/libffi.so.6 (0x00007f8d53377000)
+      #   libc.so.6 => /nix/store/wx1vk75bpdr65g6xwxbj4rw0pk04v5j3-glibc-2.27/lib/libc.so.6 (0x00007f8d531c1000)
+      #   /nix/store/wx1vk75bpdr65g6xwxbj4rw0pk04v5j3-glibc-2.27/lib/ld-linux-x86-64.so.2 => /nix/store/bpgdx6qqqzzi3szb0y3di3j3660f3wkj-glibc-2.31/lib64/ld-linux-x86-64.so.2 (0x00007f8d535e8000)
       gander-static =
         overrideCabal
           (justStaticExecutables hpNew.gander)
