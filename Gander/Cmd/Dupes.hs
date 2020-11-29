@@ -9,11 +9,11 @@ import Gander.Data   (readOrBuildTree, pathsByHash, dupesByNFiles, printDupes, w
 
 cmdDupes :: Config -> FilePath -> IO ()
 cmdDupes cfg path = do
-  tree <- readOrBuildTree (verbose cfg) (exclude cfg) path
+  tree <- readOrBuildTree (verbose cfg) (maxdepth cfg) (exclude cfg) path
   -- TODO rewrite sorting with lower memory usage
   -- let dupes = runST $ dupesByNFiles =<< pathsByHash tree
   -- printDupes $ map sortDupePaths $ simplifyDupes dupes
   let ds = dupesByNFiles $ pathsByHash tree
   case txt cfg of
-    Nothing -> printDupes ds
-    Just p  -> writeDupes p ds
+    Nothing -> printDupes (maxdepth cfg) ds
+    Just p  -> writeDupes (maxdepth cfg) p ds

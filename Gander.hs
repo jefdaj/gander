@@ -36,13 +36,14 @@ main = do
              then short 'e' >>= readFile >>= return . map compile . lines
              else return $ exclude defaultConfig
   let cfg = Config
-        { annex   = getArg args $ argument "annex"
-        , bin     = getArg args $ shortOption 'b'
-        , txt     = getArg args $ shortOption 't'
-        , verbose = flag 'v'
-        , force   = flag 'f'
-        , check   = flag 'c'
-        , exclude = eList
+        { annex    = getArg args $ argument "annex"
+        , bin      = getArg args $ shortOption 'b'
+        , txt      = getArg args $ shortOption 't'
+        , maxdepth = fmap (read :: String -> Int) $ getArg args $ shortOption 'm'
+        , verbose  = flag 'v'
+        , force    = flag 'f'
+        , check    = flag 'c'
+        , exclude  = eList
         }
   -- print cfg
   case annex cfg of

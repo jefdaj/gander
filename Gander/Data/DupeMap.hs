@@ -170,15 +170,17 @@ simplifyDupes (d@((_,_,fs)):ds) = d : filter (not . redundantSet) ds
 -- TODO use this as the basis for the dedup repl
 -- TODO subtract one group when saying how many dupes in a dir,
 --      and 1 when saying how many in a file. because it's about how much you would save
-printDupes :: [DupeList] -> IO ()
-printDupes groups = B.putStrLn $ explainDupes groups
+printDupes :: Maybe Int -> [DupeList] -> IO ()
+printDupes md groups = B.putStrLn $ explainDupes md groups
 
-writeDupes :: FilePath -> [DupeList] -> IO ()
-writeDupes path groups = B.writeFile path $ explainDupes groups
+writeDupes :: Maybe Int -> FilePath -> [DupeList] -> IO ()
+writeDupes md path groups = B.writeFile path $ explainDupes md groups
 
-explainDupes :: [DupeList] -> B.ByteString
-explainDupes = B.unlines . map explainGroup
+explainDupes :: Maybe Int -> [DupeList] -> B.ByteString
+explainDupes md = B.unlines . map explainGroup
   where
+    disclaimer Nothing  = ""
+    disclaimer (Just d) = "(up to " `B.append` B.pack (show d) `B.append` " levels deep)"
 
     explainGroup :: DupeList -> B.ByteString
     explainGroup (n, t, paths) = B.unlines
@@ -189,11 +191,13 @@ explainDupes = B.unlines . map explainGroup
     header F n fs = B.intercalate " " $
       [ "# deduping these"  , B.pack (show fs)
       , "files would remove", B.pack (show n )
+      , disclaimer md
       ]
     header D n ds = B.intercalate " " $
       [ "# deduping these" , B.pack (show ds)
       , "dirs would remove", B.pack (show n )
       , "files"
+      , disclaimer md
       ]
 
 -----------------------------
