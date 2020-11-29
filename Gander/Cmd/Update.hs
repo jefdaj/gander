@@ -8,6 +8,6 @@ import Gander.Data   (readOrBuildTree, addSubTree, printTree)
 
 cmdUpdate :: Config -> FilePath -> FilePath -> FilePath -> IO ()
 cmdUpdate cfg root sub path = do
-  tree1 <- readOrBuildTree (verbose cfg) (exclude cfg) root
-  tree2 <- readOrBuildTree (verbose cfg) (exclude cfg) sub
+  tree1 <- readOrBuildTree (verbose cfg) (maxdepth cfg) (exclude cfg) root
+  tree2 <- readOrBuildTree (verbose cfg) (maxdepth cfg) (exclude cfg) sub
   printTree $ addSubTree tree1 tree2 path

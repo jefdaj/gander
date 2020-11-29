@@ -27,7 +27,7 @@ cmdDedup cfg = do
   let aPath    = fromJust $ annex cfg
       hashes   = aPath </> "hashes.txt"
       unsorted = aPath </> "unsorted"
-  tree <- readTree hashes
+  tree <- readTree (maxdepth cfg) hashes
   dedupLoop cfg unsorted [] tree
 
 clear :: IO ()
@@ -63,7 +63,7 @@ dedupLoop cfg path ignored tree = do
       updateAnnexHashes cfg new
       let msg = unwords ["dedup", keep]
       runGitCommit cfg aPath msg
-      tree' <- readTree $ aPath </> "hashes.txt" -- TODO calculate from current tree instead!
+      tree' <- readTree (maxdepth cfg) $ aPath </> "hashes.txt" -- TODO calculate from current tree instead!
       dedupLoop cfg path ignored' tree'
 
 -- TODO check that they share the same annex?
