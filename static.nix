@@ -5,8 +5,8 @@
   stack2nix-output-path ? "custom-stack2nix-output.nix",
 }:
 let
-  cabalPackageName = "example-project";
-  compiler = "ghc884"; # matching stack.yaml
+  cabalPackageName = "Gander";
+  compiler = "ghc865"; # matching stack.yaml
 
   # Pin static-haskell-nix version.
   static-haskell-nix =
@@ -19,7 +19,7 @@ let
   # By default to the one `static-haskell-nix` provides, but you may also give
   # your own as long as it has the necessary patches, using e.g.
   #     pkgs = import (fetchTarball https://github.com/nh2/nixpkgs/archive/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa123.tar.gz) {};
-  pkgs = import "${static-haskell-nix}/nixpkgs.nix";
+  pkgs = (import "${static-haskell-nix}/nixpkgs.nix").pkgsMusl;
 
   stack2nix-script = import "${static-haskell-nix}/static-stack2nix-builder/stack2nix-script.nix" {
     inherit pkgs;
@@ -30,6 +30,7 @@ let
   static-stack2nix-builder = import "${static-haskell-nix}/static-stack2nix-builder/default.nix" {
     normalPkgs = pkgs;
     inherit cabalPackageName compiler stack2nix-output-path;
+    # TODO add static options here?
     # disableOptimization = true; # for compile speed
   };
 
@@ -38,7 +39,7 @@ let
     set -eu -o pipefail
     STACK2NIX_OUTPUT_PATH=$(${stack2nix-script})
     export NIX_PATH=nixpkgs=${pkgs.path}
-    ${pkgs.nix}/bin/nix-build --no-link -A static_package --argstr stack2nix-output-path "$STACK2NIX_OUTPUT_PATH" "$@"
+    ${pkgs.nix}/bin/nix-build static.nix --no-link -A static_package --argstr stack2nix-output-path "$STACK2NIX_OUTPUT_PATH" "$@"
   '';
 
 in
