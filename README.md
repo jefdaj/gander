@@ -16,7 +16,9 @@ Of course, it also handles small and medium-sized dedup jobs quickly.
 Install
 -------
 
-The project can be built with either [Stack][2] or [Nix][3]:
+If you're on Mac OSX, try the precompiled binary release.
+
+Otherwise, the project can be built with either [Stack][2] or [Nix][3]:
 
 ```
 git clone https://github.com/jefdaj/gander.git
@@ -29,8 +31,6 @@ nix-build
 
 The stack install has been tested on Mac OSX and Linux machines.
 There are currently no plans for Windows support.
-
-Email me or open an issue if you would like a precompiled binary release added.
 
 
 Hash a folder

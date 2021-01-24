@@ -2,6 +2,7 @@
 #
 #     $(nix-build --no-link -A fullBuildScript)
 {
+  # TODO hey, put stuff here?
   stack2nix-output-path ? "custom-stack2nix-output.nix",
 }:
 let
