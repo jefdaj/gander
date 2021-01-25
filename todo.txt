@@ -1,3 +1,6 @@
+feature:
+  dupes across multiple hashes files would make dealing with lots of drives much easier
+
 convert to ST:
   x pathsByHash
   dupesByNFiles
