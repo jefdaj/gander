@@ -3,6 +3,7 @@
 demo*/
 demo-hashes.txt
 dist
+dist-newstyle
 result
 test*
 *.lock
