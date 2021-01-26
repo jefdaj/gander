@@ -6,6 +6,7 @@ module Gander.Data.HashTree
   ( HashTree(..)
   , TreeType(..)
   , IndentLevel(..)
+  , HashLine(..)
   , keepPath
   , readTree
   , buildTree
@@ -79,12 +80,14 @@ $($(derive [d| instance Deriving (Store TreeType) |]))
 newtype IndentLevel = IndentLevel Int
   deriving (Read, Show, Eq, Ord)
 
-type HashLine = (TreeType, IndentLevel, Hash, FileName)
+-- TODO remove the tuple part now?
+newtype HashLine = HashLine (TreeType, IndentLevel, Hash, FileName)
+  deriving (Read, Show, Eq, Ord)
 
 -- TODO actual Pretty instance
 -- note: p can have weird characters, so it should be handled only as ByteString
 prettyHashLine :: HashLine -> B.ByteString
-prettyHashLine (t, (IndentLevel n), h, p) = B.unwords
+prettyHashLine (HashLine (t, (IndentLevel n), h, p)) = B.unwords
   [B.pack $ show t, B.pack $ show n, prettyHash h, T.encodeUtf8 p]
 
 {- A tree of file names matching (a subdirectory of) the annex,
@@ -242,11 +245,11 @@ flattenTree = flattenTree' ""
 -- TODO need to handle unicode here?
 -- TODO does this affect memory usage?
 flattenTree' :: FilePath -> HashTree -> [HashLine]
-flattenTree' dir (File n h     ) = [(F, IndentLevel $ length (splitPath dir), h, n)]
+flattenTree' dir (File n h     ) = [HashLine (F, IndentLevel $ length (splitPath dir), h, n)]
 flattenTree' dir (Dir  n h cs _) = subtrees ++ [wholeDir]
   where
     subtrees = concatMap (flattenTree' $ dir </> n2p n) cs
-    wholeDir = (D, IndentLevel $ length (splitPath dir), h, n)
+    wholeDir = HashLine (D, IndentLevel $ length (splitPath dir), h, n)
 
 typeP :: Parser TreeType
 typeP = do
@@ -292,7 +295,7 @@ lineP md = do
       h <- hashP
       p <- nameP
       -- return $ trace ("finished: " ++ show (t, i, h, p)) $ Just (t, i, h, p)
-      return $ Just (t, i, h, p)
+      return $ Just (HashLine (t, i, h, p))
 
 linesP :: Maybe Int -> Parser [HashLine]
 linesP md = do
@@ -333,7 +336,7 @@ countFiles (Dir  _ _ _ n) = n
 --   | otherwise  = accTrees' hl cs
 
 accTrees :: HashLine -> [(IndentLevel, HashTree)] -> [(IndentLevel, HashTree)]
-accTrees (t, (IndentLevel i), h, p) cs = case t of
+accTrees (HashLine (t, (IndentLevel i), h, p)) cs = case t of
   F -> cs ++ [((IndentLevel i), File p h)]
   D -> let (children, siblings) = partition (\(IndentLevel i2, _) -> i2 > i) cs
            dir = Dir p h (map snd children)

@@ -151,6 +151,8 @@ test-suite test
                        attoparsec,
                        safe-exceptions,
                        monad-parallel,
+                       quickcheck-instances,
+                       directory-tree,
                        Glob,
                        deepseq
   other-modules:       Gander.Data.Hash,

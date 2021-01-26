@@ -3,8 +3,11 @@
 
 module Main where
 
+import qualified Data.ByteString.Char8 as B
+
 import Test.Hspec
 import Test.QuickCheck
+import Test.QuickCheck.Instances.ByteString
 import Test.QuickCheck.Unicode
 import qualified Data.Text as T
 -- import Test.QuickCheck.Monadic
@@ -47,6 +50,17 @@ instance Arbitrary TreeType where
 
 instance Arbitrary IndentLevel where
   arbitrary = fmap IndentLevel $ ((arbitrary :: Gen Int) `suchThat` (>= 0))
+
+instance Arbitrary Hash where
+  arbitrary = fmap hashBytes (arbitrary :: Gen B.ByteString)
+
+instance Arbitrary HashLine where
+  arbitrary = do
+    tt <- arbitrary :: Gen TreeType
+    il <- arbitrary :: Gen IndentLevel
+    h  <- arbitrary :: Gen Hash
+    n  <- arbitrary :: Gen FileName
+    return $ HashLine (tt, il, h, n)
 
 ----------
 -- main --
