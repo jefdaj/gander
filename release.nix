@@ -33,10 +33,5 @@ in
       # pkgs.nix    # needed for niv
     ];
     withHoogle = true;
-
-    shellHook = ''
-      cabal repl
-      exit
-    '';
   };
 }
