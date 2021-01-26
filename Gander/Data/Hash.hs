@@ -11,14 +11,11 @@ module Gander.Data.Hash
   , digestLength
   , prettyHash
   , hashBytes
-  -- , hashBytesStreaming
   , hashString
   , hashFile
   )
   where
 
--- import qualified Data.ByteString.Lazy as LB
--- import qualified Data.ByteString.Lazy.Char8 as B
 import qualified Crypto.Hash as CH
 
 import Streaming (Stream, Of)
@@ -31,8 +28,7 @@ import qualified Data.ByteString.Short as BS
 import qualified Data.ByteString.Base64 as B64
 import qualified Data.ByteString.Lazy.Char8 as BL
 import qualified Data.ByteString.Streaming.Char8 as Q
--- import Data.Byteable      (toBytes)
--- import Data.Char          (ord)
+
 import Data.List          (isInfixOf, isPrefixOf)
 import Data.List.Split    (splitOn)
 import System.FilePath    (takeBaseName)
@@ -70,10 +66,6 @@ digestLength = 20
 -- prettyHash (Hash h) = firstN h ++ "..." ++ lastN h
 prettyHash :: Hash -> B.ByteString
 prettyHash = BS.fromShort . unHash
-
--- this works, but can probably be made faster...
--- hashBytes :: B.ByteString -> B.ByteString
--- hashBytes = B.pack . show . (hash :: B.ByteString -> CH.Digest CH.SHA256)
 
 -- there's nothing more compressed about Text; it's just convenient for
 -- drafting the changes to put the functions here at first
@@ -124,21 +116,13 @@ hashSymlink path = do
 -- based on https://gist.github.com/michaelt/6c6843e6dd8030e95d58
 -- TODO show when verbose?
 hashFileContentsStreaming :: FilePath -> IO Hash
--- hashFileContentsStreaming path = withFile path ReadMode $ \h -> hashBytes Q.fromHandle h
 hashFileContentsStreaming path = BL.readFile path >>= hashBytesStreaming
---   ctx <- hashMutableInitWith SHA256
---   let chunked :: Stream (Of B.ByteString) IO ()
---       chunked = Q.toChunks $ Q.fromHandle h
---   S.mapM_ (hashMutableUpdate ctx) chunked
---   final <- hashMutableFinalize ctx
---   return $ B.pack $ show final
 
 -- Hashes if necessary, but tries to read it from a link first
 -- Note that this can only print file hashes, not the whole streaming trees format
 -- TODO remove the unused verbose flag?
 hashFile :: Bool -> FilePath -> IO Hash
 hashFile _ path = do
-  -- aHash <- hashAnnexSymlink path
   sHash <- hashSymlink path
   case sHash of
     Just h  -> return h
