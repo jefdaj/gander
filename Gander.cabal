@@ -146,3 +146,4 @@ test-suite test
                        base64-bytestring,
                        cryptonite,
                        streaming
+  other-modules:       Gander.Data.Hash

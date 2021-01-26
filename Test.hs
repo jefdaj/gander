@@ -4,9 +4,10 @@ module Main where
 
 import Test.Hspec
 -- import Test.QuickCheck
+-- import Test.QuickCheck.Monadic
 -- import Control.Exception (evaluate)
 
-import Gander.Data.Hash (Hash(..), hashString)
+import Gander.Data.Hash (Hash(..), hashString, hashFile)
 
 main :: IO ()
 main = hspec $ do
@@ -24,10 +25,25 @@ main = hspec $ do
   describe "Gander.Data" $ do
 
     describe "Hash" $ do
-      it "hashes a simple test string" $
-        (hashString "simple test string") `shouldBe` (Hash { unHash = "NTk2OGNmOWE3MmU1ZmYw" })
+      describe "hashString" $ do
+        it "hashes a simple test string" $
+          (hashString "simple test string") `shouldBe` (Hash { unHash = "NTk2OGNmOWE3MmU1ZmYw" })
+      describe "hashFile" $ do
+        it "hashes an image from the source tree" $ do
+          h <- hashFile False "gander.png"
+          h `shouldBe` (Hash {unHash = "NWMwYjNlN2FiZTQ5OWZj"})
+        it "matches the default git-annex sha256sum hashes" $
+          pendingWith "need annex test harness"
+          -- TODO hash files the regular way first
+          -- TODO then annex them and use annex-aware hashing
+          -- TODO there should be no difference in the hashes
 
-    describe "HashTree" $ it "behaves properly" pending
+    -- TODO test filename handling here without actually generating all the messy filenames
+    describe "HashTree" $ do
+      it "builds a tree from the test annex" $ pendingWith "need annex test harness"
+      it "can be round-tripped to a file" $ pendingWith "need annex test harness"
+      it "can handle unicode filenames" pending
+
     describe "Delta"    $ it "behaves properly" pending
     describe "DupeSet" $ it "behaves properly" pending
 

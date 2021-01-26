@@ -31,6 +31,7 @@ import System.FilePath  (dropFileName)
 import System.FilePath  ((</>))
 import System.Process   (readProcess, readCreateProcess, proc)
 
+-- TODO add other options for robustness?
 runRsync :: Config -> FilePath -> FilePath -> IO ()
 runRsync cfg src dest = do
   out <- readProcess "rsync" ["-aErvz", "--copy-links", "--delete", noSlash src ++ "/", noSlash dest] ""

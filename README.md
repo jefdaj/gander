@@ -32,6 +32,8 @@ There are currently no plans for Windows support.
 
 Email me or open an issue if you would like a precompiled binary release added.
 
+To use all the features, make sure you have `git`, `git-annex`, and `rsync` installed and on your `PATH` too.
+
 
 Hash a folder
 -------------
