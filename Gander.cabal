@@ -145,5 +145,8 @@ test-suite test
                        bytestring,
                        base64-bytestring,
                        cryptonite,
-                       streaming
-  other-modules:       Gander.Data.Hash
+                       streaming,
+                       text,
+                       quickcheck-unicode
+  other-modules:       Gander.Data.Hash,
+                       Gander.Util

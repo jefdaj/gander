@@ -36,15 +36,11 @@ import Gander.Data.Hash
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Short as BS
 import qualified Data.Text.Encoding as T
--- import qualified Data.ByteString.Streaming.Char8 as Q
--- import qualified Data.ByteString.Lazy.Char8 as BL
--- import qualified Data.ByteString.Char8 as B
 
 import Gander.Util (pathComponents, FileName, p2n, n2p)
 import qualified System.Directory.Tree as DT
 
 import Control.Monad        (msum)
--- import Control.Monad.Parallel (forM) -- no effect on memory usage (for annex links at least)
 import qualified Control.Monad.Parallel as P
 import qualified Control.Monad          as M
 import Data.List            (find, delete, sort)
@@ -69,9 +65,6 @@ import Control.Exception.Safe (catchAny)
 import TH.Derive
 
 import Control.DeepSeq
-
--- import Text.Regex.Do.Split  (split)
--- import Text.Regex.Do.TypeDo (Body(..), Pattern(..))
 
 -- for distinguishing beween files and dirs
 data TreeType = D | F
