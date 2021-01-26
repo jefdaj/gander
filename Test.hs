@@ -1,13 +1,44 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeSynonymInstances #-}
 
 module Main where
 
 import Test.Hspec
--- import Test.QuickCheck
+import Test.QuickCheck
+import Test.QuickCheck.Unicode
+import qualified Data.Text as T
 -- import Test.QuickCheck.Monadic
 -- import Control.Exception (evaluate)
 
+import Gander.Util (FileName) -- TODO should this be defined differently?
 import Gander.Data.Hash (Hash(..), hashString, hashFile)
+
+---------------------------------------
+-- generate random unicode filenames --
+---------------------------------------
+
+-- TODO fix orphan instance?
+-- TODO null and slash are the only chars not allowed in a filename, right?
+-- TODO what about newlines?
+-- TODO how to prevent empty strings after the invalid chars are removed?
+-- ghci usage: generate (arbitrary :: Gen FileName)
+
+-- taken from quickcheck-unicode source
+excluding :: (a -> Bool) -> Gen a -> Gen a
+excluding bad gen = loop
+  where
+    loop = do
+      x <- gen
+      if bad x
+        then loop
+        else return x
+
+instance Arbitrary FileName where
+  arbitrary = fmap T.pack $ list1 $ excluding (\c -> c `elem` ['\000', '\057']) char
+
+----------
+-- main --
+----------
 
 main :: IO ()
 main = hspec $ do
@@ -40,9 +71,16 @@ main = hspec $ do
 
     -- TODO test filename handling here without actually generating all the messy filenames
     describe "HashTree" $ do
-      it "builds a tree from the test annex" $ pendingWith "need annex test harness"
-      it "can be round-tripped to a file" $ pendingWith "need annex test harness"
-      it "can handle unicode filenames" pending
+      describe "HashLine" $ do
+        it "can parse arbitrary filenames" $ pending
+        it "can serialize arbitrary filenames" $ pending
+        it "round-trips arbitrary filenames to bytestring" $ pending
+        -- TODO are prettyHashLine and lineP a good pair for round-tripping a single line?
+
+      describe "HashTree" $ do
+        it "builds a tree from the test annex" $ pendingWith "need annex test harness"
+        it "can be round-tripped to a file" $ pendingWith "need annex test harness"
+        it "can handle unicode filenames" pending
 
     describe "Delta"    $ it "behaves properly" pending
     describe "DupeSet" $ it "behaves properly" pending
