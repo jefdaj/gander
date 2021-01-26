@@ -133,4 +133,16 @@ test-suite test
   build-depends:       base,
                        Gander,
                        hspec,
-                       QuickCheck
+                       QuickCheck,
+                       store,
+                       th-utilities,
+                       hashable,
+                       unix,
+                       filepath,
+                       directory,
+                       split,
+                       streaming-bytestring,
+                       bytestring,
+                       base64-bytestring,
+                       cryptonite,
+                       streaming

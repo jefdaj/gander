@@ -1,8 +1,12 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Main where
 
 import Test.Hspec
 -- import Test.QuickCheck
 -- import Control.Exception (evaluate)
+
+import Gander.Data.Hash (Hash(..), hashString)
 
 main :: IO ()
 main = hspec $ do
@@ -18,7 +22,11 @@ main = hspec $ do
   --     evaluate (head []) `shouldThrow` anyException
 
   describe "Gander.Data" $ do
-    describe "Hash"     $ it "behaves properly" pending
+
+    describe "Hash" $ do
+      it "hashes a simple test string" $
+        (hashString "simple test string") `shouldBe` (Hash { unHash = "NTk2OGNmOWE3MmU1ZmYw" })
+
     describe "HashTree" $ it "behaves properly" pending
     describe "Delta"    $ it "behaves properly" pending
     describe "DupeSet" $ it "behaves properly" pending
