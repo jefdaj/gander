@@ -310,6 +310,17 @@ before continuing! `gander` assumes that file matches the current repository
 state, and will give nonsensical results or possibly remove the last copy of
 something if not.
 
+Development
+-----------
+
+I do most of the development in a Nix environment, using commands like these:
+
+```
+nix-shell --run 'cabal repl'
+nix-shell --run 'cabal test'
+nix-build
+``
+
 
 [1]: https://git-annex.branchable.com
 [2]: https://docs.haskellstack.org/en/stable/README/
