@@ -147,6 +147,12 @@ test-suite test
                        cryptonite,
                        streaming,
                        text,
-                       quickcheck-unicode
+                       quickcheck-unicode,
+                       attoparsec,
+                       safe-exceptions,
+                       monad-parallel,
+                       Glob,
+                       deepseq
   other-modules:       Gander.Data.Hash,
+                       Gander.Data.HashTree,
                        Gander.Util
