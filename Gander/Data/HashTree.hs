@@ -5,6 +5,7 @@
 module Gander.Data.HashTree
   ( HashTree(..)
   , TreeType(..)
+  , IndentLevel(..)
   , keepPath
   , readTree
   , buildTree
@@ -75,14 +76,15 @@ instance NFData TreeType
 
 $($(derive [d| instance Deriving (Store TreeType) |]))
 
-type IndentLevel = Int
+newtype IndentLevel = IndentLevel Int
+  deriving (Read, Show, Eq, Ord)
 
 type HashLine = (TreeType, IndentLevel, Hash, FileName)
 
 -- TODO actual Pretty instance
 -- note: p can have weird characters, so it should be handled only as ByteString
 prettyHashLine :: HashLine -> B.ByteString
-prettyHashLine (t, n, h, p) = B.unwords
+prettyHashLine (t, (IndentLevel n), h, p) = B.unwords
   [B.pack $ show t, B.pack $ show n, prettyHash h, T.encodeUtf8 p]
 
 {- A tree of file names matching (a subdirectory of) the annex,
@@ -240,11 +242,11 @@ flattenTree = flattenTree' ""
 -- TODO need to handle unicode here?
 -- TODO does this affect memory usage?
 flattenTree' :: FilePath -> HashTree -> [HashLine]
-flattenTree' dir (File n h     ) = [(F, length (splitPath dir), h, n)]
+flattenTree' dir (File n h     ) = [(F, IndentLevel $ length (splitPath dir), h, n)]
 flattenTree' dir (Dir  n h cs _) = subtrees ++ [wholeDir]
   where
     subtrees = concatMap (flattenTree' $ dir </> n2p n) cs
-    wholeDir = (D, length (splitPath dir), h, n)
+    wholeDir = (D, IndentLevel $ length (splitPath dir), h, n)
 
 typeP :: Parser TreeType
 typeP = do
@@ -269,22 +271,22 @@ indentP :: Parser IndentLevel
 indentP = do
   n <- manyTill digit $ char ' '
   -- TODO char ' ' here?
-  return $ read n
+  return $ IndentLevel $ read n
 
 -- TODO is there a cleaner syntax for this?
 lineP :: Maybe Int -> Parser (Maybe HashLine)
 lineP md = do
   t <- typeP
-  i <- indentP
+  (IndentLevel i) <- indentP
   case md of
-    Nothing -> parseTheRest t i
+    Nothing -> parseTheRest t (IndentLevel i)
     Just d -> do
       if i > d
         then do
           skipWhile (not . isEndOfLine)
           lookAhead breakP
           return Nothing
-        else parseTheRest t i
+        else parseTheRest t (IndentLevel i)
   where
     parseTheRest t i = do
       h <- hashP
@@ -330,13 +332,13 @@ countFiles (Dir  _ _ _ n) = n
 --   | indent > d = cs
 --   | otherwise  = accTrees' hl cs
 
-accTrees :: HashLine -> [(Int, HashTree)] -> [(Int, HashTree)]
-accTrees (t, indent, h, p) cs = case t of
-  F -> cs ++ [(indent, File p h)]
-  D -> let (children, siblings) = partition (\(i, _) -> i > indent) cs
+accTrees :: HashLine -> [(IndentLevel, HashTree)] -> [(IndentLevel, HashTree)]
+accTrees (t, (IndentLevel i), h, p) cs = case t of
+  F -> cs ++ [((IndentLevel i), File p h)]
+  D -> let (children, siblings) = partition (\(IndentLevel i2, _) -> i2 > i) cs
            dir = Dir p h (map snd children)
                          (sum $ map (countFiles . snd) children)
-       in siblings ++ [(indent, dir)]
+       in siblings ++ [(IndentLevel i, dir)]
 
 -------------------
 -- search a tree --

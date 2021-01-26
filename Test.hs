@@ -11,7 +11,8 @@ import qualified Data.Text as T
 -- import Control.Exception (evaluate)
 
 import Gander.Util (FileName) -- TODO should this be defined differently?
-import Gander.Data.Hash (Hash(..), hashString, hashFile)
+import Gander.Data.Hash
+import Gander.Data.HashTree
 
 ---------------------------------------
 -- generate random unicode filenames --
@@ -35,6 +36,17 @@ excluding bad gen = loop
 
 instance Arbitrary FileName where
   arbitrary = fmap T.pack $ list1 $ excluding (\c -> c `elem` ['\000', '\057']) char
+
+instance Arbitrary TreeType where
+  arbitrary = do
+    n <- choose (0,1 :: Int)
+    return $ [F, D] !! n
+
+-- genPos :: Gen IndentLevel
+-- genPos = fmap IndentLevel $ abs `fmap` (arbitrary :: Gen Int) `suchThat` (>= 0)
+
+instance Arbitrary IndentLevel where
+  arbitrary = fmap IndentLevel $ ((arbitrary :: Gen Int) `suchThat` (>= 0))
 
 ----------
 -- main --
