@@ -31,6 +31,9 @@ import Data.Attoparsec.Combinator
 parseFileName :: B.ByteString -> Either String FileName
 parseFileName bs = parseOnly nameP (B.append bs "\n")
 
+parseHashLine :: B.ByteString -> Either String (Maybe HashLine)
+parseHashLine bs = parseOnly (lineP Nothing) (B.append bs "\n")
+
 ----------------------
 -- random test data --
 ----------------------
@@ -66,9 +69,14 @@ instance Arbitrary HashLine where
 -- properties --
 ----------------
 
-
 prop_roundtrip_filename :: FileName -> Bool
 prop_roundtrip_filename n = n' == (Right n)
   where
     bs = DTE.encodeUtf8 n -- (T.append n "\n") -- TODO maybe the \n was a bad idea then
     n' = parseFileName bs
+
+prop_roundtrip_hashline :: HashLine -> Bool
+prop_roundtrip_hashline l = l' == (Right $ Just l)
+  where
+    bs = prettyHashLine l -- (T.append n "\n") -- TODO maybe the \n was a bad idea then
+    l' = parseHashLine bs
