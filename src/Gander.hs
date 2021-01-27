@@ -26,7 +26,7 @@ main = do
   setEnv "LANG" "en_US.UTF-8"
   _ <- setLocale LC_ALL $ Just "en_US.UTF-8"
 
-  let ptns = [docoptFile|usage.txt|]
+  let ptns = [docoptFile|src/usage.txt|]
   args <- parseArgsOrExit ptns =<< getArgs
   let cmd   n = isPresent args $ command n
       arg   n = getArgOrExitWith ptns args $ argument n
