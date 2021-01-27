@@ -70,6 +70,8 @@ instance Arbitrary HashLine where
 parseFileName :: B.ByteString -> Either String FileName
 parseFileName bs = parseOnly nameP (B.append bs "\n")
 
+-- TODO prop_roundTripBS toBsFn fromBsFn, for FileName + HashLine + HashTree
+
 ----------
 -- main --
 ----------
