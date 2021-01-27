@@ -106,19 +106,23 @@ test-suite test
   default-language:    Haskell2010
   hs-source-dirs:      lib, app, test
   type:                exitcode-stdio-1.0
-  main-is:             Test.hs
+  main-is:             Tasty.hs
   ghc-options:         -Wall -O2 -threaded -rtsopts -with-rtsopts=-N
   build-depends:       gander,
-                       hspec,
-                       tasty,
-                       tasty-quickcheck,
-                       tasty-discover,
+                       HUnit,
                        QuickCheck,
+                       hspec,
                        quickcheck-instances,
-                       quickcheck-unicode
+                       quickcheck-unicode,
+                       tasty,
+                       tasty-discover,
+                       tasty-hspec,
+                       tasty-hunit,
+                       tasty-quickcheck
   other-modules:       Data.Gander.Hash,
                        Gander.Config,
-                       Test.Gander.RoundTrip,
+                       HashTest,
+                       RoundTripTest,
                        Data.Gander.HashTree,
                        Util,
                        System.Directory.Tree
