@@ -66,21 +66,21 @@ prop_roundtrip_hashline_to_bytestring l = l' == (Right $ Just l)
     l' = parseHashLine bs
 
 -- based on https://stackoverflow.com/a/2946515
-mkRoundTripIO :: (Show a, Eq a, Arbitrary a) => (a -> IO a) -> Property
-mkRoundTripIO roundTripFn = monadicIO $ do
-  d1 <- pick arbitrary
-  d2 <- run $ roundTripFn d1
-  assert $ d2 == d1
+-- mkRoundTripIO :: (Show a, Eq a, Arbitrary a) => (a -> IO a) -> Property
+-- mkRoundTripIO roundTripFn = monadicIO $ do
+--   d1 <- pick arbitrary
+--   d2 <- run $ roundTripFn d1
+--   assert $ d2 == d1
 
-roundtrip_hashline_to_file :: HashLine -> IO HashLine
+roundtrip_hashline_to_file :: HashLine -> IO (Either String (Maybe HashLine))
 roundtrip_hashline_to_file hl = withSystemTempFile "roundtriptemp" $ \path hdl -> do
   B8.hPut hdl $ prettyHashLine hl
   hClose hdl
   bs' <- B8.readFile path
-  case parseHashLine bs' of
-    Left   err       -> undefined err
-    Right  Nothing   -> undefined
-    Right (Just hl') -> return hl'
+  return $ parseHashLine bs'
 
 prop_roundtrip_hashline_to_file :: Property
-prop_roundtrip_hashline_to_file = mkRoundTripIO roundtrip_hashline_to_file
+prop_roundtrip_hashline_to_file = monadicIO $ do
+  d1 <- pick arbitrary
+  d2 <- run $ roundtrip_hashline_to_file d1
+  assert $ d2 == Right (Just d1)
