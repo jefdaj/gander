@@ -1,9 +1,11 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeSynonymInstances #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module Main where
 
 import qualified Data.ByteString.Char8 as B
+import qualified Data.Text.Encoding as DTE
 
 import Test.Hspec
 import Test.QuickCheck
@@ -12,16 +14,19 @@ import Test.QuickCheck.Unicode
 import qualified Data.Text as T
 -- import Test.QuickCheck.Monadic
 -- import Control.Exception (evaluate)
+import Data.Attoparsec.ByteString.Char8 hiding (D, skipWhile, char)
+import Data.Attoparsec.ByteString (skipWhile)
+import Data.Attoparsec.Combinator
 
-import Gander.Util (FileName) -- TODO should this be defined differently?
+import Gander.Util
 import Gander.Data.Hash
 import Gander.Data.HashTree
 
----------------------------------------
--- generate random unicode filenames --
----------------------------------------
+-------------------------------
+-- generate random test data --
+-------------------------------
 
--- TODO fix orphan instance?
+-- TODO fix orphan instances?
 -- TODO null and slash are the only chars not allowed in a filename, right?
 -- TODO what about newlines?
 -- TODO how to prevent empty strings after the invalid chars are removed?
@@ -37,6 +42,7 @@ excluding bad gen = loop
         then loop
         else return x
 
+-- TODO why isn't this excluding ""?
 instance Arbitrary FileName where
   arbitrary = fmap T.pack $ list1 $ excluding (\c -> c `elem` ['\000', '\057']) char
 
@@ -44,9 +50,6 @@ instance Arbitrary TreeType where
   arbitrary = do
     n <- choose (0,1 :: Int)
     return $ [F, D] !! n
-
--- genPos :: Gen IndentLevel
--- genPos = fmap IndentLevel $ abs `fmap` (arbitrary :: Gen Int) `suchThat` (>= 0)
 
 instance Arbitrary IndentLevel where
   arbitrary = fmap IndentLevel $ ((arbitrary :: Gen Int) `suchThat` (>= 0))
@@ -61,6 +64,11 @@ instance Arbitrary HashLine where
     h  <- arbitrary :: Gen Hash
     n  <- arbitrary :: Gen FileName
     return $ HashLine (tt, il, h, n)
+
+-- TODO move to HashTree.hs?
+-- TODO this should fail on the empty string right?
+parseFileName :: B.ByteString -> Either String FileName
+parseFileName bs = parseOnly nameP (B.append bs "\n")
 
 ----------
 -- main --
@@ -81,6 +89,14 @@ main = hspec $ do
 
   describe "Gander.Data" $ do
 
+    -- TODO is this actually all from Util? or HashTree?
+    describe "FileName" $ do
+      -- TODO convert to prop_ style with the \x :: thing
+      it "can be round-tripped to bytestring" $ property $ \(n :: FileName) -> do
+        let bs = DTE.encodeUtf8 n -- (T.append n "\n") -- TODO maybe the \n was a bad idea then
+            n' = parseFileName bs
+        n' `shouldBe` (Right n)
+
     describe "Hash" $ do
       describe "hashString" $ do
         it "hashes a simple test string" $
@@ -98,9 +114,13 @@ main = hspec $ do
     -- TODO test filename handling here without actually generating all the messy filenames
     describe "HashTree" $ do
       describe "HashLine" $ do
-        it "can parse arbitrary filenames" $ pending
-        it "can serialize arbitrary filenames" $ pending
-        it "round-trips arbitrary filenames to bytestring" $ pending
+        -- it "can serialize arbitrary filenames" $ pending
+        -- it "can parse arbitrary filenames" $ pending
+        it "can be round-tripped to a bytestring" $ do
+          ls <- generate (arbitrary :: Gen [HashLine])
+          let bs = B.unlines $ map prettyHashLine ls
+              ls' = parseHashes Nothing bs
+          ls' `shouldBe` ls
         -- TODO are prettyHashLine and lineP a good pair for round-tripping a single line?
 
       describe "HashTree" $ do
