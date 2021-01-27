@@ -3,7 +3,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module Test.Gander.RoundTrip where
+module RoundTripTest where
 
 import Util
 import Data.Gander.Hash
@@ -12,9 +12,11 @@ import Data.Gander.HashTree
 import qualified Data.ByteString.Char8 as B
 import qualified Data.Text.Encoding as DTE
 import Test.Hspec
+import Test.HUnit
 import Test.QuickCheck
 import Test.QuickCheck.Instances.ByteString
 import Test.QuickCheck.Unicode
+import Test.Tasty.Discover
 import qualified Data.Text as T
 import Data.Attoparsec.ByteString.Char8 hiding (D, skipWhile, char)
 import Data.Attoparsec.ByteString (skipWhile)
@@ -64,6 +66,8 @@ instance Arbitrary HashLine where
 -- properties --
 ----------------
 
+
+prop_roundtrip_filename :: FileName -> Bool
 prop_roundtrip_filename n = n' == (Right n)
   where
     bs = DTE.encodeUtf8 n -- (T.append n "\n") -- TODO maybe the \n was a bad idea then
