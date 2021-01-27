@@ -34,21 +34,6 @@ oldMain = hspec $ do
 
   describe "Data.Gander" $ do
 
-    -- TODO is this actually all from Util? or HashTree?
-    describe "Hash" $ do
-      describe "hashString" $ do
-        it "hashes a simple test string" $
-          (hashString "simple test string") `shouldBe` (Hash { unHash = "NTk2OGNmOWE3MmU1ZmYw" })
-      describe "hashFile" $ do
-        it "hashes an image from the source tree" $ do
-          h <- hashFile False "gander.png"
-          h `shouldBe` (Hash {unHash = "NWMwYjNlN2FiZTQ5OWZj"})
-        it "matches the default git-annex sha256sum hashes" $
-          pendingWith "need annex test harness"
-          -- TODO hash files the regular way first
-          -- TODO then annex them and use annex-aware hashing
-          -- TODO there should be no difference in the hashes
-
     -- TODO test filename handling here without actually generating all the messy filenames
     describe "HashTree" $ do
       describe "HashLine" $ do
