@@ -3,29 +3,19 @@
 
 module HashTreeTest where
 
-import Data.Gander.HashTree
+import qualified Data.Attoparsec.ByteString.Char8 as A8
+import qualified Data.ByteString.Char8            as B8
 
-import FileNameTest
+import Test.QuickCheck
+import Test.QuickCheck.Instances.ByteString ()
 
 import Util
 import Data.Gander.Hash
+import Data.Gander.HashTree
+import FileNameTest ()
 
-import qualified Data.ByteString.Char8 as B
-import qualified Data.Text.Encoding as DTE
-import Test.Hspec
-import Test.HUnit
-import Test.QuickCheck
-import Test.QuickCheck.Instances.ByteString
-import Test.QuickCheck.Unicode
-import Test.Tasty.Discover
-import qualified Data.Text as T
-import Data.Attoparsec.ByteString.Char8 hiding (D, skipWhile, char)
-import Data.Attoparsec.ByteString (skipWhile)
-import Data.Attoparsec.Combinator
-
-
-parseHashLine :: B.ByteString -> Either String (Maybe HashLine)
-parseHashLine bs = parseOnly (lineP Nothing) (B.append bs "\n")
+parseHashLine :: B8.ByteString -> Either String (Maybe HashLine)
+parseHashLine bs = A8.parseOnly (lineP Nothing) (B8.append bs "\n")
 
 instance Arbitrary TreeType where
   arbitrary = do
@@ -36,7 +26,7 @@ instance Arbitrary IndentLevel where
   arbitrary = fmap IndentLevel $ ((arbitrary :: Gen Int) `suchThat` (>= 0))
 
 instance Arbitrary Hash where
-  arbitrary = fmap hashBytes (arbitrary :: Gen B.ByteString)
+  arbitrary = fmap hashBytes (arbitrary :: Gen B8.ByteString)
 
 instance Arbitrary HashLine where
   arbitrary = do
@@ -46,18 +36,9 @@ instance Arbitrary HashLine where
     n  <- arbitrary :: Gen FileName
     return $ HashLine (tt, il, h, n)
 
-
----------------------
--- manual examples --
----------------------
-
 -- TODO test tree in haskell
 -- TODO test dir
 -- TODO test annex
-
-----------------
--- unit tests --
-----------------
 
 -- TODO unit_build_tree_from_dir
 -- TODO read_tree
@@ -66,10 +47,6 @@ instance Arbitrary HashLine where
 -- TODO print_tree
 -- TODO write_tree_binary?
 -- TODO flatten_tree
-
--------------------------
--- round-trip to files --
--------------------------
 
 -- prop_roundtrip_hashtree_to_file :: 
 
