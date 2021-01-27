@@ -39,7 +39,7 @@ Hash a folder
 -------------
 
 `gander` recursively hashes folders and uses the hashes for later comparison.
-File hashes are `sha256sum`s. The `F` or `D` and number before each one is for
+File hashes are standard `sha256sum`s, but to save space they are displayed as a base-64 digest instead of the full hex encoding. The `F` or `D` and number before each one is for
 recreating the tree structure: "this is a file at indent level 1", etc.
 
 ```
@@ -107,9 +107,9 @@ moved 'folder1/file3.txt' -> 'folder1/folder2/file3.txt' (cfc9494e)
 edited 'folder1/folder2/file2.txt/file2.txt' (8c0899af -> a86b253f)
 ```
 
-Everything works similarly with directories and binary files,
-except that the directory hashes don't follow an external standard.
-
+Everything works similarly with directories and binary files.
+Directory hashes are the hash of their sorted content hashes.
+That way you know that all the contents are identical, even if some file names changed.
 
 Find dupes within a folder
 --------------------------
