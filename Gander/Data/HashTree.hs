@@ -26,6 +26,8 @@ module Gander.Data.HashTree
   , treeContainsHash
   , addSubTree
   , rmSubTree
+  -- for testing
+  , nameP
   )
   where
 
@@ -88,7 +90,7 @@ newtype HashLine = HashLine (TreeType, IndentLevel, Hash, FileName)
 -- note: p can have weird characters, so it should be handled only as ByteString
 prettyHashLine :: HashLine -> B.ByteString
 prettyHashLine (HashLine (t, (IndentLevel n), h, p)) = B.unwords
-  [B.pack $ show t, B.pack $ show n, prettyHash h, T.encodeUtf8 p]
+  [B.pack $ show t, B.pack $ show n, prettyHash h, T.encodeUtf8 p] -- TODO mismatch with n2p, p2n?
 
 {- A tree of file names matching (a subdirectory of) the annex,
  - where each dir and file node contains a hash of its contents.
@@ -267,8 +269,12 @@ hashP = do
 breakP :: Parser ()
 breakP = endOfLine >> choice [typeP >> return (), endOfInput]
 
+-- TODO should anyChar be anything except forward slash and the null char?
 nameP :: Parser FileName
-nameP = fmap p2n $ manyTill anyChar $ lookAhead breakP
+nameP = fmap p2n $ do
+  c  <- anyChar
+  cs <- manyTill anyChar $ lookAhead breakP
+  return (c:cs)
 
 indentP :: Parser IndentLevel
 indentP = do
