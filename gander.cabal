@@ -130,6 +130,6 @@ test-suite test
                        DupeSetTest,
                        HashTest,
                        HashTreeTest,
-                       RoundTripTest,
+                       FileNameTest,
                        RunTest,
                        UtilTest
