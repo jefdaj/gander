@@ -13,7 +13,7 @@ let
       scheduler = markUnbroken hpOld.scheduler;
       massiv    = markUnbroken hpOld.massiv;
       docopt    = markUnbroken (hpNew.callCabal2nix "docopt" sources.docopt {});
-      gander    = hpNew.callCabal2nix "Gander" ./. {};
+      gander    = hpNew.callCabal2nix "gander" ./. {};
     };
   };
   project = haskellPackages.gander;
