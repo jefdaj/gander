@@ -118,7 +118,8 @@ test-suite test
                        tasty-discover,
                        tasty-hspec,
                        tasty-hunit,
-                       tasty-quickcheck
+                       tasty-quickcheck,
+                       temporary
   other-modules:       Data.Gander.Hash,
                        Gander.Config,
                        HashTest,
