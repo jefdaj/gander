@@ -28,6 +28,7 @@ module Data.Gander.HashTree
   , rmSubTree
   -- for testing
   , nameP
+  , lineP
   )
   where
 
