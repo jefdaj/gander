@@ -14,6 +14,7 @@ data-files:          usage.txt
 
 library
   default-language:    Haskell2010
+  Hs-source-dirs:      src
   ghc-options:         -Wall -O2
   build-depends:       base,
                        Glob,
@@ -72,6 +73,7 @@ executable gander
   -- ghc-options:         -Wall -O2 -static -threaded -rtsopts -with-rtsopts=-N
   -- cc-options:          -static
   -- ld-options:          -static -pthread
+  Hs-source-dirs:      src
   main-is:             Gander.hs
   build-depends:       base,
                        Gander,
@@ -128,6 +130,7 @@ executable gander
 test-suite test
   default-language:    Haskell2010
   type:                exitcode-stdio-1.0
+  Hs-source-dirs:      src, test
   main-is:             Test.hs
   ghc-options:         -Wall -O2 -threaded -rtsopts -with-rtsopts=-N
   build-depends:       base,
