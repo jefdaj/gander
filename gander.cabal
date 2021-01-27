@@ -118,6 +118,7 @@ test-suite test
                        quickcheck-unicode
   other-modules:       Data.Gander.Hash,
                        Gander.Config,
+                       Test.Gander.RoundTrip,
                        Data.Gander.HashTree,
                        Util,
                        System.Directory.Tree
