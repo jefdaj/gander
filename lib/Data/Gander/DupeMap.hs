@@ -3,7 +3,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE RankNTypes #-}
 
-module Gander.Data.DupeMap
+module Data.Gander.DupeMap
   ( DupeSet
   , DupeMap
   , allDupes
@@ -37,9 +37,9 @@ import qualified Data.Massiv.Array        as A
 
 import qualified Data.HashMap.Strict as M
 
-import Gander.Data.Hash
-import Gander.Data.HashTree
-import Gander.Util (n2p)
+import Data.Gander.Hash
+import Data.Gander.HashTree
+import Util (n2p)
 
 import Data.List       (sort, isPrefixOf)
 import System.FilePath ((</>), splitDirectories)

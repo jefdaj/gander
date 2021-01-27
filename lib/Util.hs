@@ -1,10 +1,11 @@
-module Gander.Util
+-- TODO organize this somewhere better!
+
+module Util
   ( absolutize
   , dropDir
   , dropDir'
   , findAnnex
   , inAnnex
-  , log
   , noSlash
   , pathComponents
   , userSaysYes
@@ -17,11 +18,11 @@ module Gander.Util
   )
   where
 
-import Gander.Config (Config(..))
+-- TODO remove this from Util
+-- import Gander.Config (Config(..))
 
 import Prelude hiding (log)
 
-import Control.Monad         (when)
 import Data.List             (isPrefixOf, isInfixOf)
 -- import Data.Maybe            (fromJust)
 import System.Directory      (getCurrentDirectory, doesDirectoryExist, canonicalizePath)
@@ -68,9 +69,6 @@ dropDir' path = case path of
 noSlash :: FilePath -> FilePath
 noSlash = reverse . dropWhile (== '/') . reverse
 
-log :: Config -> String -> IO ()
-log cfg msg = when (verbose cfg) (putStrLn msg)
-
 userSaysYes :: String -> IO Bool
 userSaysYes question = do
   putStr $ question ++ " (yes/no) "
@@ -96,13 +94,13 @@ findAnnex path = do
 inAnnex :: FilePath -> IO Bool
 inAnnex = fmap (not . null) . findAnnex
 
-withAnnex :: Config -> FilePath -> (FilePath -> IO a) -> IO a
-withAnnex cfg path fn = do
+withAnnex :: FilePath -> (FilePath -> IO a) -> IO a
+withAnnex path fn = do
   aPath <- findAnnex path
   case aPath of
     Nothing -> error $ "'" ++ path ++ "' is not in a git-annex repo"
     Just dir -> do
-      log cfg $ "using git-annex repo '" ++ dir ++ "'"
+      -- log cfg $ "using git-annex repo '" ++ dir ++ "'"
       fn dir
 
 -- We reuse the existing SHA256SUM from the link

@@ -1,4 +1,4 @@
-module Gander.Data
+module Data.Gander
   -- hash
   ( Hash(..)
   , prettyHash
@@ -52,7 +52,7 @@ module Gander.Data
   )
   where
 
-import Gander.Data.Delta
-import Gander.Data.DupeMap
-import Gander.Data.Hash
-import Gander.Data.HashTree
+import Data.Gander.Delta
+import Data.Gander.DupeMap
+import Data.Gander.Hash
+import Data.Gander.HashTree

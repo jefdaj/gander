@@ -18,9 +18,9 @@ import Data.Attoparsec.ByteString.Char8 hiding (D, skipWhile, char)
 import Data.Attoparsec.ByteString (skipWhile)
 import Data.Attoparsec.Combinator
 
-import Gander.Util
-import Gander.Data.Hash
-import Gander.Data.HashTree
+import Util
+import Data.Gander.Hash
+import Data.Gander.HashTree
 
 -------------------------------
 -- generate random test data --
@@ -89,7 +89,7 @@ main = hspec $ do
   --   it "throws an exception if used with an empty list" $ do
   --     evaluate (head []) `shouldThrow` anyException
 
-  describe "Gander.Data" $ do
+  describe "Data.Gander" $ do
 
     -- TODO is this actually all from Util? or HashTree?
     describe "FileName" $ do
@@ -133,7 +133,7 @@ main = hspec $ do
     describe "Delta"    $ it "behaves properly" pending
     describe "DupeSet" $ it "behaves properly" pending
 
-  describe "Gander.Util" $ do
+  describe "Util" $ do
 
     describe "absolutize" $ do
       it "is idempotent" pending

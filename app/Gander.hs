@@ -7,7 +7,7 @@ module Main where
 -- TODO figure out how to read files + compute hashes in parallel
 
 import Gander.Cmd
-import Gander.Util           (absolutize)
+import Util           (absolutize)
 import Gander.Config         (Config(..), defaultConfig)
 import System.Console.Docopt (docoptFile, parseArgsOrExit,
                               getArgOrExitWith, isPresent, getArg,
@@ -26,7 +26,7 @@ main = do
   setEnv "LANG" "en_US.UTF-8"
   _ <- setLocale LC_ALL $ Just "en_US.UTF-8"
 
-  let ptns = [docoptFile|src/usage.txt|]
+  let ptns = [docoptFile|app/usage.txt|]
   args <- parseArgsOrExit ptns =<< getArgs
   let cmd   n = isPresent args $ command n
       arg   n = getArgOrExitWith ptns args $ argument n

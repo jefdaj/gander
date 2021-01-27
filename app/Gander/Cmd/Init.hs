@@ -2,9 +2,10 @@ module Gander.Cmd.Init where
 
 -- TODO guess and check hashes
 
-import Gander.Data
+import Data.Gander
 import Gander.Cmd.Hash (updateAnnexHashes)
-import Gander.Util     (absolutize, log)
+import Util     (absolutize)
+import Gander.Config (log)
 import Gander.Run      (runGit, runGitCommit)
 
 import Prelude hiding (log)

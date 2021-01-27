@@ -1,11 +1,13 @@
 module Gander.Cmd.Test where
 
-import Gander.Data
+import Data.Gander
 import Prelude hiding (log)
 
-import Gander.Util        (log)
 import Text.Pretty.Simple (pPrint)
-import Gander.Config      (Config(..))
+
+-- TODO remove because this shouldn't depend on the app target?
+import Gander.Config      (Config(..), log)
+
 import qualified Data.ByteString.Char8 as B
 
 cmdTest :: Config -> FilePath -> IO ()

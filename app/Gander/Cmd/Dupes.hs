@@ -5,7 +5,7 @@ module Gander.Cmd.Dupes where
 -- TODO guess and check hashes
 
 import Gander.Config (Config(..))
-import Gander.Data   (readOrBuildTree, pathsByHash, dupesByNFiles, printDupes, writeDupes)
+import Data.Gander   (readOrBuildTree, pathsByHash, dupesByNFiles, printDupes, writeDupes)
 
 cmdDupes :: Config -> FilePath -> IO ()
 cmdDupes cfg path = do

@@ -3,7 +3,7 @@ module Gander.Cmd.Diff where
 -- TODO guess and check hashes
 
 import Gander.Config (Config(..))
-import Gander.Data   (readOrBuildTree, renameRoot, diff, printDeltas)
+import Data.Gander   (readOrBuildTree, renameRoot, diff, printDeltas)
 
 cmdDiff :: Config -> FilePath -> FilePath -> IO ()
 cmdDiff cfg old new = do
