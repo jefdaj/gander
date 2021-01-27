@@ -4,14 +4,14 @@ module Gander.Cmd.Rm where
 -- TODO next: fix relative paths thing, write a nice lost files warning, fix any last bugs... then good :D
 -- TODO oh, write a couple other messages if it would help brian. lost files should be mentioned even when 0!
 
-import Gander.Data
+import Data.Gander
 import Prelude hiding (log)
 
 import Text.Pretty.Simple (pPrint)
 -- import Gander.Run    (safeRunDeltas)
--- import Gander.Util   (log)
+-- import Util   (log)
 -- import Gander.Run    (runGitRm)
--- import Gander.Util   (userSaysYes)
+-- import Util   (userSaysYes)
 import Gander.Config (Config(..))
 -- import Data.Maybe    (fromJust)
 

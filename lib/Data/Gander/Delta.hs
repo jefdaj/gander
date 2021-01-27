@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Gander.Data.Delta
+module Data.Gander.Delta
   ( Delta(..)
   , diff
   , prettyDelta
@@ -21,15 +21,15 @@ module Gander.Data.Delta
  -}
 
 -- import Gander.Config
-import Gander.Data.HashTree
-import Gander.Util (n2p)
+import Data.Gander.HashTree
+import Util (n2p)
 import qualified Data.ByteString.Char8 as B
 
 import Control.Monad       (when, foldM)
 import Data.List           (find)
 import Data.Maybe          (fromJust)
---import Gander.Data.DupeMap (listLostFiles)
-import Gander.Data.Hash    (prettyHash)
+--import Data.Gander.DupeMap (listLostFiles)
+import Data.Gander.Hash    (prettyHash)
 import System.FilePath     ((</>))
 
 -- TODO should these have embedded hashtrees? seems unneccesary but needed for findMoves

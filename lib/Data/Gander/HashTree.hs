@@ -2,7 +2,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module Gander.Data.HashTree
+module Data.Gander.HashTree
   ( HashTree(..)
   , TreeType(..)
   , IndentLevel(..)
@@ -35,13 +35,13 @@ module Gander.Data.HashTree
 
 -- import Debug.Trace
 
-import Gander.Data.Hash
+import Data.Gander.Hash
 
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Short as BS
 import qualified Data.Text.Encoding as T
 
-import Gander.Util (pathComponents, FileName, p2n, n2p)
+import Util (pathComponents, FileName, p2n, n2p)
 import qualified System.Directory.Tree as DT
 
 import Control.Monad        (msum)

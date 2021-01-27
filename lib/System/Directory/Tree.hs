@@ -145,7 +145,8 @@ CHANGES:
 -}
 
 -- A hack to prevent symlink cycles, which only works for gander's particular use case
-import Gander.Util (isNonAnnexSymlink, n2p, p2n)
+-- TODO make a separat "Annex Utils" module for this?
+import Util (isNonAnnexSymlink, n2p, p2n)
 -- import qualified Data.ByteString.Short as BS
 import qualified Data.Text as T
 
@@ -357,6 +358,7 @@ buildWith' bf' f p =
 
 
 -- IO function passed to our builder and finally executed here:
+-- TODO refactor to reference the new "Annex Utils" module? or something else?
 buildAtOnce' :: Builder a
 buildAtOnce' f p = handleDT n' $
            do isFile <- doesFileExist p

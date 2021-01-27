@@ -4,7 +4,7 @@ module Gander.Cmd.Update where
 -- TODO make an operation to replace a subtree (insert despite it existing, then diff)
 
 import Gander.Config (Config(..))
-import Gander.Data   (readOrBuildTree, addSubTree, printTree)
+import Data.Gander   (readOrBuildTree, addSubTree, printTree)
 
 cmdUpdate :: Config -> FilePath -> FilePath -> FilePath -> IO ()
 cmdUpdate cfg root sub path = do

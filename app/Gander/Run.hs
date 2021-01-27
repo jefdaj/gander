@@ -19,8 +19,8 @@ module Gander.Run
 -- TODO add git-annex, rsync to nix dependencies
 
 import Gander.Config
-import Gander.Data
-import Gander.Util
+import Data.Gander
+import Util
 
 import Prelude hiding (log)
 
@@ -45,31 +45,31 @@ runGit dir args = readCreateProcess gitProc ""
 
 -- TODO get annex path from config! or pass explicitly
 runGitMv :: Config -> FilePath -> FilePath -> FilePath -> IO ()
-runGitMv cfg aPath src dst = withAnnex cfg aPath $ \dir -> do
+runGitMv cfg aPath src dst = withAnnex aPath $ \dir -> do
   createDirectoryIfMissing True $ dir </> (dropFileName dst)
   out <- readProcess "git" ["-C", dir, "mv", src, dst] ""
   log cfg out
 
 runGitAdd :: Config -> FilePath -> [FilePath] -> IO ()
-runGitAdd cfg aPath paths = withAnnex cfg aPath $ \dir -> do
+runGitAdd cfg aPath paths = withAnnex aPath $ \dir -> do
   out <- readProcess "git" (["-C", dir, "add"] ++ paths) ""
   log cfg out
 
 -- TODO handle exit 1 when git-annex not installed
 -- TODO take a list of paths?
 runGitAnnexAdd :: Config -> FilePath -> FilePath -> IO ()
-runGitAnnexAdd cfg aPath path = withAnnex cfg aPath $ \dir -> do
+runGitAnnexAdd cfg aPath path = withAnnex aPath $ \dir -> do
   out <- readProcess "git" ["-C", dir, "annex", "add", "--include-dotfiles", path] ""
   log cfg out
 
 -- TODO always remove the first path component?
 runGitRm :: Config -> FilePath -> FilePath -> IO ()
-runGitRm cfg aPath path = withAnnex cfg aPath $ \dir -> do
+runGitRm cfg aPath path = withAnnex aPath $ \dir -> do
   out <- readProcess "git" ["-C", dir, "rm", "-rf", path] ""
   log cfg out
 
 runGitCommit :: Config -> FilePath -> String -> IO ()
-runGitCommit cfg aPath msg = withAnnex cfg aPath $ \dir -> do
+runGitCommit cfg aPath msg = withAnnex aPath $ \dir -> do
   out <- readProcess "git" ["-C", dir, "commit", "-m", msg] ""
   log cfg out
 

@@ -6,7 +6,7 @@
 -- TODO should it also hash filenames?
 -- TODO convert everything here to UTF-8?
 
-module Gander.Data.Hash
+module Data.Gander.Hash
   ( Hash(..)
   , digestLength
   , prettyHash
