@@ -121,9 +121,15 @@ test-suite test
                        tasty-quickcheck,
                        temporary
   other-modules:       Data.Gander.Hash,
-                       Gander.Config,
-                       HashTest,
-                       RoundTripTest,
                        Data.Gander.HashTree,
+                       Gander.Config,
+                       System.Directory.Tree,
                        Util,
-                       System.Directory.Tree
+                       CmdTest,
+                       DeltaTest,
+                       DupeSetTest,
+                       HashTest,
+                       HashTreeTest,
+                       RoundTripTest,
+                       RunTest,
+                       UtilTest
