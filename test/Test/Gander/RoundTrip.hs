@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Test.Gander.RoundTrip where
 
@@ -32,25 +33,13 @@ parseFileName bs = parseOnly nameP (B.append bs "\n")
 -- random test data --
 ----------------------
 
--- TODO fix orphan instances?
 -- TODO null and slash are the only chars not allowed in a filename, right?
 -- TODO what about newlines?
--- TODO how to prevent empty strings after the invalid chars are removed?
--- ghci usage: generate (arbitrary :: Gen FileName)
+reservedPathChars :: [Char]
+reservedPathChars = ['\000', '\057']
 
--- taken from quickcheck-unicode source
-excluding :: (a -> Bool) -> Gen a -> Gen a
-excluding bad gen = loop
-  where
-    loop = do
-      x <- gen
-      if bad x
-        then loop
-        else return x
-
--- TODO why isn't this excluding ""?
 instance Arbitrary FileName where
-  arbitrary = fmap T.pack $ list1 $ excluding (\c -> c `elem` ['\000', '\057']) char
+  arbitrary = fmap T.pack $ list1 $ char `suchThat` (\c -> not $ c `elem` reservedPathChars)
 
 instance Arbitrary TreeType where
   arbitrary = do
