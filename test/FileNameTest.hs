@@ -24,9 +24,12 @@ parseFileName bs = A8.parseOnly nameP (B.append bs "\n")
 reservedPathChars :: [Char]
 reservedPathChars = ['\000', '\057']
 
--- TODO why is it still returning empty strings?
+-- TODO why is the not . null thing required to prevent empty strings? list1 should be enough
 instance Arbitrary FileName where
-  arbitrary = fmap T.pack $ list1 $ char `suchThat` (\c -> not $ c `elem` reservedPathChars)
+  arbitrary = fmap T.pack $ arbList
+    where
+      arbChar = char `suchThat` (\c -> not $ c `elem` reservedPathChars)
+      arbList = (list arbChar) `suchThat` (not . null)
 
 prop_roundtrip_filename_to_bytestring :: FileName -> Bool
 prop_roundtrip_filename_to_bytestring n = parseFileName (TE.encodeUtf8 n) == Right n
