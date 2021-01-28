@@ -13,8 +13,7 @@ let
       scheduler = markUnbroken hpOld.scheduler;
       massiv    = markUnbroken hpOld.massiv;
       docopt    = markUnbroken (hpNew.callCabal2nix "docopt" sources.docopt {});
-      gander    = dontCheck # TODO remove once tests are passing again
-                    (hpNew.callCabal2nix "gander" ./. {});
+      gander    = hpNew.callCabal2nix "gander" ./. {};
     };
   };
   project = haskellPackages.gander;
