@@ -1,11 +1,11 @@
 cabal-version:       3.0
 name:                gander
-version:             0.1.7.0
+version:             0.2.0.0
 synopsis:            The "Git ANnex DEdupeR"
 description:         Deduplicates large numbers of files using git-annex
 license:             LGPL-3.0-only
 author:              Jeff Johnson
-maintainer:          jefdaj@gmail.com
+maintainer:          jefdaj@protonmail.ch
 build-type:          Simple
 
 common deps
