@@ -67,8 +67,6 @@ digestLength = 20
 prettyHash :: Hash -> B.ByteString
 prettyHash = BS.fromShort . unHash
 
--- there's nothing more compressed about Text; it's just convenient for
--- drafting the changes to put the functions here at first
 compress :: B.ByteString -> BS.ShortByteString
 compress = BS.toShort . B.take digestLength . B64.encode
 
