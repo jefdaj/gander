@@ -323,8 +323,7 @@ nix-shell --run 'cabal run gander hash ~/some-path'
 nix-shell --run 'cabal repl'
 nix-shell --run 'cabal repl test'
 nix-build
-``
-
+```
 
 [1]: https://git-annex.branchable.com
 [2]: https://docs.haskellstack.org/en/stable/README/
