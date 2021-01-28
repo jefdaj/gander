@@ -39,6 +39,9 @@ instance Arbitrary HashLine where
     n  <- arbitrary :: Gen FileName
     return $ HashLine (tt, il, h, n)
 
+instance Arbitrary HashTree where
+  arbitrary = undefined
+
 -- TODO test tree in haskell
 -- TODO test dir
 -- TODO test annex
@@ -56,8 +59,6 @@ instance Arbitrary HashLine where
 --     describe "HashTree" $ do
 --       describe "HashTree" $ do
 --         it "builds a tree from the test annex" $ pendingWith "need annex test harness"
---         it "can be round-tripped to a file" $ pendingWith "need annex test harness"
---         it "can handle unicode filenames" pending
 
 prop_roundtrip_hashline_to_bytestring :: HashLine -> Bool
 prop_roundtrip_hashline_to_bytestring l = l' == (Right $ Just l)
@@ -84,3 +85,9 @@ prop_roundtrip_hashline_to_file = monadicIO $ do
   d1 <- pick arbitrary
   d2 <- run $ roundtrip_hashline_to_file d1
   assert $ d2 == Right (Just d1)
+
+prop_roundtrip_hashtree_to_bytestring :: HashTree -> Bool
+prop_roundtrip_hashtree_to_bytestring t = t' == t
+  where
+    bs = B8.unlines $ serializeTree t -- TODO why didn't it include the unlines part again?
+    t' = deserializeTree Nothing bs
