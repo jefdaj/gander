@@ -325,6 +325,16 @@ nix-shell --run 'cabal run gander hash ~/some-path'
 nix-shell --run 'cabal repl'
 nix-shell --run 'cabal repl test'
 nix-build
+./result/bin/gander -h
+```
+
+But Stack works fine too:
+
+```
+stack build
+stack repl
+stack test
+stack exec gander -- -h
 ```
 
 [1]: https://git-annex.branchable.com
