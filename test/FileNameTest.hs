@@ -24,6 +24,7 @@ parseFileName bs = A8.parseOnly nameP (B.append bs "\n")
 reservedPathChars :: [Char]
 reservedPathChars = ['\000', '\057']
 
+-- TODO why is it still returning empty strings?
 instance Arbitrary FileName where
   arbitrary = fmap T.pack $ list1 $ char `suchThat` (\c -> not $ c `elem` reservedPathChars)
 

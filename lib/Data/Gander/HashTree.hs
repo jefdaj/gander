@@ -29,6 +29,7 @@ module Data.Gander.HashTree
   -- for testing
   , nameP
   , lineP
+  , countFiles
   )
   where
 
