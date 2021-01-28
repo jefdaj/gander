@@ -108,9 +108,10 @@ withAnnex path fn = do
 
 -- We reuse the existing SHA256SUM from the link
 -- TODO is this less efficient than putting all the logic in one function?
+-- TODO does this fail when the filepath contains certain chars?
 isAnnexSymlink :: FilePath -> IO Bool
 isAnnexSymlink path = do
-  status <- getSymbolicLinkStatus path
+  status <- getSymbolicLinkStatus path -- TODO recover if this fails?
   if not (isSymbolicLink status)
     then return False
     else do
@@ -121,7 +122,7 @@ isAnnexSymlink path = do
 -- We treat these as files rather than following to avoid infinite cycles
 isNonAnnexSymlink :: FilePath -> IO Bool
 isNonAnnexSymlink path = do
-  status <- getSymbolicLinkStatus path
+  status <- getSymbolicLinkStatus path -- TODO recover if this fails?
   if not (isSymbolicLink status)
     then return False
     else do
