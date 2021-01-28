@@ -91,3 +91,7 @@ prop_roundtrip_hashtree_to_bytestring t = t' == t
   where
     bs = B8.unlines $ serializeTree t -- TODO why didn't it include the unlines part again?
     t' = deserializeTree Nothing bs
+
+-- attempt at generating hashtrees with actions, as explained here:
+-- https://jaspervdj.be/posts/2015-03-13-practical-testing-in-haskell.html
+-- except i seem to have already written the "Action" type as Delta?
