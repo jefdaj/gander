@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE BangPatterns #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module HashTreeTest where
@@ -40,7 +41,24 @@ instance Arbitrary HashLine where
     return $ HashLine (tt, il, h, n)
 
 instance Arbitrary HashTree where
-  arbitrary = undefined
+  arbitrary = do
+    n   <- arbitrary :: Gen FileName
+    bs  <- arbitrary :: Gen B8.ByteString
+    !cs <- resize 3 $ arbitrary :: Gen [HashTree]
+
+    -- TODO there's got to be a better way, right?
+    i <- choose (0,2 :: Int)
+    return $ if i == 0
+
+      then Dir { name     = n
+               , hash     = hashContents cs
+               , contents = cs
+               , nFiles   = sum $ map countFiles cs
+               }
+
+      else File { name = n
+                , hash = hashBytes bs
+                }
 
 -- TODO test tree in haskell
 -- TODO test dir
@@ -91,7 +109,3 @@ prop_roundtrip_hashtree_to_bytestring t = t' == t
   where
     bs = B8.unlines $ serializeTree t -- TODO why didn't it include the unlines part again?
     t' = deserializeTree Nothing bs
-
--- attempt at generating hashtrees with actions, as explained here:
--- https://jaspervdj.be/posts/2015-03-13-practical-testing-in-haskell.html
--- except i seem to have already written the "Action" type as Delta?
