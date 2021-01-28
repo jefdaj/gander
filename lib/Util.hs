@@ -15,6 +15,8 @@ module Util
   , FileName
   , n2p
   , p2n
+  , n2bs
+  , bs2n
   )
   where
 
@@ -34,6 +36,7 @@ import System.Posix.Files (getSymbolicLinkStatus, isSymbolicLink, readSymbolicLi
 -- import qualified Data.ByteString.Char8 as B
 -- import qualified Data.ByteString.Short as BS
 import qualified Data.Text as T
+import qualified Data.ByteString.UTF8             as BU
 
 pathComponents :: FilePath -> [FilePath]
 pathComponents f = filter (not . null)
@@ -136,3 +139,10 @@ n2p = T.unpack
 
 p2n :: FilePath -> FileName
 p2n = T.pack
+
+n2bs :: FileName -> BU.ByteString
+n2bs = BU.fromString . n2p
+
+-- TODO should this have the option for a decoding error?
+bs2n :: BU.ByteString -> FileName
+bs2n = p2n . BU.toString
