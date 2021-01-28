@@ -186,7 +186,7 @@ explainDupes md = B.unlines . map explainGroup
     explainGroup :: DupeList -> B.ByteString
     explainGroup (n, t, paths) = B.unlines
       $ [header t n (length paths) `B.append` ":"]
-      ++ sort paths ++ [""]
+      ++ sort paths
 
     header :: TreeType -> Int -> Int -> B.ByteString
     header F n fs = B.intercalate " " $
