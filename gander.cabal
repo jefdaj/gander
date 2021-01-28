@@ -69,6 +69,7 @@ library
                        Data.Gander.Delta,
                        Data.Gander.DupeMap,
                        Data.Gander.Hash,
+                       Data.Gander.HashLine,
                        Data.Gander.HashTree,
                        Util,
                        System.Directory.Tree
@@ -97,6 +98,7 @@ executable gander
                        Data.Gander.Delta,
                        Data.Gander.DupeMap,
                        Data.Gander.Hash,
+                       Data.Gander.HashLine,
                        Data.Gander.HashTree,
                        Gander.Run,
                        Util,
@@ -123,6 +125,7 @@ test-suite test
                        temporary
   other-modules:       Data.Gander.Hash,
                        Data.Gander.Delta,
+                       Data.Gander.HashLine,
                        Data.Gander.HashTree,
                        Gander.Config,
                        System.Directory.Tree,

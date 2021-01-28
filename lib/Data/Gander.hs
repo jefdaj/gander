@@ -55,4 +55,5 @@ module Data.Gander
 import Data.Gander.Delta
 import Data.Gander.DupeMap
 import Data.Gander.Hash
+import Data.Gander.HashLine
 import Data.Gander.HashTree

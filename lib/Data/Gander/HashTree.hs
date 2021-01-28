@@ -4,8 +4,6 @@
 
 module Data.Gander.HashTree
   ( HashTree(..)
-  , TreeType(..)
-  , IndentLevel(..)
   , HashLine(..)
   , keepPath
   , readTree
@@ -14,21 +12,17 @@ module Data.Gander.HashTree
   , renameRoot
   , printTree
   , writeBinTree
-  , prettyHashLine
   , serializeTree
   , writeTree
   , flattenTree
   , deserializeTree
   , hashContents
-  , parseHashes
   , dropTo
   , treeContainsPath
   , treeContainsHash
   , addSubTree
   , rmSubTree
   -- for testing
-  , nameP
-  , lineP
   , countFiles
   )
   where
@@ -38,6 +32,7 @@ module Data.Gander.HashTree
 -- import Debug.Trace
 
 import Data.Gander.Hash
+import Data.Gander.HashLine
 
 import qualified Data.ByteString.Char8 as B8
 import qualified Data.ByteString.Short as BS
@@ -71,28 +66,6 @@ import Control.Exception.Safe (catchAny)
 import TH.Derive
 
 import Control.DeepSeq
-
--- for distinguishing beween files and dirs
-data TreeType = D | F
-  deriving (Eq, Read, Show, Ord)
-
-instance NFData TreeType
-  where rnf = const () -- TODO is this valid?
-
-$($(derive [d| instance Deriving (Store TreeType) |]))
-
-newtype IndentLevel = IndentLevel Int
-  deriving (Read, Show, Eq, Ord)
-
--- TODO remove the tuple part now?
-newtype HashLine = HashLine (TreeType, IndentLevel, Hash, FileName)
-  deriving (Read, Show, Eq, Ord)
-
--- TODO actual Pretty instance
--- note: p can have weird characters, so it should be handled only as ByteString
-prettyHashLine :: HashLine -> B8.ByteString
-prettyHashLine (HashLine (t, (IndentLevel n), h, p)) = B8.unwords
-  [B8.pack $ show t, B8.pack $ show n, prettyHash h, T.encodeUtf8 p] -- TODO mismatch with n2p, p2n?
 
 {- A tree of file names matching (a subdirectory of) the annex,
  - where each dir and file node contains a hash of its contents.
@@ -255,69 +228,8 @@ flattenTree' dir (Dir  n h cs _) = subtrees ++ [wholeDir]
     subtrees = concatMap (flattenTree' $ dir </> n2p n) cs
     wholeDir = HashLine (D, IndentLevel $ length (splitPath dir), h, n)
 
-typeP :: Parser TreeType
-typeP = do
-  t <- choice [char 'D', char 'F'] <* char ' '
-  return $ read [t]
-
-hashP :: Parser Hash
-hashP = do
-  h <- take digestLength -- TODO any need to sanitize these?
-  _ <- char ' '
-  return $ Hash $ BS.toShort h
-
--- like endOfLine, but make sure D/F comes next instead of the rest of a filename
--- TODO uh, what if the filename contains "\n(D|F)\ "? pretty pathological
-breakP :: Parser ()
-breakP = endOfLine >> choice [typeP >> return (), endOfInput]
-
--- TODO should anyChar be anything except forward slash and the null char?
-nameP :: Parser FileName
-nameP = fmap p2n $ do
-  c  <- anyChar
-  cs <- manyTill anyChar $ lookAhead breakP
-  return (c:cs)
-
-indentP :: Parser IndentLevel
-indentP = do
-  n <- manyTill digit $ char ' '
-  -- TODO char ' ' here?
-  return $ IndentLevel $ read n
-
--- TODO is there a cleaner syntax for this?
-lineP :: Maybe Int -> Parser (Maybe HashLine)
-lineP md = do
-  t <- typeP
-  (IndentLevel i) <- indentP
-  case md of
-    Nothing -> parseTheRest t (IndentLevel i)
-    Just d -> do
-      if i > d
-        then do
-          skipWhile (not . isEndOfLine)
-          lookAhead breakP
-          return Nothing
-        else parseTheRest t (IndentLevel i)
-  where
-    parseTheRest t i = do
-      h <- hashP
-      p <- nameP
-      -- return $ trace ("finished: " ++ show (t, i, h, p)) $ Just (t, i, h, p)
-      return $ Just (HashLine (t, i, h, p))
-
-linesP :: Maybe Int -> Parser [HashLine]
-linesP md = do
-  hls <- sepBy' (lineP md) endOfLine
-  return $ catMaybes hls
-
 fileP :: Maybe Int -> Parser [HashLine]
 fileP md = linesP md <* endOfLine <* endOfInput
-
--- TODO use bytestring the whole time rather than converting
--- TODO should this propogate the Either?
--- TODO any more elegant way to make the parsing strict?
-parseHashes :: Maybe Int -> B8.ByteString -> [HashLine]
-parseHashes md = fromRight [] . parseOnly (fileP md)
 
 -- TODO error on null string/lines?
 -- TODO wtf why is reverse needed? remove that to save RAM

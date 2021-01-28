@@ -38,6 +38,7 @@ import qualified Data.Massiv.Array        as A
 import qualified Data.HashMap.Strict as M
 
 import Data.Gander.Hash
+import Data.Gander.HashLine
 import Data.Gander.HashTree
 import Util (n2p)
 

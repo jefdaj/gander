@@ -4,7 +4,7 @@
 
 module FileNameTest where
 
-import Data.Gander.HashTree
+import Data.Gander.HashLine
 import Test.QuickCheck
 import Util
 
