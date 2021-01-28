@@ -16,6 +16,7 @@ import System.IO (hClose, IOMode(..), withFile)
 
 import Util
 import Data.Gander.Hash
+import Data.Gander.HashLine
 import Data.Gander.HashTree
 import FileNameTest ()
 
