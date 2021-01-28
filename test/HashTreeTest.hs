@@ -104,8 +104,21 @@ prop_roundtrip_hashline_to_file = monadicIO $ do
   d2 <- run $ roundtrip_hashline_to_file d1
   assert $ d2 == Right (Just d1)
 
+-- TODO what's right here but wrong in the roundtrip to bytestring ones?
 prop_roundtrip_hashtree_to_bytestring :: HashTree -> Bool
 prop_roundtrip_hashtree_to_bytestring t = t' == t
   where
     bs = B8.unlines $ serializeTree t -- TODO why didn't it include the unlines part again?
     t' = deserializeTree Nothing bs
+
+roundtrip_hashtree_to_file :: HashTree -> IO HashTree
+roundtrip_hashtree_to_file t = withSystemTempFile "roundtriptemp" $ \path hdl -> do
+  hClose hdl
+  writeTree path t
+  readTree Nothing path
+
+prop_roundtrip_hashtree_to_file :: Property
+prop_roundtrip_hashtree_to_file = monadicIO $ do
+  t1 <- pick arbitrary
+  t2 <- run $ roundtrip_hashtree_to_file t1
+  assert $ t2 == t1
