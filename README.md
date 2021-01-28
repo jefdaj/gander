@@ -39,18 +39,20 @@ Hash a folder
 -------------
 
 `gander` recursively hashes folders and uses the hashes for later comparison.
-File hashes are standard `sha256sum`s, but to save space they are displayed as a base-64 digest instead of the full hex encoding. The `F` or `D` and number before each one is for
-recreating the tree structure: "this is a file at indent level 1", etc.
+File hashes are standard `sha256sum`s, but to save space a 20-character base64
+digest is used in place of the full hash. The `F` or `D` and number before each
+one is for recreating the tree structure: "this is a file at indent level 1",
+etc.
 
 ```
 $ gander hash backup > backup-hashes.txt
 $ cat backup-hashes.txt
-F 1 e80d8ed374517e280f5923057046010b5786251e65dac402bf87b1a07f48780b file1.txt
-F 2 cfc9494ec1483b639a5d07dcbfafb9b27048800d5ad6c1e320a36272c2e42880 file3.txt
-F 3 8c0899afa99e1ea386150e72bd6b72e8e7ac78f5c0e984b97a0a10aa2982039b file2.txt
-D 2 88bddd45f2a68576fdeebcef08c10101a568ab615747fbf4949e622fd57ad8d8 folder2
-D 1 0abc967a6c1907a42360f0fc9e3695feddeb6dcafa5e1511afbae4e3be49669f folder1
-D 0 bad85662b5cc09010d879c8f580f80125417a330ee7d5b5f4b70eee1ae7a95d2 backup
+F 1 ZTgwZDhlZDM3NDUxN2Uy file1.txt
+F 2 Y2ZjOTQ5NGVjMTQ4M2I2 file3.txt
+F 3 OGMwODk5YWZhOTllMWVh file2.txt
+D 2 ZDUzYWU5MWIyNTAwNjU5 folder2
+D 1 NDEzYWJiZjYyZDY3MmI1 folder1
+D 0 OTY2NjU5NzE5MjczZGMx backup
 ```
 
 The standalone hash command is mainly useful when the files to hash are large or on an external drive.
