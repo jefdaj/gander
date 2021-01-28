@@ -73,14 +73,14 @@ instance Arbitrary HashTree where
 -- TODO write_tree_binary?
 -- TODO flatten_tree
 
--- prop_roundtrip_hashtree_to_file :: 
+-- prop_roundtrip_hashtrees_to_file :: 
 
 --     describe "HashTree" $ do
 --       describe "HashTree" $ do
 --         it "builds a tree from the test annex" $ pendingWith "need annex test harness"
 
-prop_roundtrip_hashline_to_bytestring :: HashLine -> Bool
-prop_roundtrip_hashline_to_bytestring l = l' == (Right $ Just l)
+prop_roundtrip_hashlines_to_bytestring :: HashLine -> Bool
+prop_roundtrip_hashlines_to_bytestring l = l' == (Right $ Just l)
   where
     bs = prettyHashLine l
     l' = parseHashLine bs
@@ -92,34 +92,34 @@ prop_roundtrip_hashline_to_bytestring l = l' == (Right $ Just l)
 --   d2 <- run $ roundTripFn d1
 --   assert $ d2 == d1
 
-roundtrip_hashline_to_file :: HashLine -> IO (Either String (Maybe HashLine))
-roundtrip_hashline_to_file hl = withSystemTempFile "roundtriptemp" $ \path hdl -> do
+roundtrip_hashlines_to_file :: HashLine -> IO (Either String (Maybe HashLine))
+roundtrip_hashlines_to_file hl = withSystemTempFile "roundtriptemp" $ \path hdl -> do
   B8.hPut hdl $ prettyHashLine hl
   hClose hdl
   bs' <- B8.readFile path
   return $ parseHashLine bs'
 
-prop_roundtrip_hashline_to_file :: Property
-prop_roundtrip_hashline_to_file = monadicIO $ do
+prop_roundtrip_hashlines_to_file :: Property
+prop_roundtrip_hashlines_to_file = monadicIO $ do
   d1 <- pick arbitrary
-  d2 <- run $ roundtrip_hashline_to_file d1
+  d2 <- run $ roundtrip_hashlines_to_file d1
   assert $ d2 == Right (Just d1)
 
 -- TODO what's right here but wrong in the roundtrip to bytestring ones?
-prop_roundtrip_hashtree_to_bytestring :: HashTree -> Bool
-prop_roundtrip_hashtree_to_bytestring t = t' == t
+prop_roundtrip_hashtrees_to_bytestring :: HashTree -> Bool
+prop_roundtrip_hashtrees_to_bytestring t = t' == t
   where
     bs = B8.unlines $ serializeTree t -- TODO why didn't it include the unlines part again?
     t' = deserializeTree Nothing bs
 
-roundtrip_hashtree_to_file :: HashTree -> IO HashTree
-roundtrip_hashtree_to_file t = withSystemTempFile "roundtriptemp" $ \path hdl -> do
+roundtrip_hashtrees_to_file :: HashTree -> IO HashTree
+roundtrip_hashtrees_to_file t = withSystemTempFile "roundtriptemp" $ \path hdl -> do
   hClose hdl
   writeTree path t
   readTree Nothing path
 
-prop_roundtrip_hashtree_to_file :: Property
-prop_roundtrip_hashtree_to_file = monadicIO $ do
+prop_roundtrip_hashtrees_to_file :: Property
+prop_roundtrip_hashtrees_to_file = monadicIO $ do
   t1 <- pick arbitrary
-  t2 <- run $ roundtrip_hashtree_to_file t1
+  t2 <- run $ roundtrip_hashtrees_to_file t1
   assert $ t2 == t1
