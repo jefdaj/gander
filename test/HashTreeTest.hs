@@ -42,23 +42,24 @@ instance Arbitrary HashLine where
 
 instance Arbitrary HashTree where
   arbitrary = do
-    n   <- arbitrary :: Gen FileName
-    bs  <- arbitrary :: Gen B8.ByteString
-    !cs <- resize 3 $ arbitrary :: Gen [HashTree]
-
+    n <- arbitrary :: Gen FileName
     -- TODO there's got to be a better way, right?
     i <- choose (0,2 :: Int)
-    return $ if i == 0
+    if i == 0
 
-      then Dir { name     = n
-               , hash     = hashContents cs
-               , contents = cs
-               , nFiles   = sum $ map countFiles cs
-               }
+      then do
+        !cs <- resize 5 $ arbitrary :: Gen [HashTree] -- increase size to test RAM + CPU usage?
+        return $ Dir { name     = n
+                     , hash     = hashContents cs
+                     , contents = cs
+                     , nFiles   = sum $ map countFiles cs
+                     }
 
-      else File { name = n
-                , hash = hashBytes bs
-                }
+      else do
+        bs <- arbitrary :: Gen B8.ByteString
+        return $ File { name = n
+                      , hash = hashBytes bs
+                      }
 
 -- TODO test tree in haskell
 -- TODO test dir
