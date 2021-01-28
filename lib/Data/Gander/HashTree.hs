@@ -38,7 +38,7 @@ module Data.Gander.HashTree
 
 import Data.Gander.Hash
 
-import qualified Data.ByteString.Char8 as B
+import qualified Data.ByteString.Char8 as B8
 import qualified Data.ByteString.Short as BS
 import qualified Data.Text.Encoding as T
 
@@ -89,9 +89,9 @@ newtype HashLine = HashLine (TreeType, IndentLevel, Hash, FileName)
 
 -- TODO actual Pretty instance
 -- note: p can have weird characters, so it should be handled only as ByteString
-prettyHashLine :: HashLine -> B.ByteString
-prettyHashLine (HashLine (t, (IndentLevel n), h, p)) = B.unwords
-  [B.pack $ show t, B.pack $ show n, prettyHash h, T.encodeUtf8 p] -- TODO mismatch with n2p, p2n?
+prettyHashLine :: HashLine -> B8.ByteString
+prettyHashLine (HashLine (t, (IndentLevel n), h, p)) = B8.unwords
+  [B8.pack $ show t, B8.pack $ show n, prettyHash h, T.encodeUtf8 p] -- TODO mismatch with n2p, p2n?
 
 {- A tree of file names matching (a subdirectory of) the annex,
  - where each dir and file node contains a hash of its contents.
@@ -135,12 +135,12 @@ keepPath excludes path = not $ any (\ptn -> matchWith opts ptn path) excludes
 -- try to read as binary, and fall back to text if it fails
 readTree :: Maybe Int -> FilePath -> IO HashTree
 readTree md path = catchAny
-                    (B.readFile path >>= decodeIO)
-                    (\_ -> fmap (deserializeTree md) $ B.readFile path)
+                    (B8.readFile path >>= decodeIO)
+                    (\_ -> fmap (deserializeTree md) $ B8.readFile path)
 --   (do
---      (hs :: [HashLine]) <- decodeIO =<< B.readFile path
+--      (hs :: [HashLine]) <- decodeIO =<< B8.readFile path
 --      return $ snd $ head $ foldr accTrees [] hs)
---   (\_ -> fmap deserializeTree $ B.readFile path)
+--   (\_ -> fmap deserializeTree $ B8.readFile path)
 
 -- TODO are contents sorted? they probably should be for stable hashes
 buildTree :: Bool -> [Pattern] -> FilePath -> IO HashTree
@@ -200,7 +200,7 @@ buildTree' v depth es d@(a DT.:/ (DT.Dir n _)) = do
             }
 
 hashContents :: [HashTree] -> Hash
-hashContents = hashBytes . B.unlines . sort . map (BS.fromShort . unHash . hash)
+hashContents = hashBytes . B8.unlines . sort . map (BS.fromShort . unHash . hash)
 
 -- If passed a file this assumes it contains hashes and builds a tree of them;
 -- If passed a dir it will scan it first and then build the tree.
@@ -224,23 +224,23 @@ renameRoot newName tree = tree { name = p2n newName }
 -- TODO can Foldable or Traversable simplify these?
 -- TODO need to handle unicode here?
 -- TODO does map evaluation influence memory usage?
-serializeTree :: HashTree -> [B.ByteString]
+serializeTree :: HashTree -> [B8.ByteString]
 serializeTree = map prettyHashLine . flattenTree
 
 printTree :: HashTree -> IO ()
 printTree = mapM_ printLine . flattenTree
   where
     -- TODO don't flush every line
-    printLine l = (putStrLn $ B.unpack $ prettyHashLine l) >> hFlush stdout
+    printLine l = (putStrLn $ B8.unpack $ prettyHashLine l) >> hFlush stdout
 
 -- this uses a handle for streaming output, which turns out to be important for memory usage
 -- TODO rename writeHashes? this is a confusing way to say that
 writeTree :: FilePath -> HashTree -> IO ()
 writeTree path tree = withFile path WriteMode $ \h ->
-  mapM_ (B.hPutStrLn h) (serializeTree tree)
+  mapM_ (B8.hPutStrLn h) (serializeTree tree)
 
 writeBinTree :: FilePath -> HashTree -> IO ()
-writeBinTree path tree = B.writeFile path $ encode tree
+writeBinTree path tree = B8.writeFile path $ encode tree
 
 flattenTree :: HashTree -> [HashLine]
 flattenTree = flattenTree' ""
@@ -315,14 +315,14 @@ fileP md = linesP md <* endOfLine <* endOfInput
 -- TODO use bytestring the whole time rather than converting
 -- TODO should this propogate the Either?
 -- TODO any more elegant way to make the parsing strict?
-parseHashes :: Maybe Int -> B.ByteString -> [HashLine]
+parseHashes :: Maybe Int -> B8.ByteString -> [HashLine]
 parseHashes md = fromRight [] . parseOnly (fileP md)
 
 -- TODO error on null string/lines?
 -- TODO wtf why is reverse needed? remove that to save RAM
 -- TODO refactor so there's a proper buildTree function and this uses it
 -- TODO what about files with newlines in them? might need to split at \n(file|dir)
-deserializeTree :: Maybe Int -> B.ByteString -> HashTree
+deserializeTree :: Maybe Int -> B8.ByteString -> HashTree
 deserializeTree md = snd . head . foldr accTrees [] . reverse . parseHashes md
 
 countFiles :: HashTree -> Int
