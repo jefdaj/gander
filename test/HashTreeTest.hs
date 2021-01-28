@@ -80,11 +80,11 @@ instance Arbitrary HashTree where
 --       describe "HashTree" $ do
 --         it "builds a tree from the test annex" $ pendingWith "need annex test harness"
 
-prop_roundtrip_hashlines_to_bytestring :: HashLine -> Bool
-prop_roundtrip_hashlines_to_bytestring l = l' == (Right $ Just l)
-  where
-    bs = prettyHashLine l
-    l' = parseHashLine $ B8.append bs "\n"
+-- prop_roundtrip_hashlines_to_bytestring :: HashLine -> Bool
+-- prop_roundtrip_hashlines_to_bytestring l = l' == (Right $ Just l)
+--   where
+--     bs = prettyHashLine l
+--     l' = parseHashLine $ B8.append bs "\n"
 
 -- based on https://stackoverflow.com/a/2946515
 -- mkRoundTripIO :: (Show a, Eq a, Arbitrary a) => (a -> IO a) -> Property
@@ -94,33 +94,33 @@ prop_roundtrip_hashlines_to_bytestring l = l' == (Right $ Just l)
 --   assert $ d2 == d1
 
 -- roundtrip_hashline_to_file :: HashLine -> IO (Either String (Maybe HashLine))
-roundtrip_hashline_to_file :: HashLine -> IO HashLine
-roundtrip_hashline_to_file hl = withSystemTempFile "roundtriptemp" $ \path hdl -> do
+-- roundtrip_hashline_to_file :: HashLine -> IO HashLine
+-- roundtrip_hashline_to_file hl = withSystemTempFile "roundtriptemp" $ \path hdl -> do
+-- 
+--   -- writeTree :: FilePath -> HashTree -> IO ()
+--   -- writeTree path tree = withFile path WriteMode $ \h ->
+--     -- mapM_ (B8.hPutStrLn h) (serializeTree tree)
+--   hClose hdl
+--   -- withFile path WriteMode $ \hdl2 -> B8.hPut hdl2 $ prettyHashLine hl
+--   B8.writeFile path $ prettyHashLine hl
+-- 
+--   -- (\_ -> fmap (deserializeTree md) $ B8.readFile path)
+--   -- bs' <- B8.readFile path
+--   -- hl' <- fmap (head . parseHashes) $ B8.readFile path
+--   bs <- B8.readFile path
+--   let hl' = head $ parseHashes Nothing $ B8.snoc bs '\n'
+--   -- putStrLn $ "hl: " ++ show hl
+--   -- putStrLn $ "hl': " ++ show hl'
+--   return hl'
+--   -- return $ head hs
+--   -- return $ T.pack $ BU.toString bs'
+--   -- prop_roundtrip_filenames_to_bytestring n = n == T.pack (BU.toString (BU.fromString (T.unpack n)))
 
-  -- writeTree :: FilePath -> HashTree -> IO ()
-  -- writeTree path tree = withFile path WriteMode $ \h ->
-    -- mapM_ (B8.hPutStrLn h) (serializeTree tree)
-  hClose hdl
-  -- withFile path WriteMode $ \hdl2 -> B8.hPut hdl2 $ prettyHashLine hl
-  B8.writeFile path $ prettyHashLine hl
-
-  -- (\_ -> fmap (deserializeTree md) $ B8.readFile path)
-  -- bs' <- B8.readFile path
-  -- hl' <- fmap (head . parseHashes) $ B8.readFile path
-  bs <- B8.readFile path
-  let hl' = head $ parseHashes Nothing $ B8.snoc bs '\n'
-  -- putStrLn $ "hl: " ++ show hl
-  -- putStrLn $ "hl': " ++ show hl'
-  return hl'
-  -- return $ head hs
-  -- return $ T.pack $ BU.toString bs'
-  -- prop_roundtrip_filenames_to_bytestring n = n == T.pack (BU.toString (BU.fromString (T.unpack n)))
-
-prop_roundtrip_hashlines_to_file :: Property
-prop_roundtrip_hashlines_to_file = monadicIO $ do
-  d1 <- pick arbitrary
-  d2 <- run $ roundtrip_hashline_to_file d1
-  assert $ d2 == d1
+-- prop_roundtrip_hashlines_to_file :: Property
+-- prop_roundtrip_hashlines_to_file = monadicIO $ do
+--   d1 <- pick arbitrary
+--   d2 <- run $ roundtrip_hashline_to_file d1
+--   assert $ d2 == d1
 
 -- TODO what's right here but wrong in the roundtrip to bytestring ones?
 prop_roundtrip_hashtrees_to_bytestring :: HashTree -> Bool
