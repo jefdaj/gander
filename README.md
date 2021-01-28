@@ -103,10 +103,10 @@ diff -r backup/folder1/folder2/file2.txt current/folder1/folder2/file2.txt
 > edit the 2nd file
 Only in current/folder1/folder2: file3.txt
 
-and this is what `gander diff` says:
-added 'file3.txt' (03c6a1ef)
-moved 'folder1/file3.txt' -> 'folder1/folder2/file3.txt' (cfc9494e)
-edited 'folder1/folder2/file2.txt/file2.txt' (8c0899af -> a86b253f)
+and this is how `gander diff` explains it:
+added 'file3.txt' (MDNjNmExZWYyM2JhOWNj)
+moved 'folder1/file3.txt' -> 'folder1/folder2/file3.txt'
+edited 'folder1/folder2/file2.txt/file2.txt' (OGMwODk5YWZhOTllMWVh -> YTg2YjI1M2Y4MzY1OWQy)
 ```
 
 Everything works similarly with directories and binary files.
@@ -123,22 +123,22 @@ Continuing with [demo.sh][4],
 
 ```
 $ gander dupes demo
-# 3 duplicate dirs with 3 files each (9 total)
+# deduping these 3 dirs would remove 6 files:
 demo/backup
 demo/current/old-backup-1
 demo/current/old-backup-2
 
-# 4 duplicate files
-demo/backup/folder1/file3.txt
-demo/current/folder1/folder2/file3.txt
-demo/current/old-backup-1/folder1/file3.txt
-demo/current/old-backup-2/folder1/file3.txt
-
-# 4 duplicate files
+# deduping these 4 files would remove 3:
 demo/backup/file1.txt
 demo/current/file1.txt
 demo/current/old-backup-1/file1.txt
 demo/current/old-backup-2/file1.txt
+
+# deduping these 4 files would remove 3:
+demo/backup/folder1/file3.txt
+demo/current/folder1/folder2/file3.txt
+demo/current/old-backup-1/folder1/file3.txt
+demo/current/old-backup-2/folder1/file3.txt
 ```
 
 It still looks messy because the duplicate sets overlap,
@@ -147,13 +147,13 @@ So we delete `current/old-backup-1` and `current/old-backup-2` and re-run it:
 
 ```
 $ gander dupes demo
-# 2 duplicate files
-demo/backup/folder1/file3.txt
-demo/current/folder1/folder2/file3.txt
-
-# 2 duplicate files
+# deduping these 2 files would remove 1:
 demo/backup/file1.txt
 demo/current/file1.txt
+
+# deduping these 2 files would remove 1:
+demo/backup/folder1/file3.txt
+demo/current/folder1/folder2/file3.txt
 ```
 
 Much better! Even very large, messy drives can be simplified after several rounds.
