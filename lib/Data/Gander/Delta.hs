@@ -38,7 +38,7 @@ data Delta
   = Add  FilePath HashTree
   | Rm   FilePath
   | Mv   FilePath FilePath
-  | Edit FilePath HashTree -- TODO remove in favor of subtle use of Add?
+  | Edit FilePath HashTree HashTree -- TODO remove in favor of subtle use of Add?
   deriving (Read, Show, Eq)
 
 ------------------------
@@ -49,7 +49,7 @@ data Delta
 prettyDelta :: Delta -> B.ByteString
 prettyDelta (Add  f  t ) = B.pack $ "added '"   ++ f  ++ "' (" ++ B.unpack (prettyHash (hash t)) ++ ")"
 prettyDelta (Rm   f    ) = B.pack $ "removed '" ++ f  ++ "'"
-prettyDelta (Edit f  t ) = B.pack $ "edited '"  ++ f  ++ "' (" ++ B.unpack (prettyHash (hash t)) ++ ")"
+prettyDelta (Edit f  t1 t2) = B.pack $ "edited '"  ++ f  ++ "' (" ++ B.unpack (prettyHash (hash t1)) ++ " -> " ++ B.unpack (prettyHash (hash t2)) ++ ")"
 prettyDelta (Mv   f1 f2) = B.pack $ "moved '"   ++ f1 ++ "' -> '" ++ f2 ++ "'"
 
 printDeltas :: [Delta] -> IO ()
@@ -62,7 +62,7 @@ diff' :: FilePath -> HashTree -> HashTree -> [Delta]
 diff' a t1@(File f1 h1) t2@(File f2 h2)
   | f1 == f2 && h1 == h2 = []
   | f1 /= f2 && h1 == h2 = [Mv (a </> n2p f1) (a </> n2p f2)]
-  | f1 == f2 && h1 /= h2 = [Edit (if a == n2p f1 then n2p f1 else a </> n2p f1) t2]
+  | f1 == f2 && h1 /= h2 = [Edit (if a == n2p f1 then n2p f1 else a </> n2p f1) t1 t2]
   | otherwise = error $ "error in diff': " ++ show t1 ++ " " ++ show t2
 diff' a (File _ _) t2@(Dir  d _ _ _) = [Rm a, Add (a </> n2p d) t2]
 -- TODO wait is this a Mv?
@@ -123,7 +123,7 @@ fixMoves t (d:ds) = d : fixMoves t ds
 simDelta :: HashTree -> Delta -> Either String HashTree
 simDelta t (Rm   p    ) = rmSubTree t p
 simDelta t (Add  p  t2) = Right $ addSubTree t t2 p
-simDelta t (Edit p  t2) = Right $ addSubTree t t2 p
+simDelta t (Edit p _ t2) = Right $ addSubTree t t2 p
 simDelta t (Mv   p1 p2) = case simDelta t (Rm p1) of
   Left  e  -> Left e
   Right t2 -> simDelta t2 $ Add p2 $ fromJust $ dropTo t p1 -- TODO path error here?

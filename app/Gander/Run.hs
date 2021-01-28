@@ -80,7 +80,7 @@ runDelta :: Config -> FilePath -> Delta -> IO ()
 runDelta c a   (Add p _  ) = runGitAnnexAdd c a p
 runDelta c a   (Rm  p    ) = runGitRm       c a p
 runDelta c a   (Mv  p1 p2) = runGitMv       c a p1 p2
-runDelta c a e@(Edit _ _ ) = runDelta       c a e -- TODO are separate edits really needed?
+runDelta c a e@(Edit _ _ _) = runDelta      c a e -- TODO are separate edits really needed?
 
 runDeltas :: Config -> FilePath -> [Delta] -> IO ()
 runDeltas c a = mapM_ (runDelta c a)
