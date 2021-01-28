@@ -45,6 +45,7 @@ common deps
                        store,
                        text,
                        th-utilities,
+                       utf8-string,
                        unix
 
 library
@@ -111,7 +112,6 @@ test-suite test
   build-depends:       gander,
                        HUnit,
                        QuickCheck,
-                       utf8-string,
                        hspec,
                        quickcheck-instances,
                        quickcheck-unicode,
