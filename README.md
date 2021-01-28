@@ -318,8 +318,10 @@ Development
 I do most of the development in a Nix environment, using commands like these:
 
 ```
+nix-shell --run 'cabal build'
+nix-shell --run 'cabal run gander hash ~/some-path'
 nix-shell --run 'cabal repl'
-nix-shell --run 'cabal test'
+nix-shell --run 'cabal repl test'
 nix-build
 ``
 
