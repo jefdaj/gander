@@ -181,7 +181,7 @@ explainDupes :: Maybe Int -> [DupeList] -> B.ByteString
 explainDupes md = B.unlines . map explainGroup
   where
     disclaimer Nothing  = ""
-    disclaimer (Just d) = "(up to " `B.append` B.pack (show d) `B.append` " levels deep)"
+    disclaimer (Just d) = " (up to " `B.append` B.pack (show d) `B.append` " levels deep)"
 
     explainGroup :: DupeList -> B.ByteString
     explainGroup (n, t, paths) = B.unlines
@@ -191,14 +191,12 @@ explainDupes md = B.unlines . map explainGroup
     header :: TreeType -> Int -> Int -> B.ByteString
     header F n fs = B.intercalate " " $
       [ "# deduping these"  , B.pack (show fs)
-      , "files would remove", B.pack (show n )
-      , disclaimer md
+      , "files would remove", B.append (B.pack (show n )) (disclaimer md)
       ]
     header D n ds = B.intercalate " " $
       [ "# deduping these" , B.pack (show ds)
       , "dirs would remove", B.pack (show n )
-      , "files"
-      , disclaimer md
+      , B.append "files" (disclaimer md)
       ]
 
 -----------------------------
