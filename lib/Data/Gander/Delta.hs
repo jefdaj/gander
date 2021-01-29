@@ -29,7 +29,7 @@ import Control.Monad       (when, foldM)
 import Data.List           (find)
 import Data.Maybe          (fromJust)
 --import Data.Gander.DupeMap (listLostFiles)
-import Data.Gander.Hash    (prettyHash)
+-- import Data.Gander.Hash    (prettyHash)
 import System.FilePath     ((</>))
 
 -- TODO should these have embedded hashtrees? seems unneccesary but needed for findMoves
@@ -47,9 +47,9 @@ data Delta
 
 -- TODO put the hashes back here?
 prettyDelta :: Delta -> B.ByteString
-prettyDelta (Add  f  t ) = B.pack $ "added '"   ++ f  ++ "' (" ++ B.unpack (prettyHash (hash t)) ++ ")"
+prettyDelta (Add  f _  ) = B.pack $ "added '"   ++ f  ++ "'"
 prettyDelta (Rm   f    ) = B.pack $ "removed '" ++ f  ++ "'"
-prettyDelta (Edit f  t1 t2) = B.pack $ "edited '"  ++ f  ++ "' (" ++ B.unpack (prettyHash (hash t1)) ++ " -> " ++ B.unpack (prettyHash (hash t2)) ++ ")"
+prettyDelta (Edit f _ _) = B.pack $ "edited '"  ++ f  ++ "'"
 prettyDelta (Mv   f1 f2) = B.pack $ "moved '"   ++ f1 ++ "' -> '" ++ f2 ++ "'"
 
 printDeltas :: [Delta] -> IO ()
