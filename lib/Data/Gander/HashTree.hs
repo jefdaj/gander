@@ -228,9 +228,6 @@ flattenTree' dir (Dir  n h cs _) = subtrees ++ [wholeDir]
     subtrees = concatMap (flattenTree' $ dir </> n2p n) cs
     wholeDir = HashLine (D, IndentLevel $ length (splitPath dir), h, n)
 
-fileP :: Maybe Int -> Parser [HashLine]
-fileP md = linesP md <* endOfLine <* endOfInput
-
 -- TODO error on null string/lines?
 -- TODO wtf why is reverse needed? remove that to save RAM
 -- TODO refactor so there's a proper buildTree function and this uses it
