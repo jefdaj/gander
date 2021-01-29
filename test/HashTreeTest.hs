@@ -14,6 +14,7 @@ import Test.QuickCheck.Instances.ByteString ()
 import System.IO.Temp
 import System.IO (hClose, IOMode(..), withFile)
 
+import System.Directory.Tree (writeJustDirs)
 import Util
 import Data.Gander.Hash
 import Data.Gander.HashLine
@@ -94,8 +95,15 @@ roundtrip_hashtree_to_file t = withSystemTempFile "roundtriptemp" $ \path hdl ->
   writeTree path t
   readTree Nothing path
 
-prop_roundtrip_hashtrees_to_file :: Property
-prop_roundtrip_hashtrees_to_file = monadicIO $ do
-  t1 <- pick arbitrary
-  t2 <- run $ roundtrip_hashtree_to_file t1
-  assert $ t2 == t1
+-- prop_roundtrip_hashtrees_to_file :: Property
+-- prop_roundtrip_hashtrees_to_file = monadicIO $ do
+--   t1 <- pick arbitrary
+--   t2 <- run $ roundtrip_hashtree_to_file t1
+--   assert $ t2 == t1
+
+-- prop_write_hashtrees_to_dirs :: Property
+-- prop_write_hashtrees_to_dirs = monadicIO $ do
+--   t <- pick (arbitrary :: Gen HashTree)
+--   run $ withSystemTempDirectory "writedirtemp" $ \d -> writeJustDirs t
+--   -- run $ putStrLn $ "t: " ++ show t
+--   assert True
