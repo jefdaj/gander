@@ -40,9 +40,13 @@ Hash a folder
 
 `gander` recursively hashes folders and uses the hashes for later comparison.
 File hashes are standard `sha256sum`s, but to save space a 20-character base64
-digest is used in place of the full hash. The `F` or `D` and number before each
-one is for recreating the tree structure: "this is a file at indent level 1",
-etc.
+digest is used in place of the full hash.
+
+The `F` or `D` and number before each one is for recreating the tree structure:
+"this is a file at indent level 1", etc.
+
+Directory hashes are the hash of their sorted content hashes. That way you know
+that all the contents are identical, even if some file names changed.
 
 ```
 $ gander hash backup > backup-hashes.txt
@@ -104,14 +108,10 @@ diff -r backup/folder1/folder2/file2.txt current/folder1/folder2/file2.txt
 Only in current/folder1/folder2: file3.txt
 
 and this is how `gander diff` explains it:
-added 'file3.txt' (MDNjNmExZWYyM2JhOWNj)
+added 'file3.txt'
 moved 'folder1/file3.txt' -> 'folder1/folder2/file3.txt'
-edited 'folder1/folder2/file2.txt/file2.txt' (OGMwODk5YWZhOTllMWVh -> YTg2YjI1M2Y4MzY1OWQy)
+edited 'folder1/folder2/file2.txt/file2.txt'
 ```
-
-Everything works similarly with directories and binary files.
-Directory hashes are the hash of their sorted content hashes.
-That way you know that all the contents are identical, even if some file names changed.
 
 Find dupes within a folder
 --------------------------
