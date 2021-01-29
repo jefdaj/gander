@@ -14,6 +14,7 @@ import Test.QuickCheck.Instances.ByteString ()
 import System.IO.Temp
 import System.IO (hClose, IOMode(..), withFile)
 
+import System.FilePath
 import System.Directory.Tree (writeJustDirs)
 import Util
 import Data.Gander.Hash
@@ -107,3 +108,17 @@ roundtrip_hashtree_to_file t = withSystemTempFile "roundtriptemp" $ \path hdl ->
 --   run $ withSystemTempDirectory "writedirtemp" $ \d -> writeJustDirs t
 --   -- run $ putStrLn $ "t: " ++ show t
 --   assert True
+
+-----------------------------------
+-- write test dirs to filesystem --
+-----------------------------------
+
+-- creates a diabolically-named file in the given dir and returns its path
+-- TODO uh oh, printing the names messes up mac terminals
+writeDiabolicalFile :: FilePath -> IO FilePath
+writeDiabolicalFile dir = do
+  basename <- fmap n2p $ generate (arbitrary :: Gen FileName)
+  let path = dir </> basename
+  -- putStrLn $ "writing diabolical file: '" ++ path ++ "'"
+  writeFile path "this is a test"
+  return path
