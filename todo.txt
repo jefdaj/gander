@@ -1,5 +1,6 @@
 feature:
   dupes across multiple hashes files would make dealing with lots of drives much easier
+  annex mode would be less confusing if it required an explicit --annex flag
 
 convert to ST:
   x pathsByHash
