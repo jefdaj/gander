@@ -1,3 +1,6 @@
+feature:
+  dupes across multiple hashes files would make dealing with lots of drives much easier
+
 convert to ST:
   x pathsByHash
   dupesByNFiles
@@ -52,6 +55,10 @@ timing data:
     feature-strictmap-bytestrings-dupesets dupes 11m1s
 
 bugs:
+  errors that cause crashes in real-life situations:
+    encountering a file with "invalid encoding" (possibly a hard drive error?)
+      nope, this is a filename issue! start a dir of difficult test cases to actually scan and fix
+    encountering a (nonexistent?) socket file. would be nice to specifically alert the user about that, or skip it
   wrong counts for empty dirs:
     # 81 dirs (0 files each, 11 total) have hash e3b0c442
   crashes on hashing a symlink... but is that what we want anyway?

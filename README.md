@@ -32,23 +32,31 @@ There are currently no plans for Windows support.
 
 Email me or open an issue if you would like a precompiled binary release added.
 
+To use all the features, make sure you have `git`, `git-annex`, and `rsync` installed and on your `PATH` too.
+
 
 Hash a folder
 -------------
 
 `gander` recursively hashes folders and uses the hashes for later comparison.
-File hashes are `sha256sum`s. The `F` or `D` and number before each one is for
-recreating the tree structure: "this is a file at indent level 1", etc.
+File hashes are standard `sha256sum`s, but to save space a 20-character base64
+digest is used in place of the full hash.
+
+The `F` or `D` and number before each one is for recreating the tree structure:
+"this is a file at indent level 1", etc.
+
+Directory hashes are the hash of their sorted content hashes. That way you know
+that all the contents are identical, even if some file names changed.
 
 ```
 $ gander hash backup > backup-hashes.txt
 $ cat backup-hashes.txt
-F 1 e80d8ed374517e280f5923057046010b5786251e65dac402bf87b1a07f48780b file1.txt
-F 2 cfc9494ec1483b639a5d07dcbfafb9b27048800d5ad6c1e320a36272c2e42880 file3.txt
-F 3 8c0899afa99e1ea386150e72bd6b72e8e7ac78f5c0e984b97a0a10aa2982039b file2.txt
-D 2 88bddd45f2a68576fdeebcef08c10101a568ab615747fbf4949e622fd57ad8d8 folder2
-D 1 0abc967a6c1907a42360f0fc9e3695feddeb6dcafa5e1511afbae4e3be49669f folder1
-D 0 bad85662b5cc09010d879c8f580f80125417a330ee7d5b5f4b70eee1ae7a95d2 backup
+F 1 ZTgwZDhlZDM3NDUxN2Uy file1.txt
+F 2 Y2ZjOTQ5NGVjMTQ4M2I2 file3.txt
+F 3 OGMwODk5YWZhOTllMWVh file2.txt
+D 2 ZDUzYWU5MWIyNTAwNjU5 folder2
+D 1 NDEzYWJiZjYyZDY3MmI1 folder1
+D 0 OTY2NjU5NzE5MjczZGMx backup
 ```
 
 The standalone hash command is mainly useful when the files to hash are large or on an external drive.
@@ -99,15 +107,11 @@ diff -r backup/folder1/folder2/file2.txt current/folder1/folder2/file2.txt
 > edit the 2nd file
 Only in current/folder1/folder2: file3.txt
 
-and this is what `gander diff` says:
-added 'file3.txt' (03c6a1ef)
-moved 'folder1/file3.txt' -> 'folder1/folder2/file3.txt' (cfc9494e)
-edited 'folder1/folder2/file2.txt/file2.txt' (8c0899af -> a86b253f)
+and this is how `gander diff` explains it:
+added 'file3.txt'
+moved 'folder1/file3.txt' -> 'folder1/folder2/file3.txt'
+edited 'folder1/folder2/file2.txt/file2.txt'
 ```
-
-Everything works similarly with directories and binary files,
-except that the directory hashes don't follow an external standard.
-
 
 Find dupes within a folder
 --------------------------
@@ -119,22 +123,22 @@ Continuing with [demo.sh][4],
 
 ```
 $ gander dupes demo
-# 3 duplicate dirs with 3 files each (9 total)
+# deduping these 3 dirs would remove 6 files:
 demo/backup
 demo/current/old-backup-1
 demo/current/old-backup-2
 
-# 4 duplicate files
-demo/backup/folder1/file3.txt
-demo/current/folder1/folder2/file3.txt
-demo/current/old-backup-1/folder1/file3.txt
-demo/current/old-backup-2/folder1/file3.txt
-
-# 4 duplicate files
+# deduping these 4 files would remove 3:
 demo/backup/file1.txt
 demo/current/file1.txt
 demo/current/old-backup-1/file1.txt
 demo/current/old-backup-2/file1.txt
+
+# deduping these 4 files would remove 3:
+demo/backup/folder1/file3.txt
+demo/current/folder1/folder2/file3.txt
+demo/current/old-backup-1/folder1/file3.txt
+demo/current/old-backup-2/folder1/file3.txt
 ```
 
 It still looks messy because the duplicate sets overlap,
@@ -143,13 +147,13 @@ So we delete `current/old-backup-1` and `current/old-backup-2` and re-run it:
 
 ```
 $ gander dupes demo
-# 2 duplicate files
-demo/backup/folder1/file3.txt
-demo/current/folder1/folder2/file3.txt
-
-# 2 duplicate files
+# deduping these 2 files would remove 1:
 demo/backup/file1.txt
 demo/current/file1.txt
+
+# deduping these 2 files would remove 1:
+demo/backup/folder1/file3.txt
+demo/current/folder1/folder2/file3.txt
 ```
 
 Much better! Even very large, messy drives can be simplified after several rounds.
@@ -310,6 +314,28 @@ before continuing! `gander` assumes that file matches the current repository
 state, and will give nonsensical results or possibly remove the last copy of
 something if not.
 
+Development
+-----------
+
+I do most of the development in a Nix environment, using commands like these:
+
+```
+nix-shell --run 'cabal build'
+nix-shell --run 'cabal run gander hash ~/some-path'
+nix-shell --run 'cabal repl'
+nix-shell --run 'cabal repl test'
+nix-build
+./result/bin/gander -h
+```
+
+But Stack works fine too:
+
+```
+stack build
+stack repl
+stack test
+stack exec gander -- -h
+```
 
 [1]: https://git-annex.branchable.com
 [2]: https://docs.haskellstack.org/en/stable/README/
