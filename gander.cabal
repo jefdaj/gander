@@ -46,6 +46,8 @@ common deps
                        text,
                        th-utilities,
                        utf8-string,
+                       with-utf8,
+                       system-filepath,
                        unix
 
 library

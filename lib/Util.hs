@@ -38,6 +38,8 @@ import System.Posix.Files (getSymbolicLinkStatus, isSymbolicLink, readSymbolicLi
 import qualified Data.Text as T
 import qualified Data.ByteString.UTF8             as BU
 
+import qualified Filesystem.Path.CurrentOS as OS
+
 pathComponents :: FilePath -> [FilePath]
 pathComponents f = filter (not . null)
                  $ map (filter (/= pathSeparator))

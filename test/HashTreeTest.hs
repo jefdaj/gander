@@ -16,6 +16,7 @@ import System.IO.Temp
 import System.IO (hClose, IOMode(..), withFile)
 
 import System.FilePath
+import System.Directory (createDirectoryIfMissing)
 import System.Directory.Tree (writeJustDirs)
 import Util
 import Data.Gander.Hash
@@ -186,5 +187,6 @@ writeDiabolicalFile dir = do
   basename <- fmap n2p $ generate (arbitrary :: Gen FileName)
   let path = dir </> basename
   -- putStrLn $ "writing diabolical file: '" ++ path ++ "'"
+  createDirectoryIfMissing True dir
   writeFile path "this is a test"
-  return path
+  return path -- TODO will have to sanitize this in order to actually display it right?
