@@ -10,7 +10,7 @@ import Gander.Cmd
 import Util           (absolutize)
 import Gander.Config         (Config(..), defaultConfig)
 import System.Console.Docopt (docoptFile, parseArgsOrExit,
-                              getArgOrExitWith, isPresent, getArg,
+                              getArgOrExitWith, isPresent, getArg, getAllArgs,
                               shortOption, command, argument)
 import System.Environment    (getArgs)
 import System.FilePath       ((</>))
@@ -30,6 +30,7 @@ main = do
   args <- parseArgsOrExit ptns =<< getArgs
   let cmd   n = isPresent args $ command n
       arg   n = getArgOrExitWith ptns args $ argument n
+      lst   n = getAllArgs args $ argument n
       short n = getArgOrExitWith ptns args $ shortOption n
       flag  n = isPresent args $ shortOption n
   eList <- if (flag 'e')
@@ -53,8 +54,8 @@ main = do
       aPath <- absolutize a
       let hashes = aPath </> "hashes.txt"
       if      cmd "init"  then cmdInit  cfg aPath
-      else if cmd "hash"  then cmdHash  cfg aPath
-      else if cmd "dupes" then cmdDupes cfg aPath
+      else if cmd "hash"  then cmdHash  cfg [aPath]
+      else if cmd "dupes" then cmdDupes cfg [aPath]
       else if cmd "add" then do
         dst <- arg "dst"
         let src = getArg args $ argument "src"
@@ -74,14 +75,14 @@ main = do
     -- standalone mode (note: still works on annexed files)
     Nothing -> do
       if cmd "hash" then do
-        path <- arg "path"
-        cmdHash cfg path
+        let paths = lst "path"
+        cmdHash cfg paths
       else if cmd "diff" then do
         old <- arg "old"
         new <- arg "new"
         cmdDiff cfg old new
       else if cmd "dupes" then do
-        hashes <- arg "hashes"
+        let hashes = lst "hashes"
         cmdDupes cfg hashes
       else if cmd "test"  then do
         path <- arg "path"

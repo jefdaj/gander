@@ -1,9 +1,9 @@
 The "Git ANnex DEdupeR" deduplicates files and folders using git-annex.
 
 Usage:
-  gander [-vc]  hash   <path> [-e <exclude>] [-t <txt>] [-b <bin>]
+  gander [-vc]  hash   <path>... [-e <exclude>] [-t <txt>] [-b <bin>]
   gander [-vc]  diff   <old> <new>
-  gander [-vc]  dupes  <hashes> [-t <txt>] [-m <maxdepth>]
+  gander [-vc]  dupes  <hashes>... [-t <txt>] [-m <maxdepth>]
   gander [-vfc] annex  <src> <dest>
   gander [-vfc] rm     <target> <rootpath> <rmpath>
   gander [-vfc] update <main> <sub> <path>
@@ -26,9 +26,9 @@ Options:
   -t <txt>       Stream output to a text file rather than stdout.
   -b <bin>       Before exit, write a binary <hashes> file for fast reloading.
                  Text will still stream to stdout as usual.
-  -m <maxdepth>  Look for dupes only a <maxdepth> levels into the folder structure.
+  -m <maxdepth>  Look for dupes only <maxdepth> levels into the folder structure.
                  Drastically reduces time and memory use when reading hashes
-                 from a file, without affectin g accuracy.
+                 from a file, without affecting accuracy up to the max depth.
                  WARNING: only works on a saved hashes file. No effect on
                  binary data or when reading a tree of files and deduping them
                  at the same time.

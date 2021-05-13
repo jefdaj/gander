@@ -18,10 +18,13 @@ import System.FilePath  ((</>))
 -- TODO is there a better way to set that up?
 -- TODO require that the path be either absolute + in the annex or relative and in the annex
 -- this works, but add doesn't. so what changed?
-cmdHash :: Config -> FilePath -> IO ()
-cmdHash cfg target = case annex cfg of
+cmdHash :: Config -> [FilePath] -> IO ()
+cmdHash cfg targets = case annex cfg of
   Nothing -> do
-    t <- buildTree (verbose cfg) (exclude cfg) target
+    -- TODO support multiple targets here by also supporting it in buildTree?
+    -- TODO is it a problem to have multiple 0-indent dirs in a tree? think it over
+    -- TODO also think about how it would be handled in the dupes command
+    t <- buildTree (verbose cfg) (exclude cfg) (head targets) -- TODO finish this
     case txt cfg of
       Nothing -> printTree t
       Just p  -> writeTree p t
@@ -29,7 +32,7 @@ cmdHash cfg target = case annex cfg of
       Nothing -> return ()
       Just p -> writeBinTree p t
   Just dir -> do
-    new <- buildTree (verbose cfg) (exclude cfg) target
+    new <- buildTree (verbose cfg) (exclude cfg) (head targets) -- TODO finish this
     updateAnnexHashes cfg new
     runGitCommit cfg dir "gander hash" -- TODO only if hashes changed
     -- out2 <- runGit dir ["commit", "-m", "gander hash"]

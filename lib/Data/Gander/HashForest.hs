@@ -5,7 +5,7 @@ module Data.Gander.HashForest
   , readTrees
   , buildForest
   , readForest
-  , readOrBuildForest
+  , readOrBuildTrees
   , serializeForest
   , deserializeForest
   , printForest
@@ -51,8 +51,8 @@ buildForest :: Bool -> [Pattern] -> [FilePath] -> IO HashForest
 buildForest beVerbose excludes paths = HashForest <$> mapM (buildTree beVerbose excludes) paths
 
 -- TODO be clearer: this works on trees, but you could also read a forest directly
-readOrBuildForest :: Bool -> Maybe Int -> [Pattern] -> [FilePath] -> IO HashForest
-readOrBuildForest verbose mmaxdepth excludes paths = HashForest <$> mapM (readOrBuildTree verbose mmaxdepth excludes) paths
+readOrBuildTrees :: Bool -> Maybe Int -> [Pattern] -> [FilePath] -> IO HashForest
+readOrBuildTrees verbose mmaxdepth excludes paths = HashForest <$> mapM (readOrBuildTree verbose mmaxdepth excludes) paths
 
 serializeForest :: HashForest -> [B8.ByteString]
 serializeForest (HashForest ts) = concatMap serializeTree ts 

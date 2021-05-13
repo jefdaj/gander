@@ -1,6 +1,12 @@
 feature:
   dupes across multiple hashes files would make dealing with lots of drives much easier
   annex mode would be less confusing if it required an explicit --annex flag
+  add .git/* to the default ignore list?
+  when using max depth, dupes should still properly report the total number of files
+    while you're at it, dirs should probably also count as files because they take up inodes and its more consistent
+    add a Skip Int data type while parsing somewhere, and use it to add to the dir counts?
+    test that total nFiles is the same no matter what max depth you parse with
+    how should you handle serializing a tree with skips in it? test that it also round-trips successfully
 
 convert to ST:
   x pathsByHash
@@ -56,6 +62,7 @@ timing data:
     feature-strictmap-bytestrings-dupesets dupes 11m1s
 
 bugs:
+  reading a forest sometimes only gets the first tree?
   errors that cause crashes in real-life situations:
     encountering a file with "invalid encoding" (possibly a hard drive error?)
       nope, this is a filename issue! start a dir of difficult test cases to actually scan and fix

@@ -31,7 +31,8 @@ module Data.Gander
   , HashForest(..)
   , buildForest
   , readForest
-  , readOrBuildForest
+  , readTrees
+  , readOrBuildTrees
   , printForest
   , writeForest
   , writeBinForest
