@@ -29,7 +29,7 @@ import Control.Exception.Safe (catchAny)
  - at the top level when reading potentially more than one tree from the
  - command line.
  -}
-data HashForest = HashForest [HashTree]
+newtype HashForest = HashForest [HashTree]
   deriving (Eq, Show, Read)
 
 -- https://hackage.haskell.org/package/store-0.7.2/docs/Data-Store-TH.html
