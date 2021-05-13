@@ -7,6 +7,7 @@ module Data.Gander.HashForest
   , readOrBuildForest
   , serializeForest
   , printForest
+  , writeForest
   )
   where
 
@@ -18,6 +19,7 @@ import TH.Derive
 import Data.Store             (Store(..))
 import System.FilePath.Glob (Pattern)
 import qualified Data.ByteString.Char8 as B8
+import System.IO            (withFile, IOMode(..))
 
 {- A forest is just a list of trees without an overall content hash. It's used
  - at the top level when reading potentially more than one tree from the
@@ -47,3 +49,9 @@ serializeForest (HashForest ts) = concatMap serializeTree ts
 
 printForest :: HashForest -> IO ()
 printForest (HashForest ts) = mapM_ printTree ts
+
+-- this uses a handle for streaming output, which turns out to be important for memory usage
+-- TODO rename writeHashes? this is a confusing way to say that
+writeForest :: FilePath -> HashForest -> IO ()
+writeForest path forest = withFile path WriteMode $ \h ->
+  mapM_ (B8.hPutStrLn h) (serializeForest forest)
