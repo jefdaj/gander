@@ -21,18 +21,16 @@ import System.FilePath  ((</>))
 cmdHash :: Config -> [FilePath] -> IO ()
 cmdHash cfg targets = case annex cfg of
   Nothing -> do
-    -- TODO support multiple targets here by also supporting it in buildTree?
-    -- TODO is it a problem to have multiple 0-indent dirs in a tree? think it over
-    -- TODO also think about how it would be handled in the dupes command
-    t <- buildTree (verbose cfg) (exclude cfg) (head targets) -- TODO finish this
+    f <- buildForest (verbose cfg) (exclude cfg) targets
     case txt cfg of
-      Nothing -> printTree t
-      Just p  -> writeTree p t
+      Nothing -> printForest f
+      Just p  -> writeForest p f
     case bin cfg of
       Nothing -> return ()
-      Just p -> writeBinTree p t
+      Just p -> writeBinForest p f
   Just dir -> do
-    new <- buildTree (verbose cfg) (exclude cfg) (head targets) -- TODO finish this
+    when (length targets > 1) $ error "multiple hash targets in annex mode"
+    new <- buildTree (verbose cfg) (exclude cfg) (head targets)
     updateAnnexHashes cfg new
     runGitCommit cfg dir "gander hash" -- TODO only if hashes changed
     -- out2 <- runGit dir ["commit", "-m", "gander hash"]
