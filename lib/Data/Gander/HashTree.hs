@@ -22,6 +22,7 @@ module Data.Gander.HashTree
   , treeContainsHash
   , addSubTree
   , rmSubTree
+  , accTrees -- TODO hide this better?
   -- for testing
   , countFiles
   )
