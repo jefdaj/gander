@@ -51,7 +51,7 @@ instance Arbitrary HashTree where
     if i == 0
 
       then do
-        !cs <- resize 5 $ arbitrary :: Gen [HashTree] -- increase size to test RAM + CPU usage?
+        !cs <- resize 6 $ arbitrary :: Gen [HashTree] -- increase size to test RAM + CPU usage?
         return $ Dir { name     = n
                      , hash     = hashContents cs
                      , contents = cs
@@ -88,6 +88,8 @@ prop_roundtrip_hashtrees_to_bytestring t = t' == t
   where
     bs = B8.unlines $ serializeTree t -- TODO why didn't it include the unlines part again?
     t' = deserializeTree Nothing bs
+
+-- TODO round-trip to binary files too
 
 roundtrip_hashtree_to_file :: HashTree -> IO HashTree
 roundtrip_hashtree_to_file t = withSystemTempFile "roundtriptemp" $ \path hdl -> do
