@@ -6,6 +6,7 @@ module Data.Gander.HashForest
   , buildForest
   , readOrBuildForest
   , serializeForest
+  , printForest
   )
   where
 
@@ -43,3 +44,6 @@ readOrBuildForest verbose mmaxdepth excludes paths = HashForest <$> mapM (readOr
 
 serializeForest :: HashForest -> [B8.ByteString]
 serializeForest (HashForest ts) = concatMap serializeTree ts 
+
+printForest :: HashForest -> IO ()
+printForest (HashForest ts) = mapM_ printTree ts
