@@ -301,6 +301,7 @@ treeContainsHash (Dir  _ h1 cs _) h2
 -- add a subtree --
 -------------------
 
+-- TODO use this to implement hashing multiple trees at once?
 wrapInEmptyDir :: FilePath -> HashTree -> HashTree
 wrapInEmptyDir n t = do
   Dir { name = p2n n, hash = h, contents = cs, nFiles = nFiles t }
