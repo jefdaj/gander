@@ -5,6 +5,7 @@ module Data.Gander.HashForest
   , readForest
   , buildForest
   , readOrBuildForest
+  , serializeForest
   )
   where
 
@@ -15,6 +16,7 @@ import Data.Gander.HashTree
 import TH.Derive
 import Data.Store             (Store(..))
 import System.FilePath.Glob (Pattern)
+import qualified Data.ByteString.Char8 as B8
 
 {- A forest is just a list of trees without an overall content hash. It's used
  - at the top level when reading potentially more than one tree from the
@@ -38,3 +40,6 @@ buildForest beVerbose excludes paths = HashForest <$> mapM (buildTree beVerbose 
 
 readOrBuildForest :: Bool -> Maybe Int -> [Pattern] -> [FilePath] -> IO HashForest
 readOrBuildForest verbose mmaxdepth excludes paths = HashForest <$> mapM (readOrBuildTree verbose mmaxdepth excludes) paths
+
+serializeForest :: HashForest -> [B8.ByteString]
+serializeForest (HashForest ts) = concatMap serializeTree ts 
