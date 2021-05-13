@@ -29,6 +29,12 @@ module Data.Gander
 
   -- hashforest
   , HashForest(..)
+  , buildForest
+  , readForest
+  , readOrBuildForest
+  , printForest
+  , writeForest
+  , writeBinForest
 
   -- delta
   , Delta(..)

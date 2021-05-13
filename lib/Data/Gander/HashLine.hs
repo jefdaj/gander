@@ -66,6 +66,7 @@ $($(derive [d| instance Deriving (Store TreeType) |]))
 newtype IndentLevel = IndentLevel Int
   deriving (Read, Show, Eq, Ord)
 
+-- TODO make a skip type here, or in hashtree?
 -- TODO remove the tuple part now?
 newtype HashLine = HashLine (TreeType, IndentLevel, Hash, FileName)
   deriving (Read, Show, Eq, Ord)
