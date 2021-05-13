@@ -54,6 +54,7 @@ buildForest beVerbose excludes paths = HashForest <$> mapM (buildTree beVerbose 
 readOrBuildTrees :: Bool -> Maybe Int -> [Pattern] -> [FilePath] -> IO HashForest
 readOrBuildTrees verbose mmaxdepth excludes paths = HashForest <$> mapM (readOrBuildTree verbose mmaxdepth excludes) paths
 
+-- TODO is there a reason this doesn't join lines?
 serializeForest :: HashForest -> [B8.ByteString]
 serializeForest (HashForest ts) = concatMap serializeTree ts 
 

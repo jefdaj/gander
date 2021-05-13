@@ -94,7 +94,7 @@ safeRunDeltas cfg deltas msg = do
     Left e -> log cfg e
     Right expected -> do
       -- TODO check no lost files here and ask user to confirm if there are
-      let lost = listLostFiles before expected
+      let lost = listLostFiles (HashForest [before]) (HashForest [expected])
           run = do
             runDeltas cfg aPath deltas
             when (check cfg) $ do

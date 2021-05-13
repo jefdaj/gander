@@ -36,6 +36,8 @@ module Data.Gander
   , printForest
   , writeForest
   , writeBinForest
+  , serializeForest
+  , deserializeForest
 
   -- delta
   , Delta(..)

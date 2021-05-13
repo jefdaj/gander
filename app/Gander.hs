@@ -85,8 +85,8 @@ main = do
         let hashes = lst "hashes"
         cmdDupes cfg hashes
       else if cmd "test"  then do
-        path <- arg "path"
-        cmdTest cfg path
+        let paths = lst "path"
+        cmdTest cfg paths
       else if cmd "update" then do
         mainTree <- arg "main"
         subTree  <- arg "sub"
