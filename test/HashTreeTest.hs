@@ -99,7 +99,7 @@ instance Arbitrary HashTree where
 -- TODO write_tree_binary?
 -- TODO flatten_tree
 
--- prop_roundtrip_hashtree_to_file :: 
+-- prop_roundtrip_hashtree_to_test_hashes_file :: 
 
 --     describe "HashTree" $ do
 --       describe "HashTree" $ do
@@ -114,28 +114,28 @@ prop_roundtrip_hashtree_to_bytestring t = t' == t
 
 -- TODO round-trip to binary files too
 
-roundtrip_hashtree_to_file :: HashTree -> IO HashTree
-roundtrip_hashtree_to_file t = withSystemTempFile "roundtriptemp" $ \path hdl -> do
+roundtrip_hashtree_to_test_hashes_file :: HashTree -> IO HashTree
+roundtrip_hashtree_to_test_hashes_file t = withSystemTempFile "roundtriptemp" $ \path hdl -> do
   hClose hdl
   writeTree path t
   readTree Nothing path
 
-prop_roundtrip_hashtree_to_file :: Property
-prop_roundtrip_hashtree_to_file = monadicIO $ do
+prop_roundtrip_hashtree_to_test_hashes_file :: Property
+prop_roundtrip_hashtree_to_test_hashes_file = monadicIO $ do
   t1 <- pick arbitrary
-  t2 <- run $ roundtrip_hashtree_to_file t1
+  t2 <- run $ roundtrip_hashtree_to_test_hashes_file t1
   assert $ t2 == t1
 
-roundtrip_hashtree_to_binary_file :: HashTree -> IO HashTree
-roundtrip_hashtree_to_binary_file t = withSystemTempFile "roundtriptemp" $ \path hdl -> do
+roundtrip_hashtree_to_binary_hashes_file :: HashTree -> IO HashTree
+roundtrip_hashtree_to_binary_hashes_file t = withSystemTempFile "roundtriptemp" $ \path hdl -> do
   hClose hdl
   writeBinTree path t
   readTree Nothing path
 
-prop_roundtrip_hashtree_to_binary_file :: Property
-prop_roundtrip_hashtree_to_binary_file = monadicIO $ do
+prop_roundtrip_hashtree_to_binary_hashes_file :: Property
+prop_roundtrip_hashtree_to_binary_hashes_file = monadicIO $ do
   t1 <- pick arbitrary
-  t2 <- run $ roundtrip_hashtree_to_binary_file t1
+  t2 <- run $ roundtrip_hashtree_to_binary_hashes_file t1
   assert $ t2 == t1
 
 -- prop_write_hashtree_to_dirs :: Property
