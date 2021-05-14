@@ -88,10 +88,14 @@ hashP = do
   _ <- char ' '
   return $ Hash $ BS.toShort h
 
--- like endOfLine, but make sure D/F comes next instead of the rest of a filename
--- TODO uh, what if the filename contains "\n(D|F)\ "? pretty pathological
+{- Like endOfLine, but make sure D/F comes next followed by a valid hash digest
+ - instead of the rest of a filename. This catches the rare case where a
+ - filename contains a newline followed by D or F. You could still construct a
+ - filename that would fool it, but it would be extremely unlikely to happen by
+ - chance.
+ -}
 breakP :: Parser ()
-breakP = endOfLine >> choice [typeP >> return (), endOfInput]
+breakP = endOfLine >> choice [typeP >> indentP >> hashP >> return (), endOfInput]
 
 -- TODO should anyChar be anything except forward slash and the null char?
 nameP :: Parser FileName

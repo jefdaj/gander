@@ -40,7 +40,7 @@ instance Arbitrary FileName where
       okList = (list okChar) `suchThat` (not . null)
 
   -- copied directly from `Test.QuickCheck.Arbitrary.Text.shrink`.
-  shrink xs = T.pack <$> shrink (T.unpack xs)
+  shrink xs = T.pack <$> filter (not . null) (shrink $ T.unpack xs)
 
 prop_roundtrip_filenames_to_bytestring :: FileName -> Bool
 prop_roundtrip_filenames_to_bytestring n = p2n (n2p n) == n
