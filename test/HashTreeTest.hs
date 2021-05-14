@@ -99,15 +99,15 @@ instance Arbitrary HashTree where
 -- TODO write_tree_binary?
 -- TODO flatten_tree
 
--- prop_roundtrip_hashtrees_to_file :: 
+-- prop_roundtrip_hashtree_to_file :: 
 
 --     describe "HashTree" $ do
 --       describe "HashTree" $ do
 --         it "builds a tree from the test annex" $ pendingWith "need annex test harness"
 
 -- TODO what's right here but wrong in the roundtrip to bytestring ones?
-prop_roundtrip_hashtrees_to_bytestring :: HashTree -> Bool
-prop_roundtrip_hashtrees_to_bytestring t = t' == t
+prop_roundtrip_hashtree_to_bytestring :: HashTree -> Bool
+prop_roundtrip_hashtree_to_bytestring t = t' == t
   where
     bs = B8.unlines $ serializeTree t -- TODO why didn't it include the unlines part again?
     t' = deserializeTree Nothing bs
@@ -120,14 +120,26 @@ roundtrip_hashtree_to_file t = withSystemTempFile "roundtriptemp" $ \path hdl ->
   writeTree path t
   readTree Nothing path
 
--- prop_roundtrip_hashtrees_to_file :: Property
--- prop_roundtrip_hashtrees_to_file = monadicIO $ do
---   t1 <- pick arbitrary
---   t2 <- run $ roundtrip_hashtree_to_file t1
---   assert $ t2 == t1
+prop_roundtrip_hashtree_to_file :: Property
+prop_roundtrip_hashtree_to_file = monadicIO $ do
+  t1 <- pick arbitrary
+  t2 <- run $ roundtrip_hashtree_to_file t1
+  assert $ t2 == t1
 
--- prop_write_hashtrees_to_dirs :: Property
--- prop_write_hashtrees_to_dirs = monadicIO $ do
+roundtrip_hashtree_to_binary_file :: HashTree -> IO HashTree
+roundtrip_hashtree_to_binary_file t = withSystemTempFile "roundtriptemp" $ \path hdl -> do
+  hClose hdl
+  writeBinTree path t
+  readTree Nothing path
+
+prop_roundtrip_hashtree_to_binary_file :: Property
+prop_roundtrip_hashtree_to_binary_file = monadicIO $ do
+  t1 <- pick arbitrary
+  t2 <- run $ roundtrip_hashtree_to_binary_file t1
+  assert $ t2 == t1
+
+-- prop_write_hashtree_to_dirs :: Property
+-- prop_write_hashtree_to_dirs = monadicIO $ do
 --   t <- pick (arbitrary :: Gen HashTree)
 --   run $ withSystemTempDirectory "writedirtemp" $ \d -> writeJustDirs t
 --   -- run $ putStrLn $ "t: " ++ show t

@@ -42,8 +42,8 @@ instance Arbitrary FileName where
   -- copied directly from `Test.QuickCheck.Arbitrary.Text.shrink`.
   shrink xs = T.pack <$> filter (not . null) (shrink $ T.unpack xs)
 
-prop_roundtrip_filenames_to_bytestring :: FileName -> Bool
-prop_roundtrip_filenames_to_bytestring n = p2n (n2p n) == n
+prop_roundtrip_filename_to_bytestring :: FileName -> Bool
+prop_roundtrip_filename_to_bytestring n = p2n (n2p n) == n
 
 roundtrip_filename_to_file :: FileName -> IO FileName
 roundtrip_filename_to_file n = withSystemTempFile "roundtriptemp" $ \f hdl -> do
@@ -52,8 +52,8 @@ roundtrip_filename_to_file n = withSystemTempFile "roundtriptemp" $ \f hdl -> do
   bs <- B.readFile f
   return $ bs2n bs
 
-prop_roundtrip_filenames_to_file :: Property
-prop_roundtrip_filenames_to_file = monadicIO $ do
+prop_roundtrip_filename_to_file :: Property
+prop_roundtrip_filename_to_file = monadicIO $ do
   d1 <- pick arbitrary
   d2 <- run $ roundtrip_filename_to_file d1
   assert $ d2 == d1
