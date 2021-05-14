@@ -25,23 +25,33 @@ parseHashLine :: B8.ByteString -> Either String (Maybe HashLine)
 parseHashLine bs = A8.parseOnly (lineP Nothing) (B8.append bs "\n")
 
 instance Arbitrary TreeType where
+
   arbitrary = do
     n <- choose (0,1 :: Int)
     return $ [F, D] !! n
 
+  -- you could shrink D -> F, but not without changing the rest of the hashline
+  shrink _ = []
+
 instance Arbitrary IndentLevel where
   arbitrary = fmap IndentLevel $ ((arbitrary :: Gen Int) `suchThat` (>= 0))
+  shrink _ = []
 
 instance Arbitrary Hash where
   arbitrary = fmap hashBytes (arbitrary :: Gen B8.ByteString)
+  shrink _ = []
 
 instance Arbitrary HashLine where
+
   arbitrary = do
     tt <- arbitrary :: Gen TreeType
     il <- arbitrary :: Gen IndentLevel
     h  <- arbitrary :: Gen Hash
     n  <- arbitrary :: Gen FileName
     return $ HashLine (tt, il, h, n)
+
+  -- only shrinks the filename
+  shrink (HashLine (tt, il, h, n)) = map (\n' -> HashLine (tt, il, h, n')) (shrink n)
 
 instance Arbitrary HashTree where
   arbitrary = do
