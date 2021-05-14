@@ -27,6 +27,18 @@ module Data.Gander
   , treeContainsHash
   , treeContainsPath
 
+  -- hashforest
+  , HashForest(..)
+  , buildForest
+  , readForest
+  , readTrees
+  , readOrBuildTrees
+  , printForest
+  , writeForest
+  , writeBinForest
+  , serializeForest
+  , deserializeForest
+
   -- delta
   , Delta(..)
   , diff
@@ -57,3 +69,4 @@ import Data.Gander.DupeMap
 import Data.Gander.Hash
 import Data.Gander.HashLine
 import Data.Gander.HashTree
+import Data.Gander.HashForest

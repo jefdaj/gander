@@ -10,35 +10,36 @@ import Gander.Config      (Config(..), log)
 
 import qualified Data.ByteString.Char8 as B
 
-cmdTest :: Config -> FilePath -> IO ()
-cmdTest cfg path = do
+cmdTest :: Config -> [FilePath] -> IO ()
+cmdTest cfg paths = do
   putStrLn "loading config: "; pPrint cfg; putStrLn ""
-  tree <- readOrBuildTree (verbose cfg) (maxdepth cfg) (exclude cfg) path
-  testSerialization cfg tree
-  testDupes cfg tree
-  -- testRm cfg tree
+  forest <- readOrBuildTrees (verbose cfg) (maxdepth cfg) (exclude cfg) paths
+  -- let forest = HashForest trees
+  testSerialization cfg forest
+  testDupes cfg forest
+  -- testRm cfg forest
 
 explain :: String -> IO () -> IO ()
 explain msg fn = putStrLn msg >> fn >> putStrLn ""
 
-testSerialization :: Config -> HashTree -> IO ()
-testSerialization cfg tree1 = do
-  explain "making hashtree:" $ pPrint tree1
-  let str1  = B.unlines $ serializeTree tree1
-      tree2 = deserializeTree (maxdepth cfg) str1
-      str2  = B.unlines $ serializeTree tree2
-  let tests = [tree1 == tree2, show tree1 == show tree1, str1 == str2]
+testSerialization :: Config -> HashForest -> IO ()
+testSerialization cfg forest1 = do
+  explain "making hashforest:" $ pPrint forest1
+  let string1 = B.unlines $ serializeForest forest1
+      forest2 = deserializeForest (maxdepth cfg) string1
+      string2 = B.unlines $ serializeForest forest2
+  let tests = [forest1 == forest2, show forest1 == show forest2, string1 == string2]
   if (all id tests) then do
-    explain "round-tripped hashtree to string:" $ printTree tree1
+    explain "round-tripped hashtree to string:" $ printForest forest1
   else do
     putStrLn "failed to round-trip hashtree to string!"
-    print str1
-    print str2
+    print string1
+    print string2
     putStrLn "failed to round-trip the tree!"
 
-testDupes :: Config -> HashTree -> IO ()
-testDupes cfg tree = do
-  let ds = dupesByNFiles $ pathsByHash tree
+testDupes :: Config -> HashForest -> IO ()
+testDupes cfg forest = do
+  let ds = dupesByNFiles $ pathsByHash forest
   -- explain "making dupemap from hashtree:" $ pPrint m
   explain "using dupemap to report duplicates:" $ printDupes (maxdepth cfg) ds
 

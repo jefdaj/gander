@@ -40,14 +40,18 @@ import qualified Data.HashMap.Strict as M
 import Data.Gander.Hash
 import Data.Gander.HashLine
 import Data.Gander.HashTree
+import Data.Gander.HashForest
 import Util (n2p)
 
 import Data.List       (sort, isPrefixOf)
 import System.FilePath ((</>), splitDirectories)
 
+-- TODO replace every HashTree in here with HashForest?
+
 -- TODO can Foldable or Traversable simplify these?
 
 -- note that most of the functions use (Hash, DupeSet) instead of plain DupeSet
+-- TODO is DupeSet a Monoid?
 type DupeSet  = (Int, TreeType, S.HashSet B.ByteString)
 type DupeList = (Int, TreeType, [B.ByteString]) -- TODO move to Cmd/Dupes.hs?
 
@@ -71,10 +75,10 @@ type DupeTable s = C.HashTable s Hash DupeSet
 
 -- TODO what about if we guess the approximate size first?
 -- TODO what about if we make it from the serialized hashes instead of a tree?
-pathsByHash :: HashTree -> ST s (DupeTable s)
-pathsByHash t = do
+pathsByHash :: HashForest -> ST s (DupeTable s)
+pathsByHash (HashForest ts) = do
   ht <- H.newSized 1 -- TODO what's with the size thing? maybe use H.new instead
-  addToDupeMap ht t
+  mapM_ (addToDupeMap ht) ts
   -- TODO try putting it back and compare overall speed
   -- H.mapM_ (\(k,_) -> H.mutate ht k removeNonDupes) ht
   return ht
@@ -220,19 +224,20 @@ anotherCopy h mainMap subMap = nMain > nSub
     (Just nMain) = fmap (\(n,_,_) -> n) $ M.lookup h mainMap
     (Just nSub ) = fmap (\(n,_,_) -> n) $ M.lookup h subMap
 
+-- TODO finish this
 allDupes :: HashTree -> HashTree -> Bool
 -- allDupes mainTree subTree = all safeToRmHash $ undefined subDupes
 allDupes mainTree subTree = undefined safeToRmHash $ undefined subDupes
   where
-    mainDupes = undefined $ pathsByHash mainTree
-    subDupes  = undefined $ pathsByHash subTree
+    mainDupes = undefined $ pathsByHash $ HashForest [mainTree]
+    subDupes  = undefined $ pathsByHash $ HashForest [subTree]
     safeToRmHash h = anotherCopy h mainDupes subDupes
 
 -- for warning the user when their action will delete the last copy of a file
 -- TODO also warn about directories, because sometimes they might care (Garageband files for example)
 -- TODO make more efficient by restricting to hashes found in the removed subtree!
 --      (only used for Rm right?)
-listLostFiles :: HashTree -> HashTree -> [FilePath]
+listLostFiles :: HashForest -> HashForest -> [FilePath]
 listLostFiles before after = filesLost
   where
     hashesBefore = pathsByHash before

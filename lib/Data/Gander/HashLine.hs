@@ -66,6 +66,7 @@ $($(derive [d| instance Deriving (Store TreeType) |]))
 newtype IndentLevel = IndentLevel Int
   deriving (Read, Show, Eq, Ord)
 
+-- TODO make a skip type here, or in hashtree?
 -- TODO remove the tuple part now?
 newtype HashLine = HashLine (TreeType, IndentLevel, Hash, FileName)
   deriving (Read, Show, Eq, Ord)
@@ -106,6 +107,7 @@ indentP = do
   return $ IndentLevel $ read n
 
 -- TODO is there a cleaner syntax for this?
+-- TODO this should still count up total files when given a max depth
 lineP :: Maybe Int -> Parser (Maybe HashLine)
 lineP md = do
   t <- typeP
@@ -129,7 +131,7 @@ lineP md = do
 linesP :: Maybe Int -> Parser [HashLine]
 linesP md = do
   hls <- sepBy' (lineP md) endOfLine
-  return $ catMaybes hls
+  return $ catMaybes hls -- TODO count skipped lines here?
 
 fileP :: Maybe Int -> Parser [HashLine]
 fileP md = linesP md <* endOfLine <* endOfInput

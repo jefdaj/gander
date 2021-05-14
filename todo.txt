@@ -1,6 +1,28 @@
+should the top level dir include its absolute path?
+  if so, have to allow slashes
+
+forest test properties:
+  reading multiple trees into a forest should be the same as reading them separately and making a list
+  should the empty forest have the same hash as the empty tree?
+  you should be able to concat serialized trees and read them back as a forest
+  if you make a forest with a tree duplicated N times, the top dupe should be that whole tree N times
+    should it also be the only dupe, since everything else is redundant?
+    it should work even if you rename the top dir
+
+tree test properties:
+  tree should maintain the same hashes if you randomly rename some things, right?
+  diff of the same tree twice should be empty
+  if you write the read/show instances right, the printed description of a diff should equal the list of deltas that generated it?
+
 feature:
   dupes across multiple hashes files would make dealing with lots of drives much easier
   annex mode would be less confusing if it required an explicit --annex flag
+  add .git/* to the default ignore list?
+  when using max depth, dupes should still properly report the total number of files
+    while you're at it, dirs should probably also count as files because they take up inodes and its more consistent
+    add a Skip Int data type while parsing somewhere, and use it to add to the dir counts?
+    test that total nFiles is the same no matter what max depth you parse with
+    how should you handle serializing a tree with skips in it? test that it also round-trips successfully
 
 convert to ST:
   x pathsByHash
@@ -56,6 +78,7 @@ timing data:
     feature-strictmap-bytestrings-dupesets dupes 11m1s
 
 bugs:
+  reading a forest sometimes only gets the first tree?
   errors that cause crashes in real-life situations:
     encountering a file with "invalid encoding" (possibly a hard drive error?)
       nope, this is a filename issue! start a dir of difficult test cases to actually scan and fix

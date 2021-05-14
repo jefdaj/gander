@@ -18,18 +18,19 @@ import System.FilePath  ((</>))
 -- TODO is there a better way to set that up?
 -- TODO require that the path be either absolute + in the annex or relative and in the annex
 -- this works, but add doesn't. so what changed?
-cmdHash :: Config -> FilePath -> IO ()
-cmdHash cfg target = case annex cfg of
+cmdHash :: Config -> [FilePath] -> IO ()
+cmdHash cfg targets = case annex cfg of
   Nothing -> do
-    t <- buildTree (verbose cfg) (exclude cfg) target
+    f <- buildForest (verbose cfg) (exclude cfg) targets
     case txt cfg of
-      Nothing -> printTree t
-      Just p  -> writeTree p t
+      Nothing -> printForest f
+      Just p  -> writeForest p f
     case bin cfg of
       Nothing -> return ()
-      Just p -> writeBinTree p t
+      Just p -> writeBinForest p f
   Just dir -> do
-    new <- buildTree (verbose cfg) (exclude cfg) target
+    when (length targets > 1) $ error "multiple hash targets in annex mode"
+    new <- buildTree (verbose cfg) (exclude cfg) (head targets)
     updateAnnexHashes cfg new
     runGitCommit cfg dir "gander hash" -- TODO only if hashes changed
     -- out2 <- runGit dir ["commit", "-m", "gander hash"]
