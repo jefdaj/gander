@@ -324,6 +324,10 @@ nix-shell --run 'cabal build'
 nix-shell --run 'cabal run gander hash ~/some-path'
 nix-shell --run 'cabal repl'
 nix-shell --run 'cabal run gander-test'
+
+# see hackage.haskell.org/package/tasty for test pattern syntax
+nix-shell --run 'TASTY_QUICKCHECK_TESTS=10000 cabal run gander-test -- --pattern "\$NF ~ /filename/"'
+
 nix-build
 ./result/bin/gander -h
 ```
