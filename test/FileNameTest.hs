@@ -10,6 +10,7 @@ import Util
 
 import qualified Data.Attoparsec.ByteString.Char8 as A8
 import qualified Data.ByteString.Char8            as B
+import qualified Data.Text                        as T
 
 import System.IO               (hClose)
 import System.IO.Temp          (withSystemTempFile)
@@ -25,12 +26,21 @@ parseFileName bs = A8.parseOnly nameP (B.append bs "\n")
 reservedPathChars :: [Char]
 reservedPathChars = ['\000', '\057']
 
--- TODO why is the not . null thing required to prevent empty strings? list1 should be enough
+{- My `FileName` type is defined in `Util` as `Text` for efficiency, but
+ - what it really means is "Text without slashes or null chars". So I have to
+ - define my own Arbitrary instance here.
+ -
+ - TODO why is the not . null thing required to prevent empty strings? list1 should be enough
+ -}
 instance Arbitrary FileName where
+
   arbitrary = fmap p2n okList
     where
       okChar = char `suchThat` (\c -> not $ c `elem` reservedPathChars)
       okList = (list okChar) `suchThat` (not . null)
+
+  -- copied directly from `Test.QuickCheck.Arbitrary.Text.shrink`.
+  shrink xs = T.pack <$> shrink (T.unpack xs)
 
 prop_roundtrip_filenames_to_bytestring :: FileName -> Bool
 prop_roundtrip_filenames_to_bytestring n = p2n (n2p n) == n
