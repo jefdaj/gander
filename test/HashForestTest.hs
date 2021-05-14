@@ -16,6 +16,7 @@ import System.IO.Temp
 
 instance Arbitrary HashForest where
   arbitrary = HashForest <$> resize 3 arbitrary
+  shrink (HashForest xs) = HashForest <$> shrink xs
 
 -- TODO round-trip to binary files too
 
