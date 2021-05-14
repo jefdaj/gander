@@ -1,3 +1,19 @@
+should the top level dir include its absolute path?
+  if so, have to allow slashes
+
+forest test properties:
+  reading multiple trees into a forest should be the same as reading them separately and making a list
+  should the empty forest have the same hash as the empty tree?
+  you should be able to concat serialized trees and read them back as a forest
+  if you make a forest with a tree duplicated N times, the top dupe should be that whole tree N times
+    should it also be the only dupe, since everything else is redundant?
+    it should work even if you rename the top dir
+
+tree test properties:
+  tree should maintain the same hashes if you randomly rename some things, right?
+  diff of the same tree twice should be empty
+  if you write the read/show instances right, the printed description of a diff should equal the list of deltas that generated it?
+
 feature:
   dupes across multiple hashes files would make dealing with lots of drives much easier
   annex mode would be less confusing if it required an explicit --annex flag
