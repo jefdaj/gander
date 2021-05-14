@@ -54,6 +54,7 @@ instance Arbitrary HashLine where
   shrink (HashLine (tt, il, h, n)) = map (\n' -> HashLine (tt, il, h, n')) (shrink n)
 
 instance Arbitrary HashTree where
+
   arbitrary = do
     n <- arbitrary :: Gen FileName
     -- TODO there's got to be a better way, right?
@@ -73,6 +74,18 @@ instance Arbitrary HashTree where
         return $ File { name = n
                       , hash = hashBytes bs
                       }
+
+  -- only shrinks the filename
+  shrink f@(File {}) = map (\n -> f { name = n }) (shrink $ name f)
+
+  -- shrinks either the name or the contents, and adjusts the rest to match
+  shrink d@(Dir {}) = newNames ++ newContents
+    where
+      newNames = map (\n -> d { name = n }) (shrink $ name d)
+      newContents = map (\cs -> d { contents = cs
+                                  , hash = hashContents cs
+                                  , nFiles = sum $ map countFiles cs})
+                        (shrink $ contents d)
 
 -- TODO test tree in haskell
 -- TODO test dir
