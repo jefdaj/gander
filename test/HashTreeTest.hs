@@ -47,11 +47,11 @@ instance Arbitrary HashTree where
   arbitrary = do
     n <- arbitrary :: Gen FileName
     -- TODO there's got to be a better way, right?
-    i <- choose (0,2 :: Int)
+    i <- choose (0,10 :: Int)
     if i == 0
 
       then do
-        !cs <- resize 6 $ arbitrary :: Gen [HashTree] -- increase size to test RAM + CPU usage?
+        !cs <- resize 20 $ arbitrary :: Gen [HashTree] -- increase size to test RAM + CPU usage?
         return $ Dir { name     = n
                      , hash     = hashContents cs
                      , contents = cs
