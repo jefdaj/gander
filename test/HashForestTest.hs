@@ -15,7 +15,7 @@ import System.IO (hClose, IOMode(..), withFile)
 import System.IO.Temp
 
 instance Arbitrary HashForest where
-  arbitrary = HashForest <$> resize 5 arbitrary
+  arbitrary = HashForest <$> resize 3 arbitrary
 
 -- TODO round-trip to binary files too
 
