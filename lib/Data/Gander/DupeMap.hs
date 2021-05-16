@@ -89,7 +89,7 @@ addToDupeMap ht t = addToDupeMap' ht "" t
 
 -- same, but start from a given root path
 addToDupeMap' :: DupeTable s -> FilePath -> HashTree -> ST s ()
-addToDupeMap' ht dir (File n h      ) = insertDupeSet ht h (1, F, S.singleton (B.pack (dir </> n2p n)))
+addToDupeMap' ht dir (File n h ()   ) = insertDupeSet ht h (1, F, S.singleton (B.pack (dir </> n2p n)))
 addToDupeMap' ht dir (Dir  n h cs fs) = do
   insertDupeSet ht h (fs, D, S.singleton (B.pack (dir </> n2p n)))
   mapM_ (addToDupeMap' ht (dir </> n2p n)) cs
@@ -209,7 +209,7 @@ explainDupes md = B.unlines . map explainGroup
 
 -- TODO is this actually helpful?
 listAllFiles :: FilePath -> HashTree -> [(Hash, FilePath)]
-listAllFiles anchor (File n h     ) = [(h, anchor </> n2p n)]
+listAllFiles anchor (File n h ()  ) = [(h, anchor </> n2p n)]
 listAllFiles anchor (Dir  n _ cs _) = concatMap (listAllFiles $ anchor </> n2p n) cs
 
 

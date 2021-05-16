@@ -77,7 +77,7 @@ import Control.DeepSeq
 --   deriving (Eq, Read, Show)
 --   TODO rename name -> path?
 data HashTree
-  = File { name :: !FileName, hash :: !Hash }
+  = File { name :: !FileName, hash :: !Hash, file :: () }
   | Dir  { name :: !FileName, hash :: Hash, contents :: [HashTree], nFiles :: Int }
   deriving (Read, Show, Ord) -- TODO switch to hash-based equality after testing
 
@@ -223,7 +223,7 @@ flattenTree = flattenTree' ""
 -- TODO need to handle unicode here?
 -- TODO does this affect memory usage?
 flattenTree' :: FilePath -> HashTree -> [HashLine]
-flattenTree' dir (File n h     ) = [HashLine (F, IndentLevel $ length (splitPath dir), h, n)]
+flattenTree' dir (File n h ()  ) = [HashLine (F, IndentLevel $ length (splitPath dir), h, n)]
 flattenTree' dir (Dir  n h cs _) = subtrees ++ [wholeDir]
   where
     subtrees = concatMap (flattenTree' $ dir </> n2p n) cs
@@ -237,7 +237,7 @@ deserializeTree :: Maybe Int -> B8.ByteString -> HashTree
 deserializeTree md = snd . head . foldr accTrees [] . reverse . parseHashes md
 
 countFiles :: HashTree -> Int
-countFiles (File _ _    ) = 1
+countFiles (File _ _ () ) = 1
 countFiles (Dir  _ _ _ n) = n
 
 {- This one is confusing! It accumulates a list of trees and their indent
@@ -255,7 +255,7 @@ countFiles (Dir  _ _ _ n) = n
 
 accTrees :: HashLine -> [(IndentLevel, HashTree)] -> [(IndentLevel, HashTree)]
 accTrees (HashLine (t, (IndentLevel i), h, p)) cs = case t of
-  F -> cs ++ [((IndentLevel i), File p h)]
+  F -> cs ++ [((IndentLevel i), File p h ())]
   D -> let (children, siblings) = partition (\(IndentLevel i2, _) -> i2 > i) cs
            dir = Dir p h (map snd children)
                          (sum $ map (countFiles . snd) children)
@@ -280,7 +280,7 @@ treeContainsPath :: HashTree -> FilePath -> Bool
 treeContainsPath tree path = isJust $ dropTo tree path
 
 dropTo :: HashTree -> FilePath -> Maybe HashTree
-dropTo t@(File f1 _     ) f2 = if n2p f1 == f2 then Just t else Nothing
+dropTo t@(File f1 _ ()  ) f2 = if n2p f1 == f2 then Just t else Nothing
 dropTo t@(Dir  f1 _ cs _) f2
   | n2p f1 == f2 = Just t
   | length (pathComponents f2) < 2 = Nothing
@@ -291,7 +291,7 @@ dropTo t@(Dir  f1 _ cs _) f2
                   else msum $ map (\c -> dropTo c f2') cs
 
 treeContainsHash :: HashTree -> Hash -> Bool
-treeContainsHash (File _ h1     ) h2 = h1 == h2
+treeContainsHash (File _ h1 ()  ) h2 = h1 == h2
 treeContainsHash (Dir  _ h1 cs _) h2
   | h1 == h2 = True
   | otherwise = any (\c -> treeContainsHash c h2) cs
@@ -318,7 +318,7 @@ wrapInEmptyDirs p t = case pathComponents p of
 
 -- TODO does the anchor here matter? maybe it's set to the full path accidentally
 addSubTree :: HashTree -> HashTree -> FilePath -> HashTree
-addSubTree (File _ _) _ _ = error $ "attempt to insert tree into a file"
+addSubTree (File _ _ ()) _ _ = error $ "attempt to insert tree into a file"
 addSubTree _ _ path | null (pathComponents path) = error "can't insert tree at null path"
 addSubTree main sub path = main { hash = h', contents = cs', nFiles = n' }
   where
@@ -347,7 +347,7 @@ addSubTree main sub path = main { hash = h', contents = cs', nFiles = n' }
  - TODO does this actually solve nFiles too?
  -}
 rmSubTree :: HashTree -> FilePath -> Either String HashTree
-rmSubTree (File _ _) p = Left $ "no such subtree: '" ++ p ++ "'"
+rmSubTree (File _ _ ()) p = Left $ "no such subtree: '" ++ p ++ "'"
 rmSubTree d@(Dir _ _ cs n) p = case dropTo d p of
   Nothing -> Left $ "no such subtree: '" ++ p ++ "'"
   Just t -> Right $ if t `elem` cs
