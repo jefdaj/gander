@@ -4,6 +4,7 @@
 
 module Data.Gander.HashTree
   ( HashTree(..)
+  , ProdTree
   , HashLine(..)
   , keepPath
   , readTree
@@ -81,6 +82,9 @@ data HashTree a
   | Dir  { name :: !FileName, hash :: Hash, contents :: [HashTree a], nFiles :: Int }
   deriving (Read, Show, Ord) -- TODO switch to hash-based equality after testing
 
+-- We only need the file decoration for testing, so we can leave it off the production types
+type ProdTree = HashTree ()
+
 -- TODO disable this while testing to ensure deep equality?
 instance Eq (HashTree a) where
   t1 == t2 = hash t1 == hash t2
@@ -108,7 +112,7 @@ keepPath excludes path = not $ any (\ptn -> matchWith opts ptn path) excludes
              }
 
 -- try to read as binary, and fall back to text if it fails
-readTree :: Maybe Int -> FilePath -> IO (HashTree ())
+readTree :: Maybe Int -> FilePath -> IO (ProdTree)
 readTree md path = catchAny
                     (B8.readFile path >>= decodeIO)
                     (\_ -> fmap (deserializeTree md) $ B8.readFile path)
@@ -118,7 +122,7 @@ readTree md path = catchAny
 --   (\_ -> fmap deserializeTree $ B8.readFile path)
 
 -- TODO are contents sorted? they probably should be for stable hashes
-buildTree :: Bool -> [Pattern] -> FilePath -> IO (HashTree ())
+buildTree :: Bool -> [Pattern] -> FilePath -> IO (ProdTree)
 buildTree beVerbose excludes path = do
   -- putStrLn $ "buildTree path: '" ++ path ++ "'"
   -- TODO attempt building lazily only to a certain depth... 10?
@@ -132,7 +136,7 @@ lazyDirDepth :: Int
 lazyDirDepth = 4
 
 -- TODO oh no, does AnchoredDirTree fail on cyclic symlinks?
-buildTree' :: Bool -> Int -> [Pattern] -> DT.AnchoredDirTree FileName -> IO (HashTree ())
+buildTree' :: Bool -> Int -> [Pattern] -> DT.AnchoredDirTree FileName -> IO (ProdTree)
 -- TODO catch and re-throw errors with better description and/or handle them here
 buildTree' _ _ _  (a DT.:/ (DT.Failed n e )) = error $ (a </> n2p n) ++ ": " ++ show e
 buildTree' v depth es (_ DT.:/ (DT.File n f)) = do
@@ -180,7 +184,7 @@ hashContents = hashBytes . B8.unlines . sort . map (BS.fromShort . unHash . hash
 -- If passed a file this assumes it contains hashes and builds a tree of them;
 -- If passed a dir it will scan it first and then build the tree.
 -- TODO don't assume??
-readOrBuildTree :: Bool -> Maybe Int -> [Pattern] -> FilePath -> IO (HashTree ())
+readOrBuildTree :: Bool -> Maybe Int -> [Pattern] -> FilePath -> IO (ProdTree)
 readOrBuildTree verbose mmaxdepth excludes path = do
   isDir  <- doesDirectoryExist path
   isFile <- doesFileExist      path
@@ -189,7 +193,7 @@ readOrBuildTree verbose mmaxdepth excludes path = do
   else error $ "No such file: '" ++ path ++ "'"
 
 -- for comparing two trees without getting hung up on different overall names
-renameRoot :: FilePath -> HashTree () -> HashTree ()
+renameRoot :: FilePath -> ProdTree -> ProdTree
 renameRoot newName tree = tree { name = p2n newName }
 
 -------------------------------------
@@ -199,10 +203,10 @@ renameRoot newName tree = tree { name = p2n newName }
 -- TODO can Foldable or Traversable simplify these?
 -- TODO need to handle unicode here?
 -- TODO does map evaluation influence memory usage?
-serializeTree :: HashTree () -> [B8.ByteString]
+serializeTree :: ProdTree -> [B8.ByteString]
 serializeTree = map prettyHashLine . flattenTree
 
-printTree :: HashTree () -> IO ()
+printTree :: ProdTree -> IO ()
 printTree = mapM_ printLine . flattenTree
   where
     -- TODO don't flush every line
@@ -210,19 +214,19 @@ printTree = mapM_ printLine . flattenTree
 
 -- this uses a handle for streaming output, which turns out to be important for memory usage
 -- TODO rename writeHashes? this is a confusing way to say that
-writeTree :: FilePath -> HashTree () -> IO ()
+writeTree :: FilePath -> ProdTree -> IO ()
 writeTree path tree = withFile path WriteMode $ \h ->
   mapM_ (B8.hPutStrLn h) (serializeTree tree)
 
-writeBinTree :: FilePath -> HashTree () -> IO ()
+writeBinTree :: FilePath -> ProdTree -> IO ()
 writeBinTree path tree = B8.writeFile path $ encode tree
 
-flattenTree :: HashTree () -> [HashLine]
+flattenTree :: ProdTree -> [HashLine]
 flattenTree = flattenTree' ""
 
 -- TODO need to handle unicode here?
 -- TODO does this affect memory usage?
-flattenTree' :: FilePath -> HashTree () -> [HashLine]
+flattenTree' :: FilePath -> ProdTree -> [HashLine]
 flattenTree' dir (File n h ()  ) = [HashLine (F, IndentLevel $ length (splitPath dir), h, n)]
 flattenTree' dir (Dir  n h cs _) = subtrees ++ [wholeDir]
   where
@@ -233,7 +237,7 @@ flattenTree' dir (Dir  n h cs _) = subtrees ++ [wholeDir]
 -- TODO wtf why is reverse needed? remove that to save RAM
 -- TODO refactor so there's a proper buildTree function and this uses it
 -- TODO what about files with newlines in them? might need to split at \n(file|dir)
-deserializeTree :: Maybe Int -> B8.ByteString -> HashTree ()
+deserializeTree :: Maybe Int -> B8.ByteString -> ProdTree
 deserializeTree md = snd . head . foldr accTrees [] . reverse . parseHashes md
 
 countFiles :: HashTree a -> Int
@@ -253,7 +257,7 @@ countFiles (Dir  _ _ _ n) = n
 --   | indent > d = cs
 --   | otherwise  = accTrees' hl cs
 
-accTrees :: HashLine -> [(IndentLevel, HashTree ())] -> [(IndentLevel, HashTree ())]
+accTrees :: HashLine -> [(IndentLevel, ProdTree)] -> [(IndentLevel, ProdTree)]
 accTrees (HashLine (t, (IndentLevel i), h, p)) cs = case t of
   F -> cs ++ [((IndentLevel i), File p h ())]
   D -> let (children, siblings) = partition (\(IndentLevel i2, _) -> i2 > i) cs
@@ -276,10 +280,10 @@ accTrees (HashLine (t, (IndentLevel i), h, p)) cs = case t of
 --                   then False
 --                   else any (\c -> treeContainsPath c f2') cs
 
-treeContainsPath :: HashTree () -> FilePath -> Bool
+treeContainsPath :: ProdTree -> FilePath -> Bool
 treeContainsPath tree path = isJust $ dropTo tree path
 
-dropTo :: HashTree () -> FilePath -> Maybe (HashTree ())
+dropTo :: ProdTree -> FilePath -> Maybe (ProdTree)
 dropTo t@(File f1 _ ()  ) f2 = if n2p f1 == f2 then Just t else Nothing
 dropTo t@(Dir  f1 _ cs _) f2
   | n2p f1 == f2 = Just t
@@ -290,7 +294,7 @@ dropTo t@(Dir  f1 _ cs _) f2
                   then Nothing
                   else msum $ map (\c -> dropTo c f2') cs
 
-treeContainsHash :: HashTree () -> Hash -> Bool
+treeContainsHash :: ProdTree -> Hash -> Bool
 treeContainsHash (File _ h1 ()  ) h2 = h1 == h2
 treeContainsHash (Dir  _ h1 cs _) h2
   | h1 == h2 = True
@@ -303,21 +307,21 @@ treeContainsHash (Dir  _ h1 cs _) h2
 -------------------
 
 -- TODO use this to implement hashing multiple trees at once?
-wrapInEmptyDir :: FilePath -> HashTree () -> HashTree ()
+wrapInEmptyDir :: FilePath -> ProdTree -> ProdTree
 wrapInEmptyDir n t = do
   Dir { name = p2n n, hash = h, contents = cs, nFiles = nFiles t }
   where
     cs = [t]
     h = hashContents cs
 
-wrapInEmptyDirs :: FilePath -> HashTree () -> HashTree ()
+wrapInEmptyDirs :: FilePath -> ProdTree -> ProdTree
 wrapInEmptyDirs p t = case pathComponents p of
   []     -> error "wrapInEmptyDirs needs at least one dir"
   (n:[]) -> wrapInEmptyDir n t
   (n:ns) -> wrapInEmptyDir n $ wrapInEmptyDirs (joinPath ns) t
 
 -- TODO does the anchor here matter? maybe it's set to the full path accidentally
-addSubTree :: HashTree () -> HashTree () -> FilePath -> HashTree ()
+addSubTree :: ProdTree -> ProdTree -> FilePath -> ProdTree
 addSubTree (File _ _ ()) _ _ = error $ "attempt to insert tree into a file"
 addSubTree _ _ path | null (pathComponents path) = error "can't insert tree at null path"
 addSubTree main sub path = main { hash = h', contents = cs', nFiles = n' }
@@ -346,7 +350,7 @@ addSubTree main sub path = main { hash = h', contents = cs', nFiles = n' }
  - Buuuut for now can just ignore nFiles as it's not needed for the rm itself.
  - TODO does this actually solve nFiles too?
  -}
-rmSubTree :: HashTree () -> FilePath -> Either String (HashTree ())
+rmSubTree :: ProdTree -> FilePath -> Either String (ProdTree)
 rmSubTree (File _ _ ()) p = Left $ "no such subtree: '" ++ p ++ "'"
 rmSubTree d@(Dir _ _ cs n) p = case dropTo d p of
   Nothing -> Left $ "no such subtree: '" ++ p ++ "'"
