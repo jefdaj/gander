@@ -17,6 +17,8 @@ import Test.QuickCheck
 import Util
 import FileNameTest
 import Control.Monad
+import Data.Either
+import qualified Data.Text as T
 
 -- import qualified Data.ByteString.Unicode as BU
 -- import qualified Data.Text as T
@@ -50,8 +52,8 @@ main = do
 --   writeFile path "this is a test"
 --   return path
 
-n2os :: FileName -> FilePath
-n2os = fromText
+n2os :: FileName -> OS.FilePath
+n2os = OS.fromText
 
-os2n :: FilePath -> FileName
-os2n = toText
+os2n :: OS.FilePath -> FileName
+os2n = either id id . OS.toText
