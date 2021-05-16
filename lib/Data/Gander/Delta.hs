@@ -34,11 +34,11 @@ import System.FilePath     ((</>))
 
 -- TODO should these have embedded hashtrees? seems unneccesary but needed for findMoves
 --      maybe only some of them are needed: add and edit. and edit only needs one.
-data Delta
-  = Add  FilePath HashTree
+data Delta a
+  = Add  FilePath (HashTree a)
   | Rm   FilePath
   | Mv   FilePath FilePath
-  | Edit FilePath HashTree HashTree -- TODO remove in favor of subtle use of Add?
+  | Edit FilePath (HashTree a) (HashTree a) -- TODO remove in favor of subtle use of Add?
   deriving (Read, Show, Eq)
 
 ------------------------
@@ -46,19 +46,19 @@ data Delta
 ------------------------
 
 -- TODO put the hashes back here?
-prettyDelta :: Delta -> B.ByteString
+prettyDelta :: Delta () -> B.ByteString
 prettyDelta (Add  f _  ) = B.pack $ "added '"   ++ f  ++ "'"
 prettyDelta (Rm   f    ) = B.pack $ "removed '" ++ f  ++ "'"
 prettyDelta (Edit f _ _) = B.pack $ "edited '"  ++ f  ++ "'"
 prettyDelta (Mv   f1 f2) = B.pack $ "moved '"   ++ f1 ++ "' -> '" ++ f2 ++ "'"
 
-printDeltas :: [Delta] -> IO ()
+printDeltas :: [Delta ()] -> IO ()
 printDeltas = mapM_ (putStrLn . B.unpack . prettyDelta)
 
-diff :: HashTree -> HashTree -> [Delta]
+diff :: HashTree () -> HashTree () -> [Delta ()]
 diff = diff' ""
 
-diff' :: FilePath -> HashTree -> HashTree -> [Delta]
+diff' :: FilePath -> HashTree () -> HashTree () -> [Delta ()]
 diff' a t1@(File f1 h1 ()) t2@(File f2 h2 ())
   | f1 == f2 && h1 == h2 = []
   | f1 /= f2 && h1 == h2 = [Mv (a </> n2p f1) (a </> n2p f2)]
@@ -78,7 +78,7 @@ diff' a t1@(Dir _ h1 os _) (Dir _ h2 ns _)
 
 -- given two Deltas, are they a matching Rm and Add that together make a Mv?
 -- TODO need an initial tree too to check if the hashes match
-findMv :: HashTree -> Delta -> Delta -> Bool
+findMv :: HashTree () -> Delta () -> Delta () -> Bool
 findMv t (Rm p) (Add _ t2) = case dropTo t p of
                                Nothing -> False
                                Just t3 -> t2 == t3
@@ -88,7 +88,7 @@ findMv _ _ _ = False
 -- else, that should be displayed as a single move operation. This will never
 -- match 100% before and after actual operations, because the filesystem
 -- version might be a move followed by editing files.
-fixMoves :: HashTree -> [Delta] -> [Delta]
+fixMoves :: HashTree () -> [Delta ()] -> [Delta ()]
 fixMoves _ [] = []
 fixMoves t (d1@(Rm f1):ds) = case find (findMv t d1) ds of
   Just d2@(Add f2 _) -> (Mv f1 f2) : let ds' = filter (/= d2) ds in fixMoves t ds'
@@ -120,7 +120,7 @@ fixMoves t (d:ds) = d : fixMoves t ds
 -----------------------------
 
 -- TODO think through how to report results more!
-simDelta :: HashTree -> Delta -> Either String HashTree
+simDelta :: HashTree () -> Delta () -> Either String (HashTree ())
 simDelta t (Rm   p    ) = rmSubTree t p
 simDelta t (Add  p  t2) = Right $ addSubTree t t2 p
 simDelta t (Edit p _ t2) = Right $ addSubTree t t2 p
@@ -128,14 +128,14 @@ simDelta t (Mv   p1 p2) = case simDelta t (Rm p1) of
   Left  e  -> Left e
   Right t2 -> simDelta t2 $ Add p2 $ fromJust $ dropTo t p1 -- TODO path error here?
 
-simDeltas :: HashTree -> [Delta] -> Either String HashTree
+simDeltas :: HashTree () -> [Delta ()] -> Either String (HashTree ())
 simDeltas = foldM simDelta
 
 -- seems like what we really want is runDeltaIfSafe, which does simDelta, checks safety, then runDelta
 
 -- TODO be clearer on before/after and or expected/actual here
 -- assertSameTrees :: FilePath -> HashTree -> HashTree -> IO ()
-assertSameTrees :: (String, HashTree) -> (String, HashTree) -> IO ()
+assertSameTrees :: (String, HashTree ()) -> (String, HashTree ()) -> IO ()
 assertSameTrees (msg1, tree1) (msg2, tree2) = do
   let wrong = diff tree1 tree2
   when (not $ null wrong) $ do

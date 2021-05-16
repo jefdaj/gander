@@ -75,7 +75,7 @@ type DupeTable s = C.HashTable s Hash DupeSet
 
 -- TODO what about if we guess the approximate size first?
 -- TODO what about if we make it from the serialized hashes instead of a tree?
-pathsByHash :: HashForest -> ST s (DupeTable s)
+pathsByHash :: HashForest () -> ST s (DupeTable s)
 pathsByHash (HashForest ts) = do
   ht <- H.newSized 1 -- TODO what's with the size thing? maybe use H.new instead
   mapM_ (addToDupeMap ht) ts
@@ -84,11 +84,11 @@ pathsByHash (HashForest ts) = do
   return ht
 
 -- inserts all nodes from a tree into an existing dupemap in ST s
-addToDupeMap :: DupeTable s -> HashTree -> ST s ()
+addToDupeMap :: DupeTable s -> HashTree () -> ST s ()
 addToDupeMap ht t = addToDupeMap' ht "" t
 
 -- same, but start from a given root path
-addToDupeMap' :: DupeTable s -> FilePath -> HashTree -> ST s ()
+addToDupeMap' :: DupeTable s -> FilePath -> HashTree () -> ST s ()
 addToDupeMap' ht dir (File n h ()   ) = insertDupeSet ht h (1, F, S.singleton (B.pack (dir </> n2p n)))
 addToDupeMap' ht dir (Dir  n h cs fs) = do
   insertDupeSet ht h (fs, D, S.singleton (B.pack (dir </> n2p n)))
@@ -208,7 +208,7 @@ explainDupes md = B.unlines . map explainGroup
 -----------------------------
 
 -- TODO is this actually helpful?
-listAllFiles :: FilePath -> HashTree -> [(Hash, FilePath)]
+listAllFiles :: FilePath -> HashTree () -> [(Hash, FilePath)]
 listAllFiles anchor (File n h ()  ) = [(h, anchor </> n2p n)]
 listAllFiles anchor (Dir  n _ cs _) = concatMap (listAllFiles $ anchor </> n2p n) cs
 
@@ -225,7 +225,7 @@ anotherCopy h mainMap subMap = nMain > nSub
     (Just nSub ) = fmap (\(n,_,_) -> n) $ M.lookup h subMap
 
 -- TODO finish this
-allDupes :: HashTree -> HashTree -> Bool
+allDupes :: HashTree () -> HashTree () -> Bool
 -- allDupes mainTree subTree = all safeToRmHash $ undefined subDupes
 allDupes mainTree subTree = undefined safeToRmHash $ undefined subDupes
   where
@@ -237,7 +237,7 @@ allDupes mainTree subTree = undefined safeToRmHash $ undefined subDupes
 -- TODO also warn about directories, because sometimes they might care (Garageband files for example)
 -- TODO make more efficient by restricting to hashes found in the removed subtree!
 --      (only used for Rm right?)
-listLostFiles :: HashForest -> HashForest -> [FilePath]
+listLostFiles :: HashForest () -> HashForest () -> [FilePath]
 listLostFiles before after = filesLost
   where
     hashesBefore = pathsByHash before

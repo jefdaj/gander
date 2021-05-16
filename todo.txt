@@ -1,6 +1,6 @@
 decorated trees:
   x 1. add a decoration type to File constructor, but specialize everything using it to ()
-  2. swap out () for any type a, but keep it in production functions
+  x 2. swap out () for any type a, but keep it in production functions
   3. add test functions that replace () with B8.ByteString
 
 should the top level dir include its absolute path?

@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module HashTreeTest where
@@ -53,7 +54,7 @@ instance Arbitrary HashLine where
   -- only shrinks the filename
   shrink (HashLine (tt, il, h, n)) = map (\n' -> HashLine (tt, il, h, n')) (shrink n)
 
-instance Arbitrary HashTree where
+instance Arbitrary a => Arbitrary (HashTree a) where
 
   arbitrary = do
     n <- arbitrary :: Gen FileName
@@ -62,7 +63,7 @@ instance Arbitrary HashTree where
     if i == 0
 
       then do
-        !cs <- resize 20 $ arbitrary :: Gen [HashTree] -- increase size to test RAM + CPU usage?
+        !cs <- resize 20 (arbitrary :: Gen [HashTree a])
         return $ Dir { name     = n
                      , hash     = hashContents cs
                      , contents = cs
@@ -71,8 +72,10 @@ instance Arbitrary HashTree where
 
       else do
         bs <- arbitrary :: Gen B8.ByteString
+        f  <- arbitrary
         return $ File { name = n
                       , hash = hashBytes bs
+                      , file = f
                       }
 
   -- only shrinks the filename
@@ -106,7 +109,7 @@ instance Arbitrary HashTree where
 --         it "builds a tree from the test annex" $ pendingWith "need annex test harness"
 
 -- TODO what's right here but wrong in the roundtrip to bytestring ones?
-prop_roundtrip_hashtree_to_bytestring :: HashTree -> Bool
+prop_roundtrip_hashtree_to_bytestring :: HashTree () -> Bool
 prop_roundtrip_hashtree_to_bytestring t = t' == t
   where
     bs = B8.unlines $ serializeTree t -- TODO why didn't it include the unlines part again?
@@ -114,7 +117,7 @@ prop_roundtrip_hashtree_to_bytestring t = t' == t
 
 -- TODO round-trip to binary files too
 
-roundtrip_hashtree_to_test_hashes_file :: HashTree -> IO HashTree
+roundtrip_hashtree_to_test_hashes_file :: HashTree () -> IO (HashTree ())
 roundtrip_hashtree_to_test_hashes_file t = withSystemTempFile "roundtriptemp" $ \path hdl -> do
   hClose hdl
   writeTree path t
@@ -126,7 +129,7 @@ prop_roundtrip_hashtree_to_test_hashes_file = monadicIO $ do
   t2 <- run $ roundtrip_hashtree_to_test_hashes_file t1
   assert $ t2 == t1
 
-roundtrip_hashtree_to_binary_hashes_file :: HashTree -> IO HashTree
+roundtrip_hashtree_to_binary_hashes_file :: HashTree () -> IO (HashTree ())
 roundtrip_hashtree_to_binary_hashes_file t = withSystemTempFile "roundtriptemp" $ \path hdl -> do
   hClose hdl
   writeBinTree path t
