@@ -9,6 +9,7 @@ module Data.Gander.HashTree
   , keepPath
   , readTree
   , buildTree
+  , buildProdTree
   , readOrBuildTree
   , renameRoot
   , printTree
@@ -95,7 +96,7 @@ $($(derive [d|
     |]))
 
 excludeGlobs :: [Pattern]
-             -> (DT.AnchoredDirTree FileName -> DT.AnchoredDirTree FileName)
+             -> (DT.AnchoredDirTree a -> DT.AnchoredDirTree a)
 excludeGlobs excludes (a DT.:/ tree) = (a DT.:/ DT.filterDir (keep a) tree)
   where
     keep a (DT.Dir  n _) = keepPath excludes (a </> n2p n)
@@ -121,39 +122,45 @@ readTree md path = catchAny
 --      return $ snd $ head $ foldr accTrees [] hs)
 --   (\_ -> fmap deserializeTree $ B8.readFile path)
 
+-- see also `buildTestTree` in the `HashTreeTest` module
+-- TODO remove this?
+buildProdTree :: Bool -> [Pattern] -> FilePath -> IO ProdTree
+buildProdTree = buildTree (return . const ())
+
 -- TODO are contents sorted? they probably should be for stable hashes
-buildTree :: Bool -> [Pattern] -> FilePath -> IO (ProdTree)
-buildTree beVerbose excludes path = do
+buildTree :: (FilePath -> IO a) -> Bool -> [Pattern] -> FilePath -> IO (HashTree a)
+buildTree readFileFn beVerbose excludes path = do
   -- putStrLn $ "buildTree path: '" ++ path ++ "'"
   -- TODO attempt building lazily only to a certain depth... 10?
   -- tree <- DT.readDirectoryWithLD 10 return path -- TODO need to rename root here?
-  tree <- DT.readDirectoryWithL (return . p2n) path -- TODO need to rename root here?
+  tree <- DT.readDirectoryWithL readFileFn path -- TODO need to rename root here?
   -- putStrLn $ show tree
-  buildTree' beVerbose 0 excludes tree
+  buildTree' readFileFn beVerbose 0 excludes tree
 
 -- TODO take this as a command-line argument
 lazyDirDepth :: Int
 lazyDirDepth = 4
 
 -- TODO oh no, does AnchoredDirTree fail on cyclic symlinks?
-buildTree' :: Bool -> Int -> [Pattern] -> DT.AnchoredDirTree FileName -> IO (ProdTree)
+buildTree' :: (FilePath -> IO a) -> Bool -> Int -> [Pattern] -> DT.AnchoredDirTree a -> IO (HashTree a)
 -- TODO catch and re-throw errors with better description and/or handle them here
-buildTree' _ _ _  (a DT.:/ (DT.Failed n e )) = error $ (a </> n2p n) ++ ": " ++ show e
-buildTree' v depth es (_ DT.:/ (DT.File n f)) = do
+buildTree' _ _ _ _  (a DT.:/ (DT.Failed n e )) = error $ (a </> n2p n) ++ ": " ++ show e
+buildTree' readFileFn v depth es (_ DT.:/ (DT.File n _)) = do
   -- TODO how to exclude these?
-  !h <- unsafeInterleaveIO $ hashFile v $ n2p f
+  !h <- unsafeInterleaveIO $ hashFile v $ n2p n -- TODO is this right?
+  !fd <- readFileFn $ n2p n
   -- seems not to help with memory usage?
   -- return $ (\x -> hash x `seq` name x `seq` x) $ File { name = n, hash = h }
   -- return File { name = n, hash = h }
   return $ (if depth < lazyDirDepth
               then id
               else (\x -> hash x `seq` name x `seq` x))
-         $ File { name = n, hash = h, file = () }
+         $ File { name = n, hash = h, file = fd }
 
-buildTree' v depth es d@(a DT.:/ (DT.Dir n _)) = do
+buildTree' readFileFn v depth es d@(a DT.:/ (DT.Dir n _)) = do
   let root = a </> n2p n
       -- bang t has no effect on memory usage
-      hashSubtree t = unsafeInterleaveIO $ buildTree' v (depth+1) es $ root DT.:/ t
+      hashSubtree t = unsafeInterleaveIO $ buildTree' readFileFn v (depth+1) es $ root DT.:/ t
       (_ DT.:/ (DT.Dir _ cs')) = excludeGlobs es d -- TODO operate on only the cs part
 
   -- this works, but doesn't affect memory usage:
@@ -184,12 +191,12 @@ hashContents = hashBytes . B8.unlines . sort . map (BS.fromShort . unHash . hash
 -- If passed a file this assumes it contains hashes and builds a tree of them;
 -- If passed a dir it will scan it first and then build the tree.
 -- TODO don't assume??
-readOrBuildTree :: Bool -> Maybe Int -> [Pattern] -> FilePath -> IO (ProdTree)
+readOrBuildTree :: Bool -> Maybe Int -> [Pattern] -> FilePath -> IO ProdTree
 readOrBuildTree verbose mmaxdepth excludes path = do
   isDir  <- doesDirectoryExist path
   isFile <- doesFileExist      path
   if      isFile then readTree mmaxdepth path
-  else if isDir then buildTree verbose excludes path
+  else if isDir then buildProdTree verbose excludes path
   else error $ "No such file: '" ++ path ++ "'"
 
 -- for comparing two trees without getting hung up on different overall names

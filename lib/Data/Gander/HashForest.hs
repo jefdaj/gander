@@ -55,7 +55,7 @@ readForest md path = catchAny
 
 -- TODO how should errors propagate?
 buildForest :: Bool -> [Pattern] -> [FilePath] -> IO (HashForest ())
-buildForest beVerbose excludes paths = HashForest <$> mapM (buildTree beVerbose excludes) paths
+buildForest beVerbose excludes paths = HashForest <$> mapM (buildProdTree beVerbose excludes) paths
 
 -- TODO be clearer: this works on trees, but you could also read a forest directly
 readOrBuildTrees :: Bool -> Maybe Int -> [Pattern] -> [FilePath] -> IO (HashForest ())

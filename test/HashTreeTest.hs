@@ -146,6 +146,26 @@ prop_roundtrip_hashtree_to_binary_hashes_file = monadicIO $ do
   t2 <- run $ roundtrip_hashtree_to_binary_hashes_file t1
   assert $ t2 == t1
 
+writeTestTree :: FilePath -> TestTree -> IO ()
+writeTestTree = undefined
+
+readTestTree :: Maybe Int -> FilePath -> IO TestTree
+readTestTree = undefined
+
+-- the tests above round-trip to single files describing trees, whereas this
+-- one round-trips to an actual directory tree on disk
+roundtrip_hashtree_to_filesystem :: TestTree -> IO (TestTree)
+roundtrip_hashtree_to_filesystem t = withSystemTempFile "roundtriptemp" $ \path hdl -> do
+  hClose hdl
+  writeTestTree path t
+  readTestTree Nothing path
+
+prop_roundtrip_hashtree_to_filesystem :: Property
+prop_roundtrip_hashtree_to_filesystem = monadicIO $ do
+  t1 <- pick arbitrary
+  t2 <- run $ roundtrip_hashtree_to_filesystem t1
+  assert $ t2 == t1
+
 -- prop_write_hashtree_to_dirs :: Property
 -- prop_write_hashtree_to_dirs = monadicIO $ do
 --   t <- pick (arbitrary :: Gen HashTree)
