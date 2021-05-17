@@ -25,13 +25,16 @@ import qualified Filesystem.Path.CurrentOS as OS
  - define my own Arbitrary instance here.
  -
  - TODO why is the not . null thing required to prevent empty strings? list1 should be enough
+ - TODO wait, is the empty string also a valid filename?
  -}
 instance Arbitrary FileName where
   arbitrary = FileName <$> (arbitrary :: Gen T.Text) `suchThat` validFileName
   shrink (FileName t) = FileName <$> filter validFileName (shrink t)
 
 validFileName :: T.Text -> Bool
-validFileName t = (not . T.null) t && (OS.valid . OS.fromText) t
+validFileName t = (not . T.null) t
+               && (not . T.any (== '/')) t -- no separators
+               && (OS.valid . OS.fromText) t
 
 prop_roundtrip_filename_to_bytestring :: FileName -> Bool
 prop_roundtrip_filename_to_bytestring n = p2n (n2p n) == n
