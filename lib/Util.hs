@@ -1,4 +1,4 @@
--- TODO organize this somewhere better!
+{-# LANGUAGE TemplateHaskell #-}
 
 module Util
   ( absolutize
@@ -12,7 +12,7 @@ module Util
   , withAnnex
   , isAnnexSymlink
   , isNonAnnexSymlink
-  , FileName
+  , FileName(..)
   , n2p
   , p2n
   , n2bs
@@ -39,6 +39,8 @@ import qualified Data.Text as T
 import qualified Data.ByteString.UTF8             as BU
 
 import qualified Filesystem.Path.CurrentOS as OS
+import Data.Store             (encode, decodeIO, Store(..))
+import TH.Derive
 
 pathComponents :: FilePath -> [FilePath]
 pathComponents f = filter (not . null)
@@ -134,13 +136,21 @@ isNonAnnexSymlink path = do
 -- from System.Directory.Tree --
 
 -- | an element in a FilePath:
-type FileName = T.Text
+-- The newtype is needed to prevent overlapping with the standard Arbitrary
+-- Text instance in the tests
+newtype FileName = FileName T.Text
+  deriving (Eq, Ord, Read, Show)
+
+-- https://hackage.haskell.org/package/store-0.7.2/docs/Data-Store-TH.html
+$($(derive [d|
+  instance Deriving (Store FileName)
+  |]))
 
 n2p :: FileName -> FilePath
-n2p = T.unpack
+n2p (FileName t) = T.unpack t
 
 p2n :: FilePath -> FileName
-p2n = T.pack
+p2n = FileName . T.pack
 
 n2bs :: FileName -> BU.ByteString
 n2bs = BU.fromString . n2p

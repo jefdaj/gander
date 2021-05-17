@@ -25,7 +25,7 @@ import qualified Data.ByteString.Char8 as B8
 import qualified Data.ByteString.Short as BS
 import qualified Data.Text.Encoding as T
 
-import Util (pathComponents, FileName, p2n, n2p)
+import Util (pathComponents, FileName, p2n, n2p, FileName(..))
 import qualified System.Directory.Tree as DT
 
 import Control.Monad        (msum)
@@ -74,7 +74,7 @@ newtype HashLine = HashLine (TreeType, IndentLevel, Hash, FileName)
 -- TODO actual Pretty instance
 -- note: p can have weird characters, so it should be handled only as ByteString
 prettyHashLine :: HashLine -> B8.ByteString
-prettyHashLine (HashLine (t, (IndentLevel n), h, p)) = B8.unwords
+prettyHashLine (HashLine (t, (IndentLevel n), h, FileName p)) = B8.unwords
   [B8.pack $ show t, B8.pack $ show n, prettyHash h, T.encodeUtf8 p] -- TODO mismatch with n2p, p2n?
 
 typeP :: Parser TreeType

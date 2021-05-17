@@ -146,7 +146,7 @@ CHANGES:
 
 -- A hack to prevent symlink cycles, which only works for gander's particular use case
 -- TODO make a separat "Annex Utils" module for this?
-import Util (isNonAnnexSymlink, n2p, p2n)
+import Util (isNonAnnexSymlink, n2p, p2n, FileName(..))
 -- import qualified Data.ByteString.Short as BS
 import qualified Data.Text as T
 
@@ -216,10 +216,6 @@ instance (Ord a,Eq a) => Ord (DirTree a) where
 -- the DirTree. (uses an infix constructor; don't be scared)
 data AnchoredDirTree a = (:/) { anchor :: !FilePath, dirTree :: DirTree a }
                      deriving (Show, Ord, Eq)
-
-
--- | an element in a FilePath:
-type FileName = T.Text
 
 
 instance Functor DirTree where
@@ -528,7 +524,7 @@ free = dirTree
 dropTo :: FileName -> AnchoredDirTree a -> Maybe (AnchoredDirTree a)
 dropTo n' (p :/ Dir n ds') = search ds'
     where search [] = Nothing
-          search (d:ds) | equalFilePath (n2p n') (n2p $ name d) = Just ((p</> n2p n) :/ d)
+          search (d:ds) | n' == name d = Just ((p</> n2p n) :/ d)
                         | otherwise = search ds
 dropTo _ _ = Nothing
 
