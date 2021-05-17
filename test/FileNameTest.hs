@@ -14,9 +14,10 @@ import qualified Data.ByteString.Char8            as B
 import qualified Data.Text                        as T
 
 import System.IO               (hClose)
-import System.IO.Temp          (withSystemTempFile)
+import System.IO.Temp          (withSystemTempDirectory)
 import Test.QuickCheck.Monadic (run, assert, pick, monadicIO)
 import Test.QuickCheck.Unicode (list, char)
+import System.FilePath ((</>))
 
 import qualified Filesystem.Path.CurrentOS as OS
 
@@ -32,22 +33,22 @@ instance Arbitrary FileName where
   shrink (FileName t) = FileName <$> filter validFileName (shrink t)
 
 validFileName :: T.Text -> Bool
-validFileName t = (not . T.null) t
+validFileName t = not (t `elem` ["", ".", ".."])
                && (not . T.any (== '/')) t -- no separators
                && (OS.valid . OS.fromText) t
 
 prop_roundtrip_filename_to_bytestring :: FileName -> Bool
 prop_roundtrip_filename_to_bytestring n = p2n (n2p n) == n
 
-roundtrip_filename_to_text_file :: FileName -> IO FileName
-roundtrip_filename_to_text_file n = withSystemTempFile "roundtriptemp" $ \f hdl -> do
-  hClose hdl
-  B.writeFile f $ n2bs n
-  bs <- B.readFile f
-  return $ bs2n bs
+roundtrip_filename_to_name_of_tmpfile :: FileName -> IO ()
+roundtrip_filename_to_name_of_tmpfile n = withSystemTempDirectory "roundtriptemp" $ \d -> do
+  let f = d </> n2p n
+  B.writeFile f "this is a test"
+  _ <- B.readFile f
+  return ()
 
-prop_roundtrip_filename_to_text_file :: Property
-prop_roundtrip_filename_to_text_file = monadicIO $ do
-  d1 <- pick arbitrary
-  d2 <- run $ roundtrip_filename_to_text_file d1
-  assert $ d2 == d1
+prop_roundtrip_filename_to_name_of_tmpfile :: Property
+prop_roundtrip_filename_to_name_of_tmpfile = monadicIO $ do
+  n <- pick arbitrary
+  run $ roundtrip_filename_to_name_of_tmpfile n
+  assert True

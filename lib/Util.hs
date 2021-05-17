@@ -15,8 +15,8 @@ module Util
   , FileName(..)
   , n2p
   , p2n
-  , n2bs
-  , bs2n
+  -- , n2bs
+  -- , bs2n
   )
   where
 
@@ -152,9 +152,9 @@ n2p (FileName t) = T.unpack t
 p2n :: FilePath -> FileName
 p2n = FileName . T.pack
 
-n2bs :: FileName -> BU.ByteString
-n2bs = BU.fromString . n2p
+-- n2bs :: FileName -> BU.ByteString
+-- n2bs = BU.fromString . n2p
 
 -- TODO should this have the option for a decoding error?
-bs2n :: BU.ByteString -> FileName
-bs2n = p2n . BU.toString
+-- bs2n :: BU.ByteString -> FileName
+-- bs2n = p2n . BU.toString
