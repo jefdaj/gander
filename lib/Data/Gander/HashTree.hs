@@ -90,6 +90,14 @@ type ProdTree = HashTree ()
 instance Eq (HashTree a) where
   t1 == t2 = hash t1 == hash t2
 
+-- TODO once there's also a dirData, should this be BiFunctor instead?
+-- TODO should this also re-hash the file, or is that not part of the fileData idea?
+instance Functor HashTree where
+  fmap fn f@(File {}) = f { file = fn (file f) }
+  fmap fn d@(Dir  {}) = d { contents = map (fmap fn) (contents d) }
+
+-- TODO test functor identity law
+
 -- https://hackage.haskell.org/package/store-0.7.2/docs/Data-Store-TH.html
 $($(derive [d|
     instance Store a => Deriving (Store (HashTree a))
@@ -145,10 +153,11 @@ lazyDirDepth = 4
 buildTree' :: (FilePath -> IO a) -> Bool -> Int -> [Pattern] -> DT.AnchoredDirTree a -> IO (HashTree a)
 -- TODO catch and re-throw errors with better description and/or handle them here
 buildTree' _ _ _ _  (a DT.:/ (DT.Failed n e )) = error $ (a </> n2p n) ++ ": " ++ show e
-buildTree' readFileFn v depth es (_ DT.:/ (DT.File n _)) = do
+buildTree' readFileFn v depth es (a DT.:/ (DT.File n _)) = do
   -- TODO how to exclude these?
-  !h <- unsafeInterleaveIO $ hashFile v $ n2p n -- TODO is this right?
-  !fd <- readFileFn $ n2p n
+  let fPath = a </> n2p n
+  !h  <- unsafeInterleaveIO $ hashFile v fPath
+  !fd <- unsafeInterleaveIO $ readFileFn fPath -- TODO is this safe enough?
   -- seems not to help with memory usage?
   -- return $ (\x -> hash x `seq` name x `seq` x) $ File { name = n, hash = h }
   -- return File { name = n, hash = h }

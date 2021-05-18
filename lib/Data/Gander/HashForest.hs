@@ -4,6 +4,7 @@
 
 module Data.Gander.HashForest
   ( HashForest(..)
+  , ProdForest
   , readTrees
   , buildForest
   , readForest
@@ -33,6 +34,8 @@ import Control.Exception.Safe (catchAny)
  -}
 newtype HashForest a = HashForest [HashTree a]
   -- deriving (Eq, Show, Read)
+
+type ProdForest = HashForest ()
 
 deriving instance Eq   a => Eq   (HashForest a)
 deriving instance Show a => Show (HashForest a)

@@ -94,7 +94,7 @@ hashString = hashBytes . B.pack
  -}
 hashSymlink :: FilePath -> IO (Maybe Hash)
 hashSymlink path = do
-  isLink <- pathIsSymbolicLink path
+  isLink <- pathIsSymbolicLink path -- TODO error here?
   if not isLink
     then return Nothing
     else do

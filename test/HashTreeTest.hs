@@ -1,6 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeSynonymInstances #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module HashTreeTest where
@@ -16,8 +18,8 @@ import System.IO.Temp
 import System.IO (hClose, IOMode(..), withFile)
 
 import System.FilePath
-import System.Directory (createDirectoryIfMissing)
-import System.Directory.Tree (writeJustDirs)
+import System.Directory (createDirectoryIfMissing, listDirectory)
+-- import System.Directory.Tree (writeJustDirs)
 import Util
 import Data.Gander.Hash
 import Data.Gander.HashLine
@@ -36,7 +38,7 @@ instance Arbitrary TreeType where
 
   arbitrary = do
     n <- choose (0,1 :: Int)
-    return $ [F, D] !! n
+    return $ [D, F] !! n
 
   -- you could shrink D -> F, but not without changing the rest of the hashline
   shrink _ = []
@@ -62,17 +64,18 @@ instance Arbitrary HashLine where
   -- only shrinks the filename
   shrink (HashLine (tt, il, h, n)) = map (\n' -> HashLine (tt, il, h, n')) (shrink n)
 
--- this should work with ProdTree or TestTree
-instance Arbitrary a => Arbitrary (HashTree a) where
+-- This is specialized to (HashTree B8.ByteString) because it needs to use the
+-- same arbitrary bytestring for the file content and its hash
+instance Arbitrary TestTree where
 
   arbitrary = do
     n <- arbitrary :: Gen FileName
     -- TODO there's got to be a better way, right?
-    i <- choose (0,10 :: Int)
+    i <- choose (0,5 :: Int)
     if i == 0
 
       then do
-        !cs <- resize 20 (arbitrary :: Gen [HashTree a])
+        !cs <- resize 5 (arbitrary :: Gen [TestTree])
         return $ Dir { name     = n
                      , hash     = hashContents cs
                      , contents = cs
@@ -81,10 +84,9 @@ instance Arbitrary a => Arbitrary (HashTree a) where
 
       else do
         bs <- arbitrary :: Gen B8.ByteString
-        f  <- arbitrary
         return $ File { name = n
                       , hash = hashBytes bs
-                      , file = f
+                      , file = bs
                       }
 
   -- only shrinks the filename
@@ -98,6 +100,15 @@ instance Arbitrary a => Arbitrary (HashTree a) where
                                   , hash = hashContents cs
                                   , nFiles = sum $ map countFiles cs})
                         (shrink $ contents d)
+
+instance Arbitrary ProdTree where
+  arbitrary = fmap dropFileData arbitrary
+
+-- TODO rename the actual function file -> fileData to match future dirData
+-- TODO rewrite this in terms of a generic map/fold so it works with other types
+dropFileData :: TestTree -> ProdTree
+dropFileData d@(Dir {contents = cs}) = d {contents = map dropFileData cs}
+dropFileData f@(File {}) = f {file = ()}
 
 -- TODO test tree in haskell
 -- TODO test dir
@@ -116,6 +127,15 @@ instance Arbitrary a => Arbitrary (HashTree a) where
 --     describe "HashTree" $ do
 --       describe "HashTree" $ do
 --         it "builds a tree from the test annex" $ pendingWith "need annex test harness"
+
+confirmFileHashes :: TestTree -> Bool
+confirmFileHashes (File {file = f, hash = h}) = hashBytes f == h
+confirmFileHashes (Dir {contents = cs}) = all confirmFileHashes cs
+
+prop_confirm_file_hashes :: TestTree -> Bool
+prop_confirm_file_hashes = confirmFileHashes
+
+-- TODO prop_confirm_dir_hashes too?
 
 -- TODO what's right here but wrong in the roundtrip to bytestring ones?
 prop_roundtrip_hashtree_to_bytestring :: ProdTree -> Bool
@@ -138,6 +158,7 @@ prop_roundtrip_hashtree_to_hashes = monadicIO $ do
   t2 <- run $ roundtrip_hashtree_to_hashes t1
   assert $ t2 == t1
 
+-- TODO separate thing for test and production trees here?
 roundtrip_hashtree_to_binary_hashes :: ProdTree -> IO (ProdTree)
 roundtrip_hashtree_to_binary_hashes t = withSystemTempFile "roundtriptemp" $ \path hdl -> do
   hClose hdl
@@ -146,12 +167,22 @@ roundtrip_hashtree_to_binary_hashes t = withSystemTempFile "roundtriptemp" $ \pa
 
 prop_roundtrip_hashtree_to_binary_hashes :: Property
 prop_roundtrip_hashtree_to_binary_hashes = monadicIO $ do
-  t1 <- pick arbitrary
+  t1 <- pick (arbitrary :: Gen ProdTree)
   t2 <- run $ roundtrip_hashtree_to_binary_hashes t1
   assert $ t2 == t1
 
-writeTestTree :: FilePath -> TestTree -> IO ()
-writeTestTree = undefined
+{- Take a generated `TestTree` and write it to a tree of tmpfiles.
+ - Note that this calls itself recursively.
+ -}
+writeTestTreeDir :: FilePath -> TestTree -> IO ()
+writeTestTreeDir root (File {name = n, file = bs}) = do
+  -- putStrLn $ "write test file: " ++ (root </> n2p n)
+  B8.writeFile (root </> n2p n) bs
+writeTestTreeDir root (Dir {name = n, contents = cs}) = do
+  let root' = root </> n2p n
+  -- putStrLn $ "write test dir: " ++ root'
+  createDirectoryIfMissing False root'
+  mapM_ (writeTestTreeDir root') cs
 
 readTestTree :: Maybe Int -> Bool -> [Pattern] -> FilePath -> IO TestTree
 readTestTree md verbose excludes path = buildTree B8.readFile verbose excludes path
@@ -159,10 +190,13 @@ readTestTree md verbose excludes path = buildTree B8.readFile verbose excludes p
 -- the tests above round-trip to single files describing trees, whereas this
 -- one round-trips to an actual directory tree on disk
 roundtrip_hashtree_to_filesystem :: TestTree -> IO (TestTree)
-roundtrip_hashtree_to_filesystem t = withSystemTempFile "roundtriptemp" $ \path hdl -> do
-  hClose hdl
-  writeTestTree path t
-  readTestTree Nothing False [] path
+roundtrip_hashtree_to_filesystem t = withSystemTempDirectory "roundtriptemp" $ \root -> do
+  createDirectoryIfMissing True root
+  let treePath = root </> n2p (name t)
+  writeTestTreeDir root t
+  putStrLn $ "treePath: " ++ treePath
+  readTestTree Nothing False [] treePath
+  -- return t
 
 prop_roundtrip_hashtree_to_filesystem :: Property
 prop_roundtrip_hashtree_to_filesystem = monadicIO $ do
@@ -183,11 +217,11 @@ prop_roundtrip_hashtree_to_filesystem = monadicIO $ do
 
 -- creates a diabolically-named file in the given dir and returns its path
 -- TODO uh oh, printing the names messes up mac terminals
-writeDiabolicalFile :: FilePath -> IO FilePath
-writeDiabolicalFile dir = do
-  basename <- fmap n2p $ generate (arbitrary :: Gen FileName)
-  let path = dir </> basename
-  -- putStrLn $ "writing diabolical file: '" ++ path ++ "'"
-  createDirectoryIfMissing True dir
-  writeFile path "this is a test"
-  return path -- TODO will have to sanitize this in order to actually display it right?
+-- writeDiabolicalFile :: FilePath -> IO FilePath
+-- writeDiabolicalFile dir = do
+--   basename <- fmap n2p $ generate (arbitrary :: Gen FileName)
+--   let path = dir </> basename
+--   -- putStrLn $ "writing diabolical file: '" ++ path ++ "'"
+--   createDirectoryIfMissing True dir
+--   writeFile path "this is a test"
+--   return path -- TODO will have to sanitize this in order to actually display it right?

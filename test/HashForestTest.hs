@@ -1,5 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE TypeSynonymInstances #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module HashForestTest where
@@ -14,11 +16,17 @@ import qualified Data.ByteString.Char8            as B8
 import System.IO (hClose, IOMode(..), withFile)
 import System.IO.Temp
 
-instance Arbitrary a => Arbitrary (HashForest a) where
+type TestForest = HashForest B8.ByteString
+
+instance Arbitrary TestForest where
   arbitrary = HashForest <$> resize 3 arbitrary
   shrink (HashForest xs) = HashForest <$> shrink xs
 
 -- TODO round-trip to binary files too
+
+instance Arbitrary ProdForest where
+  arbitrary = undefined
+  shrink = undefined
 
 prop_roundtrip_hashforest_to_bytestring :: HashForest () -> Bool
 prop_roundtrip_hashforest_to_bytestring t = t' == t
