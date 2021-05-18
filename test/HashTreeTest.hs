@@ -122,7 +122,7 @@ dropFileData f@(File {}) = f {fileData = ()}
 -- TODO write_tree_binary?
 -- TODO flatten_tree
 
--- prop_roundtrip_hashtree_to_hashes :: 
+-- prop_roundtrip_prodtree_to_hashes :: 
 
 --     describe "HashTree" $ do
 --       describe "HashTree" $ do
@@ -138,37 +138,37 @@ prop_confirm_file_hashes = confirmFileHashes
 -- TODO prop_confirm_dir_hashes too?
 
 -- TODO what's right here but wrong in the roundtrip to bytestring ones?
-prop_roundtrip_hashtree_to_bytestring :: ProdTree -> Bool
-prop_roundtrip_hashtree_to_bytestring t = t' == t
+prop_roundtrip_prodtree_to_bytestring :: ProdTree -> Bool
+prop_roundtrip_prodtree_to_bytestring t = t' == t
   where
     bs = B8.unlines $ serializeTree t -- TODO why didn't it include the unlines part again?
     t' = deserializeTree Nothing bs
 
 -- TODO round-trip to binary files too
 
-roundtrip_hashtree_to_hashes :: ProdTree -> IO (ProdTree)
-roundtrip_hashtree_to_hashes t = withSystemTempFile "roundtriptemp" $ \path hdl -> do
+roundtrip_prodtree_to_hashes :: ProdTree -> IO (ProdTree)
+roundtrip_prodtree_to_hashes t = withSystemTempFile "roundtriptemp" $ \path hdl -> do
   hClose hdl
   writeTree path t
   readTree Nothing path
 
-prop_roundtrip_hashtree_to_hashes :: Property
-prop_roundtrip_hashtree_to_hashes = monadicIO $ do
+prop_roundtrip_prodtree_to_hashes :: Property
+prop_roundtrip_prodtree_to_hashes = monadicIO $ do
   t1 <- pick arbitrary
-  t2 <- run $ roundtrip_hashtree_to_hashes t1
+  t2 <- run $ roundtrip_prodtree_to_hashes t1
   assert $ t2 == t1
 
 -- TODO separate thing for test and production trees here?
-roundtrip_hashtree_to_binary_hashes :: ProdTree -> IO (ProdTree)
-roundtrip_hashtree_to_binary_hashes t = withSystemTempFile "roundtriptemp" $ \path hdl -> do
+roundtrip_prodtree_to_bin_hashes :: ProdTree -> IO (ProdTree)
+roundtrip_prodtree_to_bin_hashes t = withSystemTempFile "roundtriptemp" $ \path hdl -> do
   hClose hdl
   writeBinTree path t
   readTree Nothing path
 
-prop_roundtrip_hashtree_to_binary_hashes :: Property
-prop_roundtrip_hashtree_to_binary_hashes = monadicIO $ do
+prop_roundtrip_prodtree_to_bin_hashes :: Property
+prop_roundtrip_prodtree_to_bin_hashes = monadicIO $ do
   t1 <- pick (arbitrary :: Gen ProdTree)
-  t2 <- run $ roundtrip_hashtree_to_binary_hashes t1
+  t2 <- run $ roundtrip_prodtree_to_bin_hashes t1
   assert $ t2 == t1
 
 {- Take a generated `TestTree` and write it to a tree of tmpfiles.
@@ -189,39 +189,17 @@ readTestTree md verbose excludes path = buildTree B8.readFile verbose excludes p
 
 -- the tests above round-trip to single files describing trees, whereas this
 -- one round-trips to an actual directory tree on disk
-roundtrip_hashtree_to_filesystem :: TestTree -> IO (TestTree)
-roundtrip_hashtree_to_filesystem t = withSystemTempDirectory "roundtriptemp" $ \root -> do
+-- note that you have to drop the bytestrings from the original testtree to compare them
+roundtrip_testtree_to_dir :: TestTree -> IO TestTree
+roundtrip_testtree_to_dir t = withSystemTempDirectory "roundtriptemp" $ \root -> do
   createDirectoryIfMissing True root
   let treePath = root </> n2p (name t)
   writeTestTreeDir root t
   putStrLn $ "treePath: " ++ treePath
   readTestTree Nothing False [] treePath
-  -- return t
 
-prop_roundtrip_hashtree_to_filesystem :: Property
-prop_roundtrip_hashtree_to_filesystem = monadicIO $ do
+prop_roundtrip_testtree_to_dir :: Property
+prop_roundtrip_testtree_to_dir = monadicIO $ do
   t1 <- pick arbitrary
-  t2 <- run $ roundtrip_hashtree_to_filesystem t1
+  t2 <- run $ roundtrip_testtree_to_dir t1
   assert $ t2 == t1
-
--- prop_write_hashtree_to_dirs :: Property
--- prop_write_hashtree_to_dirs = monadicIO $ do
---   t <- pick (arbitrary :: Gen HashTree)
---   run $ withSystemTempDirectory "writedirtemp" $ \d -> writeJustDirs t
---   -- run $ putStrLn $ "t: " ++ show t
---   assert True
-
------------------------------------
--- write test dirs to filesystem --
------------------------------------
-
--- creates a diabolically-named file in the given dir and returns its path
--- TODO uh oh, printing the names messes up mac terminals
--- writeDiabolicalFile :: FilePath -> IO FilePath
--- writeDiabolicalFile dir = do
---   basename <- fmap n2p $ generate (arbitrary :: Gen FileName)
---   let path = dir </> basename
---   -- putStrLn $ "writing diabolical file: '" ++ path ++ "'"
---   createDirectoryIfMissing True dir
---   writeFile path "this is a test"
---   return path -- TODO will have to sanitize this in order to actually display it right?
