@@ -1,4 +1,7 @@
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 module Util
   ( absolutize
@@ -46,6 +49,9 @@ import TH.Derive
 import System.Info (os)
 
 import qualified Data.ByteString.Char8 as B8
+
+import Control.DeepSeq
+import GHC.Generics
 
 pathComponents :: FilePath -> [FilePath]
 pathComponents f = filter (not . null)
@@ -144,7 +150,9 @@ isNonAnnexSymlink path = do
 -- The newtype is needed to prevent overlapping with the standard Arbitrary
 -- Text instance in the tests
 newtype FileName = FileName T.Text
-  deriving (Eq, Ord, Read, Show)
+  deriving (Eq, Ord, Read, Show, Generic)
+
+deriving instance NFData FileName
 
 -- https://hackage.haskell.org/package/store-0.7.2/docs/Data-Store-TH.html
 $($(derive [d|

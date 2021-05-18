@@ -1,6 +1,8 @@
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 -- TODO hashHashes should be hashDir
 -- TODO should it also hash filenames?
@@ -38,6 +40,8 @@ import Data.Hashable      (Hashable(..))
 
 import TH.Derive
 import Data.Store (Store(..))
+import Control.DeepSeq
+import GHC.Generics
 
 {- Checksum (sha256sum?) of a file or folder.
  - For files, should match the corresponding git-annex key.
@@ -46,7 +50,7 @@ import Data.Store (Store(..))
  - note: regular bytestrings here cause memory fragmentation/space leaks
  -}
 newtype Hash = Hash { unHash :: BS.ShortByteString }
-  deriving (Eq, Read, Show, Ord)
+  deriving (Eq, Read, Show, Ord, Generic, NFData)
 
 -- This is unrelated to Gander's hashing. It's required to use Data.HashMap
 instance Hashable Hash

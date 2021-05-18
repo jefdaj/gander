@@ -1,6 +1,7 @@
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE DeriveGeneric #-}
 
 module Data.Gander.HashTree
   ( HashTree(..)
@@ -69,6 +70,7 @@ import Control.Exception.Safe (catchAny)
 import TH.Derive
 
 import Control.DeepSeq
+import GHC.Generics (Generic)
 
 {- A tree of file names matching (a subdirectory of) the annex,
  - where each dir and file node contains a hash of its contents.
@@ -81,7 +83,7 @@ import Control.DeepSeq
 data HashTree a
   = File { name :: !FileName, hash :: !Hash, fileData :: !a }
   | Dir  { name :: !FileName, hash :: Hash, contents :: [HashTree a], nFiles :: Int }
-  deriving (Read, Show, Ord) -- TODO switch to hash-based equality after testing
+  deriving (Read, Show, Ord, Generic) -- TODO switch to hash-based equality after testing
 
 -- We only need the file decoration for testing, so we can leave it off the production types
 type ProdTree = HashTree ()
@@ -97,6 +99,8 @@ instance Functor HashTree where
   fmap fn d@(Dir  {}) = d { contents = map (fmap fn) (contents d) }
 
 -- TODO test functor identity law
+
+instance NFData a => NFData (HashTree a)
 
 -- https://hackage.haskell.org/package/store-0.7.2/docs/Data-Store-TH.html
 $($(derive [d|
