@@ -49,6 +49,7 @@ instance Arbitrary Hash where
   arbitrary = fmap hashBytes (arbitrary :: Gen B8.ByteString)
   shrink _ = []
 
+-- TODO can you really have an arbitrary hashline without the rest of a tree?
 instance Arbitrary HashLine where
 
   arbitrary = do
@@ -110,7 +111,7 @@ instance Arbitrary a => Arbitrary (HashTree a) where
 -- TODO write_tree_binary?
 -- TODO flatten_tree
 
--- prop_roundtrip_hashtree_to_test_hashes_file :: 
+-- prop_roundtrip_hashtree_to_hashes :: 
 
 --     describe "HashTree" $ do
 --       describe "HashTree" $ do
@@ -125,28 +126,28 @@ prop_roundtrip_hashtree_to_bytestring t = t' == t
 
 -- TODO round-trip to binary files too
 
-roundtrip_hashtree_to_test_hashes_file :: ProdTree -> IO (ProdTree)
-roundtrip_hashtree_to_test_hashes_file t = withSystemTempFile "roundtriptemp" $ \path hdl -> do
+roundtrip_hashtree_to_hashes :: ProdTree -> IO (ProdTree)
+roundtrip_hashtree_to_hashes t = withSystemTempFile "roundtriptemp" $ \path hdl -> do
   hClose hdl
   writeTree path t
   readTree Nothing path
 
-prop_roundtrip_hashtree_to_test_hashes_file :: Property
-prop_roundtrip_hashtree_to_test_hashes_file = monadicIO $ do
+prop_roundtrip_hashtree_to_hashes :: Property
+prop_roundtrip_hashtree_to_hashes = monadicIO $ do
   t1 <- pick arbitrary
-  t2 <- run $ roundtrip_hashtree_to_test_hashes_file t1
+  t2 <- run $ roundtrip_hashtree_to_hashes t1
   assert $ t2 == t1
 
-roundtrip_hashtree_to_binary_hashes_file :: ProdTree -> IO (ProdTree)
-roundtrip_hashtree_to_binary_hashes_file t = withSystemTempFile "roundtriptemp" $ \path hdl -> do
+roundtrip_hashtree_to_binary_hashes :: ProdTree -> IO (ProdTree)
+roundtrip_hashtree_to_binary_hashes t = withSystemTempFile "roundtriptemp" $ \path hdl -> do
   hClose hdl
   writeBinTree path t
   readTree Nothing path
 
-prop_roundtrip_hashtree_to_binary_hashes_file :: Property
-prop_roundtrip_hashtree_to_binary_hashes_file = monadicIO $ do
+prop_roundtrip_hashtree_to_binary_hashes :: Property
+prop_roundtrip_hashtree_to_binary_hashes = monadicIO $ do
   t1 <- pick arbitrary
-  t2 <- run $ roundtrip_hashtree_to_binary_hashes_file t1
+  t2 <- run $ roundtrip_hashtree_to_binary_hashes t1
   assert $ t2 == t1
 
 writeTestTree :: FilePath -> TestTree -> IO ()
