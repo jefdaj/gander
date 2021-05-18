@@ -36,11 +36,14 @@ import System.Posix.Files (getSymbolicLinkStatus, isSymbolicLink, readSymbolicLi
 -- import qualified Data.ByteString.Char8 as B
 -- import qualified Data.ByteString.Short as BS
 import qualified Data.Text as T
+import qualified Data.Text.Encoding as TE
 import qualified Data.ByteString.UTF8             as BU
 
 import qualified Filesystem.Path.CurrentOS as OS
 import Data.Store             (encode, decodeIO, Store(..))
 import TH.Derive
+
+import qualified Data.ByteString.Char8 as B8
 
 pathComponents :: FilePath -> [FilePath]
 pathComponents f = filter (not . null)
@@ -147,10 +150,10 @@ $($(derive [d|
   |]))
 
 n2p :: FileName -> FilePath
-n2p (FileName t) = T.unpack t
+n2p (FileName t) = B8.unpack $ TE.encodeUtf8 t
 
 p2n :: FilePath -> FileName
-p2n = FileName . T.pack
+p2n = FileName . TE.decodeUtf8 . B8.pack
 
 -- n2bs :: FileName -> BU.ByteString
 -- n2bs = BU.fromString . n2p
