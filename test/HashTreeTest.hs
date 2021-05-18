@@ -38,7 +38,7 @@ instance Arbitrary TreeType where
 
   arbitrary = do
     n <- choose (0,1 :: Int)
-    return $ [D, F] !! n
+    return $ [F, D] !! n
 
   -- you could shrink D -> F, but not without changing the rest of the hashline
   shrink _ = []
@@ -86,7 +86,7 @@ instance Arbitrary TestTree where
         bs <- arbitrary :: Gen B8.ByteString
         return $ File { name = n
                       , hash = hashBytes bs
-                      , file = bs
+                      , fileData = bs
                       }
 
   -- only shrinks the filename
@@ -108,7 +108,7 @@ instance Arbitrary ProdTree where
 -- TODO rewrite this in terms of a generic map/fold so it works with other types
 dropFileData :: TestTree -> ProdTree
 dropFileData d@(Dir {contents = cs}) = d {contents = map dropFileData cs}
-dropFileData f@(File {}) = f {file = ()}
+dropFileData f@(File {}) = f {fileData = ()}
 
 -- TODO test tree in haskell
 -- TODO test dir
@@ -129,7 +129,7 @@ dropFileData f@(File {}) = f {file = ()}
 --         it "builds a tree from the test annex" $ pendingWith "need annex test harness"
 
 confirmFileHashes :: TestTree -> Bool
-confirmFileHashes (File {file = f, hash = h}) = hashBytes f == h
+confirmFileHashes (File {fileData = f, hash = h}) = hashBytes f == h
 confirmFileHashes (Dir {contents = cs}) = all confirmFileHashes cs
 
 prop_confirm_file_hashes :: TestTree -> Bool
@@ -175,7 +175,7 @@ prop_roundtrip_hashtree_to_binary_hashes = monadicIO $ do
  - Note that this calls itself recursively.
  -}
 writeTestTreeDir :: FilePath -> TestTree -> IO ()
-writeTestTreeDir root (File {name = n, file = bs}) = do
+writeTestTreeDir root (File {name = n, fileData = bs}) = do
   -- putStrLn $ "write test file: " ++ (root </> n2p n)
   B8.writeFile (root </> n2p n) bs
 writeTestTreeDir root (Dir {name = n, contents = cs}) = do

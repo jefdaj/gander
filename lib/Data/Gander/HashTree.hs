@@ -79,7 +79,7 @@ import Control.DeepSeq
 --   deriving (Eq, Read, Show)
 --   TODO rename name -> path?
 data HashTree a
-  = File { name :: !FileName, hash :: !Hash, file :: !a }
+  = File { name :: !FileName, hash :: !Hash, fileData :: !a }
   | Dir  { name :: !FileName, hash :: Hash, contents :: [HashTree a], nFiles :: Int }
   deriving (Read, Show, Ord) -- TODO switch to hash-based equality after testing
 
@@ -93,7 +93,7 @@ instance Eq (HashTree a) where
 -- TODO once there's also a dirData, should this be BiFunctor instead?
 -- TODO should this also re-hash the file, or is that not part of the fileData idea?
 instance Functor HashTree where
-  fmap fn f@(File {}) = f { file = fn (file f) }
+  fmap fn f@(File {}) = f { fileData = fn (fileData f) }
   fmap fn d@(Dir  {}) = d { contents = map (fmap fn) (contents d) }
 
 -- TODO test functor identity law
@@ -164,7 +164,7 @@ buildTree' readFileFn v depth es (a DT.:/ (DT.File n _)) = do
   return $ (if depth < lazyDirDepth
               then id
               else (\x -> hash x `seq` name x `seq` x))
-         $ File { name = n, hash = h, file = fd }
+         $ File { name = n, hash = h, fileData = fd }
 
 buildTree' readFileFn v depth es d@(a DT.:/ (DT.Dir n _)) = do
   let root = a </> n2p n
