@@ -38,10 +38,12 @@ import System.Posix.Files (getSymbolicLinkStatus, isSymbolicLink, readSymbolicLi
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 import qualified Data.ByteString.UTF8             as BU
+import qualified Data.ByteString.Char8 as B8
 
 import qualified Filesystem.Path.CurrentOS as OS
 import Data.Store             (encode, decodeIO, Store(..))
 import TH.Derive
+import System.Info (os)
 
 import qualified Data.ByteString.Char8 as B8
 
@@ -150,10 +152,14 @@ $($(derive [d|
   |]))
 
 n2p :: FileName -> FilePath
-n2p (FileName t) = B8.unpack $ TE.encodeUtf8 t
+n2p (FileName t) = (if os == "darwin"
+                      then B8.unpack . TE.encodeUtf8
+                      else T.unpack) t
 
 p2n :: FilePath -> FileName
-p2n = FileName . TE.decodeUtf8 . B8.pack
+p2n = FileName . (if os == "darwin"
+                    then TE.decodeUtf8 . B8.pack
+                    else T.pack)
 
 -- n2bs :: FileName -> BU.ByteString
 -- n2bs = BU.fromString . n2p
