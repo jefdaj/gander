@@ -5,7 +5,7 @@
 
 module Data.Gander.HashTree
   ( HashTree(..)
-  , ProdTree
+  , ProdTree(..)
   , HashLine(..)
   , keepPath
   , readTree

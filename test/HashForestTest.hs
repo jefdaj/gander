@@ -7,7 +7,7 @@
 module HashForestTest where
 
 import HashTreeTest
--- import Data.Gander.HashTree
+import Data.Gander.HashTree
 import Data.Gander.HashForest
 
 import Test.QuickCheck
@@ -25,8 +25,8 @@ instance Arbitrary TestForest where
 -- TODO round-trip to binary files too
 
 instance Arbitrary ProdForest where
-  arbitrary = undefined
-  shrink = undefined
+  arbitrary = HashForest <$> arbitrary
+  shrink (HashForest ts) = HashForest <$> shrink ts
 
 prop_roundtrip_hashforest_to_bytestring :: HashForest () -> Bool
 prop_roundtrip_hashforest_to_bytestring t = t' == t
