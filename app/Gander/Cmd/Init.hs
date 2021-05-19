@@ -14,9 +14,11 @@ import System.FilePath  (takeFileName, (</>))
 import System.Directory (createDirectoryIfMissing)
 import Gander.Config    (Config(..))
 
+import Data.Maybe (fromJust)
+
 cmdInit :: Config -> FilePath -> IO ()
 cmdInit cfg dir = do
-  dir' <- absolutize dir
+  dir' <- fmap fromJust $ absolutize dir -- TODO can this fail?
   -- TODO check the root folder doesn't exist yet, or abort
   -- TODO guards: git, git-annex on path
   -- TODO abort if any exit code nonzero

@@ -51,26 +51,31 @@ main = do
 
     -- annex-aware mode
     Just a -> do
-      aPath <- absolutize a
-      let hashes = aPath </> "hashes.txt"
-      if      cmd "init"  then cmdInit  cfg aPath
-      else if cmd "hash"  then cmdHash  cfg [aPath]
-      else if cmd "dupes" then cmdDupes cfg [aPath]
-      else if cmd "add" then do
-        dst <- arg "dst"
-        let src = getArg args $ argument "src"
-        cmdAdd cfg dst src
-      else if cmd "mv" then do
-        src <- arg "src"
-        dst <- arg "dst"
-        cmdMv cfg src dst
-      else if cmd "rm" then do
-        rmPath <- arg "rmPath"
-        cmdRm cfg hashes aPath rmPath
-      else if cmd "dedup" then cmdDedup cfg
-      else do
-        print args
-        print cfg
+      maPath <- absolutize a
+      case maPath of
+        Nothing -> do
+          print args
+          print cfg
+        Just aPath -> do
+          let hashes = aPath </> "hashes.txt"
+          if      cmd "init"  then cmdInit  cfg aPath
+          else if cmd "hash"  then cmdHash  cfg [aPath]
+          else if cmd "dupes" then cmdDupes cfg [aPath]
+          else if cmd "add" then do
+            dst <- arg "dst"
+            let src = getArg args $ argument "src"
+            cmdAdd cfg dst src
+          else if cmd "mv" then do
+            src <- arg "src"
+            dst <- arg "dst"
+            cmdMv cfg src dst
+          else if cmd "rm" then do
+            rmPath <- arg "rmPath"
+            cmdRm cfg hashes aPath rmPath
+          else if cmd "dedup" then cmdDedup cfg
+          else do
+            print args
+            print cfg
 
     -- standalone mode (note: still works on annexed files)
     Nothing -> do
