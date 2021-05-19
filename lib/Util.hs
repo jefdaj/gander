@@ -58,17 +58,26 @@ pathComponents f = filter (not . null)
                  $ map (filter (/= pathSeparator))
                  $ splitPath f
 
--- removed because MissingH is deprecated. now tilde expansion won't work?
--- from schoolofhaskell.com/user/dshevchenko/cookbook
-absolutize :: FilePath -> IO FilePath
-absolutize aPath
+-- TODO is there a potential for infinite recursion bugs here?
+absolutize :: FilePath -> IO (Maybe FilePath)
+absolutize path = do
+  path' <- absolutize' path
+  case path' of
+    Nothing -> return Nothing
+    Just p' -> if p' == path
+                 then return $ Just path
+                 else absolutize p'
+
+-- based on: schoolofhaskell.com/user/dshevchenko/cookbook
+absolutize' :: FilePath -> IO (Maybe FilePath)
+absolutize' aPath
     | "~" `isPrefixOf` aPath = do
         homePath <- getHomeDirectory
-        return $ normalise $ addTrailingPathSeparator homePath
+        return $ Just $ normalise $ addTrailingPathSeparator homePath
                              ++ tail aPath
     | otherwise = do
         pathMaybeWithDots <- absolute_path aPath
-        return $ fromJust $ guess_dotdot pathMaybeWithDots
+        return $ guess_dotdot pathMaybeWithDots
 
 -- absolutize :: FilePath -> IO FilePath
 -- absolutize p = do
@@ -100,7 +109,7 @@ userSaysYes question = do
 -- TODO should this return the main dir or .git/annex inside it?
 findAnnex :: FilePath -> IO (Maybe FilePath)
 findAnnex path = do
-  absPath <- absolutize path
+  absPath <- fmap fromJust $ absolutize path -- TODO can this fail?
   let aPath = absPath </> ".git" </> "annex"
   foundIt <- doesDirectoryExist aPath
   if foundIt

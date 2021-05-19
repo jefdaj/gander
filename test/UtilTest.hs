@@ -34,11 +34,11 @@ unit_absolutize_tilde_expansion :: Assertion
 unit_absolutize_tilde_expansion = do
   home <- getHomeDirectory
   let explicit = home </> "xyz"
-  implicit <- absolutize "~/xyz"
+  (Just implicit) <- absolutize "~/xyz"
   implicit @=? explicit
 
 prop_absolutize_is_idempotent :: FilePath -> Property
 prop_absolutize_is_idempotent path = monadicIO $ do
-  path'  <- liftIO $ absolutize path
-  path'' <- liftIO $ absolutize path'
+  (Just path' ) <- liftIO $ absolutize path
+  (Just path'') <- liftIO $ absolutize path'
   assert $ path' == path''
