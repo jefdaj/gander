@@ -65,19 +65,24 @@ absolutize path = do
   case path' of
     Nothing -> return Nothing
     Just p' -> if p' == path
-                 then return $ Just path
+                 then fmap Just $ canonicalizePath p'
                  else absolutize p'
 
 -- based on: schoolofhaskell.com/user/dshevchenko/cookbook
 absolutize' :: FilePath -> IO (Maybe FilePath)
 absolutize' aPath
+    | null aPath = return Nothing
     | "~" `isPrefixOf` aPath = do
         homePath <- getHomeDirectory
         return $ Just $ normalise $ addTrailingPathSeparator homePath
                              ++ tail aPath
     | otherwise = do
-        pathMaybeWithDots <- absolute_path aPath
-        return $ guess_dotdot pathMaybeWithDots
+        -- let aPath' = guess_dotdot aPath 
+        aPath' <- absolute_path aPath
+        case guess_dotdot aPath' of
+          Nothing -> return $ Just aPath
+          Just p  -> return $ Just p
+        -- return $ guess_dotdot pathMaybeWithDots -- TODO this is totally wrong sometimes!
 
 -- absolutize :: FilePath -> IO FilePath
 -- absolutize p = do
