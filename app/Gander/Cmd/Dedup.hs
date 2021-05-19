@@ -36,7 +36,7 @@ clear = clearScreen >> cursorUp 1000
 -- TODO how to properly thread the changed tree through each step?
 -- TODO check exit codes!
 -- TODO sanitize commit message
-dedupLoop :: Config -> FilePath -> [Hash] -> HashTree -> IO ()
+dedupLoop :: Config -> FilePath -> [Hash] -> HashTree () -> IO ()
 dedupLoop cfg path ignored tree = do
   let aPath       = fromJust $ annex cfg
       dupes       = dupesByNFiles $ pathsByHash $ HashForest [tree] -- TODO only ever one tree, right?
@@ -59,7 +59,7 @@ dedupLoop cfg path ignored tree = do
       dedupGroup cfg aPath paths' keep -- at this point everything is relative to annex
       -- let tree' = tree -- TODO need to update tree to remove non-keepers!
       -- TODO use filename as part of commit? have to shorten/sanitize
-      new <- buildTree (verbose cfg) (exclude cfg) aPath
+      new <- buildProdTree (verbose cfg) (exclude cfg) aPath
       updateAnnexHashes cfg new
       let msg = unwords ["dedup", keep]
       runGitCommit cfg aPath msg

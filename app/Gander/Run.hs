@@ -76,16 +76,16 @@ runGitCommit cfg aPath msg = withAnnex aPath $ \dir -> do
 -- Takes a starting HashTree and a Delta, and actually applies the delta.
 -- Useful for checking whether git operations will be safe,
 -- and that the calculated diffs match actual changes afterward.
-runDelta :: Config -> FilePath -> Delta -> IO ()
+runDelta :: Config -> FilePath -> Delta () -> IO ()
 runDelta c a   (Add p _  ) = runGitAnnexAdd c a p
 runDelta c a   (Rm  p    ) = runGitRm       c a p
 runDelta c a   (Mv  p1 p2) = runGitMv       c a p1 p2
 runDelta c a e@(Edit _ _ _) = runDelta      c a e -- TODO are separate edits really needed?
 
-runDeltas :: Config -> FilePath -> [Delta] -> IO ()
+runDeltas :: Config -> FilePath -> [Delta ()] -> IO ()
 runDeltas c a = mapM_ (runDelta c a)
 
-safeRunDeltas :: Config -> [Delta] -> String -> IO ()
+safeRunDeltas :: Config -> [Delta ()] -> String -> IO ()
 safeRunDeltas cfg deltas msg = do
   let aPath  = fromJust $ annex cfg
       hashes = aPath </> "hashes.txt"
@@ -98,7 +98,7 @@ safeRunDeltas cfg deltas msg = do
           run = do
             runDeltas cfg aPath deltas
             when (check cfg) $ do
-              actual <- buildTree (verbose cfg) (exclude cfg) aPath
+              actual <- buildProdTree (verbose cfg) (exclude cfg) aPath
               assertSameTrees ("expected '" ++ aPath ++ "'", expected)
                               ("actual '"   ++ aPath ++ "'", actual)
             -- B.writeFile hashes $ serializeTree expected

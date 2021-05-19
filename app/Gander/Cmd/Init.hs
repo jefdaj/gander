@@ -28,7 +28,7 @@ cmdInit cfg dir = do
   out3 <- runGit dir ["config", "user.email", "f@ke.email"]
   out4 <- runGit dir ["annex", "init", takeFileName dir]
   log cfg $ concat [out1, out2, out3, out4]
-  new <- buildTree (verbose cfg) (exclude cfg) dir
+  new <- buildProdTree (verbose cfg) (exclude cfg) dir
   updateAnnexHashes cfg new
   runGitCommit cfg dir $ "gander init " ++ takeFileName dir
 

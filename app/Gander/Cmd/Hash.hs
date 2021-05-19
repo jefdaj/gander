@@ -30,12 +30,12 @@ cmdHash cfg targets = case annex cfg of
       Just p -> writeBinForest p f
   Just dir -> do
     when (length targets > 1) $ error "multiple hash targets in annex mode"
-    new <- buildTree (verbose cfg) (exclude cfg) (head targets)
+    new <- buildProdTree (verbose cfg) (exclude cfg) (head targets)
     updateAnnexHashes cfg new
     runGitCommit cfg dir "gander hash" -- TODO only if hashes changed
     -- out2 <- runGit dir ["commit", "-m", "gander hash"]
 
-updateAnnexHashes :: Config -> HashTree -> IO ()
+updateAnnexHashes :: Config -> HashTree () -> IO ()
 updateAnnexHashes cfg new = do
   let aPath   = fromJust $ annex cfg
       hashes  = aPath </> "hashes.txt"

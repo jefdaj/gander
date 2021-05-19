@@ -10,7 +10,7 @@ import Prelude hiding (log)
 import Text.Pretty.Simple (pPrint)
 -- import Gander.Run    (safeRunDeltas)
 -- import Util   (log)
--- import Gander.Run    (runGitRm)
+import Gander.Run    (safeRunDeltas)
 -- import Util   (userSaysYes)
 import Gander.Config (Config(..))
 -- import Data.Maybe    (fromJust)
@@ -25,7 +25,7 @@ cmdRm cfg target _ rmPath = do -- TODO correct toRm path using root!
   -- let rmPath' = "./" ++ rmPath -- TODO fix this of course
   let ds  = [Rm rmPath]
       msg = unwords ["gander rm", rmPath] -- TODO sanitize!
-  pPrint ds
+  pPrint (ds :: [Delta ()])
   -- TODO need to pass this the hashes and root path in case of standalone cmd too?
   -- safeRunDeltas cfg ds msg
 

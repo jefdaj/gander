@@ -22,7 +22,7 @@ cmdTest cfg paths = do
 explain :: String -> IO () -> IO ()
 explain msg fn = putStrLn msg >> fn >> putStrLn ""
 
-testSerialization :: Config -> HashForest -> IO ()
+testSerialization :: Config -> HashForest () -> IO ()
 testSerialization cfg forest1 = do
   explain "making hashforest:" $ pPrint forest1
   let string1 = B.unlines $ serializeForest forest1
@@ -30,20 +30,20 @@ testSerialization cfg forest1 = do
       string2 = B.unlines $ serializeForest forest2
   let tests = [forest1 == forest2, show forest1 == show forest2, string1 == string2]
   if (all id tests) then do
-    explain "round-tripped hashtree to string:" $ printForest forest1
+    explain "round-tripped hashforest to string:" $ printForest forest1
   else do
-    putStrLn "failed to round-trip hashtree to string!"
+    putStrLn "failed to round-trip hashforest to string!"
     print string1
     print string2
     putStrLn "failed to round-trip the tree!"
 
-testDupes :: Config -> HashForest -> IO ()
+testDupes :: Config -> HashForest () -> IO ()
 testDupes cfg forest = do
   let ds = dupesByNFiles $ pathsByHash forest
-  -- explain "making dupemap from hashtree:" $ pPrint m
+  -- explain "making dupemap from hashforest:" $ pPrint m
   explain "using dupemap to report duplicates:" $ printDupes (maxdepth cfg) ds
 
-testRm :: Config -> HashTree -> IO ()
+testRm :: Config -> HashTree () -> IO ()
 testRm cfg tree = case rmSubTree tree "./demo/backup" of
   Left e -> log cfg e
   Right t -> do

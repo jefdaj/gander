@@ -10,6 +10,7 @@ module Data.Gander
   , TreeType(..)
   , addSubTree
   , buildTree
+  , buildProdTree
   , deserializeTree
   , dropTo
   , flattenTree
