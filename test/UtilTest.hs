@@ -44,15 +44,15 @@ instance Arbitrary ValidFilePath where
     let path = joinPath (prefix:comps)
     return $ ValidFilePath $ if null path then "/" else path
 
-unit_absolutize_tilde_expansion :: Assertion
-unit_absolutize_tilde_expansion = do
+unit_absolutize_expands_tildes :: Assertion
+unit_absolutize_expands_tildes = do
   home <- getHomeDirectory
   let explicit = home </> "xyz"
   (Just implicit) <- absolutize "~/xyz"
   implicit @=? explicit
 
-unit_absolutize_rejects_null_path :: Assertion
-unit_absolutize_rejects_null_path = do
+unit_absolutize_rejects_the_null_path :: Assertion
+unit_absolutize_rejects_the_null_path = do
   reject <- absolutize ""
   reject @=? Nothing
 
