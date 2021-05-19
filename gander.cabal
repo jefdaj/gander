@@ -48,6 +48,7 @@ common deps
                        utf8-string,
                        with-utf8,
                        system-filepath,
+                       MissingH,
                        unix
 
 library

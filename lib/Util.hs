@@ -29,10 +29,10 @@ module Util
 import Prelude hiding (log)
 
 import Data.List             (isPrefixOf, isInfixOf)
--- import Data.Maybe            (fromJust)
-import System.Directory      (getCurrentDirectory, doesDirectoryExist, canonicalizePath)
-import System.FilePath       (pathSeparator, splitPath, joinPath, takeDirectory, (</>), takeBaseName)
--- import System.Path.NameManip (guess_dotdot, absolute_path)
+import Data.Maybe            (fromJust)
+import System.Directory      (getCurrentDirectory, getHomeDirectory, doesDirectoryExist, canonicalizePath)
+import System.FilePath       (pathSeparator, splitPath, joinPath, takeDirectory, (</>), takeBaseName, addTrailingPathSeparator, normalise)
+import System.Path.NameManip (guess_dotdot, absolute_path)
 import System.IO        (hFlush, stdout)
 import System.Posix.Files (getSymbolicLinkStatus, isSymbolicLink, readSymbolicLink)
 
@@ -60,20 +60,20 @@ pathComponents f = filter (not . null)
 
 -- removed because MissingH is deprecated. now tilde expansion won't work?
 -- from schoolofhaskell.com/user/dshevchenko/cookbook
--- absolutize :: FilePath -> IO FilePath
--- absolutize aPath
---     | "~" `isPrefixOf` aPath = do
---         homePath <- getHomeDirectory
---         return $ normalise $ addTrailingPathSeparator homePath
---                              ++ tail aPath
---     | otherwise = do
---         pathMaybeWithDots <- absolute_path aPath
---         return $ fromJust $ guess_dotdot pathMaybeWithDots
-
 absolutize :: FilePath -> IO FilePath
-absolutize p = do
-  wd <- getCurrentDirectory
-  canonicalizePath (wd </> p)
+absolutize aPath
+    | "~" `isPrefixOf` aPath = do
+        homePath <- getHomeDirectory
+        return $ normalise $ addTrailingPathSeparator homePath
+                             ++ tail aPath
+    | otherwise = do
+        pathMaybeWithDots <- absolute_path aPath
+        return $ fromJust $ guess_dotdot pathMaybeWithDots
+
+-- absolutize :: FilePath -> IO FilePath
+-- absolutize p = do
+--   wd <- getCurrentDirectory
+--   canonicalizePath (wd </> p)
 
 -- TODO this fails on the leading / in a full path?
 dropDir :: FilePath -> FilePath

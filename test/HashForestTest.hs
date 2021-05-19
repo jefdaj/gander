@@ -22,8 +22,6 @@ instance Arbitrary TestForest where
   arbitrary = HashForest <$> resize 3 arbitrary
   shrink (HashForest xs) = HashForest <$> shrink xs
 
--- TODO round-trip to binary files too
-
 instance Arbitrary ProdForest where
   arbitrary = HashForest <$> arbitrary
   shrink (HashForest ts) = HashForest <$> shrink ts
