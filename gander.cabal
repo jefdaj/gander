@@ -137,7 +137,6 @@ test-suite gander-test
                        System.Directory.Tree,
                        Util,
                        CmdTest,
-                       DepsTest,
                        DeltaTest,
                        DupeSetTest,
                        HashTest,
