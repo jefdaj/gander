@@ -6,14 +6,23 @@ in
 }:
 
 let
-  inherit (pkgs.haskell.lib) markUnbroken dontCheck;
+  inherit (pkgs.haskell.lib) markUnbroken dontCheck overrideCabal;
   haskellPackages = pkgs.haskell.packages.${compiler}.override {
     overrides = hpNew: hpOld: {
+
       niv       = import sources.niv {};
       scheduler = markUnbroken hpOld.scheduler;
       massiv    = markUnbroken hpOld.massiv;
       docopt    = markUnbroken (hpNew.callCabal2nix "docopt" sources.docopt {});
-      gander    = hpNew.callCabal2nix "gander" ./. {};
+
+      gander = overrideCabal (hpNew.callCabal2nix "gander" ./. {}) (_: {
+        executableSystemDepends = with pkgs; [
+          gitAndTools.git
+          gitAndTools.gitAnnex
+          rsync
+        ];
+      });
+
     };
   };
   project = haskellPackages.gander;
