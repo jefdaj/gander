@@ -4,13 +4,13 @@ import Util
 
 import Test.QuickCheck
 import Test.QuickCheck.Monadic
-import Test.HUnit
+import Test.HUnit (Assertion, (@=?))
 import System.Directory (getHomeDirectory)
 import System.FilePath ((</>))
+import Control.Monad.IO.Class (liftIO)
 
 -- describe "Util" $ do
 --   describe "absolutize" $ do
---       it "is idempotent" pending
 --       it "strips dots from paths" pending
 --       it "does not follow symlinks" pending
 -- 
@@ -30,9 +30,15 @@ import System.FilePath ((</>))
 --       it "returns False if given a symlink pointing into a .git/annex/objects dir" pending
 --       it "returns True if given a symlink pointing somewhere else" pending
 
-unit_expand_tilde_in_path :: Assertion
-unit_expand_tilde_in_path = do
+unit_absolutize_tilde_expansion :: Assertion
+unit_absolutize_tilde_expansion = do
   home <- getHomeDirectory
   let explicit = home </> "xyz"
   implicit <- absolutize "~/xyz"
   implicit @=? explicit
+
+prop_absolutize_is_idempotent :: FilePath -> Property
+prop_absolutize_is_idempotent path = monadicIO $ do
+  path'  <- liftIO $ absolutize path
+  path'' <- liftIO $ absolutize path'
+  assert $ path' == path''
