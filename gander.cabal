@@ -135,6 +135,7 @@ test-suite gander-test
                        Data.Gander.HashLine,
                        Data.Gander.HashTree,
                        Data.Gander.HashForest,
+                       Data.Gander.Sim,
                        Gander.Config,
                        System.Directory.Tree,
                        Util,

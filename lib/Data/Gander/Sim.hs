@@ -12,6 +12,8 @@ import Data.Gander.Delta
 import Control.Monad (when, foldM)
 import Data.Maybe (fromJust)
 
+-- TODO remove Deltas from the name? Run doesn't have them. Or add it like RunDeltas
+
 --------------------------------------------
 -- check if simulated operations are safe --
 --------------------------------------------
