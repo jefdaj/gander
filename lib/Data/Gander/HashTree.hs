@@ -257,7 +257,10 @@ flattenTree = flattenTree' ""
 
 flattenTreePaths :: AnchoredHashTree a -> [FilePath]
 flattenTreePaths (r :/ f@(File {})) = [r </> n2p (name f)]
-flattenTreePaths (r :/ d@(Dir  {})) = (r </> n2p (name d)) : map (\c -> r </> n2p (name c)) (contents d)
+flattenTreePaths (r :/ d@(Dir  {})) = sort $
+  (r </> n2p (name d)) : concatMap (\c -> flattenTreePaths $ r' :/ c) (contents d)
+  where
+    r' = r </> n2p (name d)
 
 -- TODO need to handle unicode here?
 -- TODO does this affect memory usage?
@@ -318,8 +321,8 @@ accTrees (HashLine (t, (IndentLevel i), h, p)) cs = case t of
 treeContainsPath :: ProdTree -> FilePath -> Bool
 treeContainsPath tree path = isJust $ dropTo tree path
 
-dropTo :: ProdTree -> FilePath -> Maybe (ProdTree)
-dropTo t@(File f1 _ ()  ) f2 = if n2p f1 == f2 then Just t else Nothing
+dropTo :: HashTree a -> FilePath -> Maybe (HashTree a)
+dropTo t@(File f1 _ _   ) f2 = if n2p f1 == f2 then Just t else Nothing
 dropTo t@(Dir  f1 _ cs _) f2
   | n2p f1 == f2 = Just t
   | length (pathComponents f2) < 2 = Nothing

@@ -34,15 +34,22 @@ import Data.Gander.Sim
 -- TODO should this be specialized to just the B8.ByteString one?
 data TestSim = TestSim
   { simStart :: TestForest
-  , simSteps :: [Delta B8.ByteString] -- TODO also store intermediate states here?
+  , simSteps :: [(Delta B8.ByteString, TestForest)] -- TODO remove the forests here?
   }
 
 -- TODO is there a way to pass data to the arbitrary fns?
 --      arbitraryDelta :: TestForest -> Gen TestDelta maybe
 
--- pick a random node in a test 
-pickNode :: TestForest -> TestTree
-pickNode = undefined
+-- Generate steps. This can't actually be an Arbitrary instance because it requires a starting forest.
+-- TODO is IO the right idea to fit with QuickCheck here?
+arbitraryDeltas :: Int -> TestForest -> IO [(Delta B8.ByteString, TestTree)]
+arbitraryDeltas nSteps tree
+ | nSteps < 1 = return []
+ | otherwise = do
+     delta <- undefined
+     let tree' = undefined delta
+     deltas <- arbitraryDeltas (nSteps - 1) tree'
+     return $ (delta, tree') : deltas
 
 instance Arbitrary TestSim where
 
