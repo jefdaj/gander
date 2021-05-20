@@ -36,10 +36,6 @@ data Delta a
   | Edit FilePath (HashTree a) (HashTree a) -- TODO remove in favor of subtle use of Add?
   deriving (Read, Show, Eq)
 
-------------------------
--- diff two hashtrees --
-------------------------
-
 -- TODO put the hashes back here?
 prettyDelta :: Delta () -> B.ByteString
 prettyDelta (Add  f _  ) = B.pack $ "added '"   ++ f  ++ "'"

@@ -5,6 +5,7 @@
 
 module Data.Gander.HashTree
   ( HashTree(..)
+  , AnchoredHashTree(..)
   , ProdTree(..)
   , HashLine(..)
   , keepPath
@@ -18,6 +19,8 @@ module Data.Gander.HashTree
   , serializeTree
   , writeTree
   , flattenTree
+  , flattenTreePaths
+  , flattenTree' -- TODO name this something better
   , deserializeTree
   , hashContents
   , dropTo
@@ -84,6 +87,14 @@ data HashTree a
   = File { name :: !FileName, hash :: !Hash, fileData :: !a }
   | Dir  { name :: !FileName, hash :: Hash, contents :: [HashTree a], nFiles :: Int }
   deriving (Read, Show, Ord, Generic) -- TODO switch to hash-based equality after testing
+
+-- based on the DirTree code
+data AnchoredHashTree a = (:/) { anchor :: !FilePath, hashTree :: HashTree a }
+  deriving (Read, Show)
+
+-- based on the DirTree code
+instance Functor AnchoredHashTree where
+  fmap f (b :/ d) = b :/ fmap f d
 
 -- We only need the file decoration for testing, so we can leave it off the production types
 type ProdTree = HashTree ()
@@ -241,13 +252,17 @@ writeTree path tree = withFile path WriteMode $ \h ->
 writeBinTree :: FilePath -> ProdTree -> IO ()
 writeBinTree path tree = B8.writeFile path $ encode tree
 
-flattenTree :: ProdTree -> [HashLine]
+flattenTree :: HashTree a -> [HashLine]
 flattenTree = flattenTree' ""
+
+flattenTreePaths :: AnchoredHashTree a -> [FilePath]
+flattenTreePaths (r :/ f@(File {})) = [r </> n2p (name f)]
+flattenTreePaths (r :/ d@(Dir  {})) = (r </> n2p (name d)) : map (\c -> r </> n2p (name c)) (contents d)
 
 -- TODO need to handle unicode here?
 -- TODO does this affect memory usage?
-flattenTree' :: FilePath -> ProdTree -> [HashLine]
-flattenTree' dir (File n h ()  ) = [HashLine (F, IndentLevel $ length (splitPath dir), h, n)]
+flattenTree' :: FilePath -> HashTree a -> [HashLine]
+flattenTree' dir (File n h _   ) = [HashLine (F, IndentLevel $ length (splitPath dir), h, n)]
 flattenTree' dir (Dir  n h cs _) = subtrees ++ [wholeDir]
   where
     subtrees = concatMap (flattenTree' $ dir </> n2p n) cs

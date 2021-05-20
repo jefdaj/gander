@@ -18,6 +18,8 @@ import System.IO.Temp
 
 type TestForest = HashForest B8.ByteString
 
+-- TODO is it possible to to arbitrary (HashForest a) here? if so, it helps in SimTest
+
 instance Arbitrary TestForest where
   arbitrary = HashForest <$> resize 3 arbitrary
   shrink (HashForest xs) = HashForest <$> shrink xs

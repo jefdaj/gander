@@ -7,6 +7,7 @@ module Data.Gander
 
   -- hashtree
   , HashTree(..)
+  , AnchoredHashTree(..)
   , TreeType(..)
   , addSubTree
   , buildTree
@@ -14,6 +15,8 @@ module Data.Gander
   , deserializeTree
   , dropTo
   , flattenTree
+  , flattenTreePaths
+  , flattenTree' -- TODO name this something better
   , hashContents
   , listAllFiles
   , listLostFiles
@@ -34,6 +37,7 @@ module Data.Gander
   , readForest
   , readTrees
   , readOrBuildTrees
+  , flattenForestPaths
   , printForest
   , writeForest
   , writeBinForest
