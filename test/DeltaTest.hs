@@ -20,6 +20,10 @@ import Test.QuickCheck
 -- import Test.QuickCheck.Monadic
 import           Control.Applicative     ((<$>), (<*>))
 
+import Data.ByteString.Char8 as B8
+
+type TestDelta = Delta B8.ByteString
+
 -- data Delta
 --   = Add  FilePath HashTree
 --   | Rm   FilePath

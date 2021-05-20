@@ -2,6 +2,7 @@
 
 module Data.Gander.Delta
   ( Delta(..)
+  , ProdDelta
   , diff
   , prettyDelta
   , printDeltas
@@ -18,7 +19,7 @@ module Data.Gander.Delta
 -- import Gander.Config
 import Data.Gander.HashTree
 import Util (n2p)
-import qualified Data.ByteString.Char8 as B
+import qualified Data.ByteString.Char8 as B8
 
 import Control.Monad       (when, foldM)
 import Data.List           (find)
@@ -36,15 +37,17 @@ data Delta a
   | Edit FilePath (HashTree a) (HashTree a) -- TODO remove in favor of subtle use of Add?
   deriving (Read, Show, Eq)
 
+type ProdDelta = Delta ()
+
 -- TODO put the hashes back here?
-prettyDelta :: Delta a -> B.ByteString
-prettyDelta (Add  f _  ) = B.pack $ "added '"   ++ f  ++ "'"
-prettyDelta (Rm   f    ) = B.pack $ "removed '" ++ f  ++ "'"
-prettyDelta (Edit f _ _) = B.pack $ "edited '"  ++ f  ++ "'"
-prettyDelta (Mv   f1 f2) = B.pack $ "moved '"   ++ f1 ++ "' -> '" ++ f2 ++ "'"
+prettyDelta :: Delta a -> B8.ByteString
+prettyDelta (Add  f _  ) = B8.pack $ "added '"   ++ f  ++ "'"
+prettyDelta (Rm   f    ) = B8.pack $ "removed '" ++ f  ++ "'"
+prettyDelta (Edit f _ _) = B8.pack $ "edited '"  ++ f  ++ "'"
+prettyDelta (Mv   f1 f2) = B8.pack $ "moved '"   ++ f1 ++ "' -> '" ++ f2 ++ "'"
 
 printDeltas :: [Delta a] -> IO ()
-printDeltas = mapM_ (putStrLn . B.unpack . prettyDelta)
+printDeltas = mapM_ (putStrLn . B8.unpack . prettyDelta)
 
 diff :: Show a => HashTree a -> HashTree a -> [Delta a]
 diff = diff' ""
