@@ -224,7 +224,7 @@ readOrBuildTree verbose mmaxdepth excludes path = do
   else error $ "No such file: '" ++ path ++ "'"
 
 -- for comparing two trees without getting hung up on different overall names
-renameRoot :: FilePath -> ProdTree -> ProdTree
+renameRoot :: FilePath -> HashTree a -> HashTree a
 renameRoot newName tree = tree { name = p2n newName }
 
 -------------------------------------
@@ -234,10 +234,10 @@ renameRoot newName tree = tree { name = p2n newName }
 -- TODO can Foldable or Traversable simplify these?
 -- TODO need to handle unicode here?
 -- TODO does map evaluation influence memory usage?
-serializeTree :: ProdTree -> [B8.ByteString]
+serializeTree :: HashTree a -> [B8.ByteString]
 serializeTree = map prettyHashLine . flattenTree
 
-printTree :: ProdTree -> IO ()
+printTree :: HashTree a -> IO ()
 printTree = mapM_ printLine . flattenTree
   where
     -- TODO don't flush every line
@@ -345,22 +345,22 @@ treeContainsHash (Dir  _ h1 cs _) h2
 -------------------
 
 -- TODO use this to implement hashing multiple trees at once?
-wrapInEmptyDir :: FilePath -> ProdTree -> ProdTree
+wrapInEmptyDir :: FilePath -> HashTree a -> HashTree a
 wrapInEmptyDir n t = do
   Dir { name = p2n n, hash = h, contents = cs, nFiles = nFiles t }
   where
     cs = [t]
     h = hashContents cs
 
-wrapInEmptyDirs :: FilePath -> ProdTree -> ProdTree
+wrapInEmptyDirs :: FilePath -> HashTree a -> HashTree a
 wrapInEmptyDirs p t = case pathComponents p of
   []     -> error "wrapInEmptyDirs needs at least one dir"
   (n:[]) -> wrapInEmptyDir n t
   (n:ns) -> wrapInEmptyDir n $ wrapInEmptyDirs (joinPath ns) t
 
 -- TODO does the anchor here matter? maybe it's set to the full path accidentally
-addSubTree :: ProdTree -> ProdTree -> FilePath -> ProdTree
-addSubTree (File _ _ ()) _ _ = error $ "attempt to insert tree into a file"
+addSubTree :: HashTree a -> HashTree a -> FilePath -> HashTree a
+addSubTree (File _ _ _) _ _ = error $ "attempt to insert tree into a file"
 addSubTree _ _ path | null (pathComponents path) = error "can't insert tree at null path"
 addSubTree main sub path = main { hash = h', contents = cs', nFiles = n' }
   where
@@ -388,8 +388,8 @@ addSubTree main sub path = main { hash = h', contents = cs', nFiles = n' }
  - Buuuut for now can just ignore nFiles as it's not needed for the rm itself.
  - TODO does this actually solve nFiles too?
  -}
-rmSubTree :: ProdTree -> FilePath -> Either String (ProdTree)
-rmSubTree (File _ _ ()) p = Left $ "no such subtree: '" ++ p ++ "'"
+rmSubTree :: HashTree a -> FilePath -> Either String (HashTree a)
+rmSubTree (File _ _ _) p = Left $ "no such subtree: '" ++ p ++ "'"
 rmSubTree d@(Dir _ _ cs n) p = case dropTo d p of
   Nothing -> Left $ "no such subtree: '" ++ p ++ "'"
   Just t -> Right $ if t `elem` cs

@@ -38,7 +38,7 @@ import Data.Maybe (fromJust)
 -----------------------------
 
 -- TODO think through how to report results more!
-simDelta :: ProdTree -> Delta () -> Either String (ProdTree)
+simDelta :: HashTree a -> Delta a -> Either String (HashTree a)
 simDelta t (Rm   p    ) = rmSubTree t p
 simDelta t (Add  p  t2) = Right $ addSubTree t t2 p
 simDelta t (Edit p _ t2) = Right $ addSubTree t t2 p
@@ -46,14 +46,14 @@ simDelta t (Mv   p1 p2) = case simDelta t (Rm p1) of
   Left  e  -> Left e
   Right t2 -> simDelta t2 $ Add p2 $ fromJust $ dropTo t p1 -- TODO path error here?
 
-simDeltas :: ProdTree -> [Delta ()] -> Either String (ProdTree)
+simDeltas :: HashTree a -> [Delta a] -> Either String (HashTree a)
 simDeltas = foldM simDelta
 
 -- seems like what we really want is runDeltaIfSafe, which does simDelta, checks safety, then runDelta
 
 -- TODO be clearer on before/after and or expected/actual here
 -- assertSameTrees :: FilePath -> HashTree -> HashTree -> IO ()
-assertSameTrees :: (String, ProdTree) -> (String, ProdTree) -> IO ()
+assertSameTrees :: Show a => (String, HashTree a) -> (String, HashTree a) -> IO ()
 assertSameTrees (msg1, tree1) (msg2, tree2) = do
   let wrong = diff tree1 tree2
   when (not $ null wrong) $ do
