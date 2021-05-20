@@ -45,6 +45,8 @@ module Data.Gander
   , diff
   , prettyDelta
   , printDeltas
+
+  -- sim
   , simDelta
   , simDeltas
   -- , safeDelta
@@ -66,6 +68,7 @@ module Data.Gander
   where
 
 import Data.Gander.Delta
+import Data.Gander.Sim
 import Data.Gander.DupeMap
 import Data.Gander.Hash
 import Data.Gander.HashLine

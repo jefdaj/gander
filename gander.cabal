@@ -75,6 +75,7 @@ library
                        Data.Gander.HashLine,
                        Data.Gander.HashTree,
                        Data.Gander.HashForest,
+                       Data.Gander.Sim,
                        Util,
                        System.Directory.Tree
 
@@ -105,6 +106,7 @@ executable gander
                        Data.Gander.HashLine,
                        Data.Gander.HashTree,
                        Data.Gander.HashForest,
+                       Data.Gander.Sim,
                        Gander.Run,
                        Util,
                        System.Directory.Tree
@@ -138,6 +140,7 @@ test-suite gander-test
                        Util,
                        CmdTest,
                        DeltaTest,
+                       SimTest,
                        DupeSetTest,
                        HashTest,
                        HashTreeTest,
