@@ -40,25 +40,51 @@ data TestSim = TestSim
 -- TODO is there a way to pass data to the arbitrary fns?
 --      arbitraryDelta :: TestForest -> Gen TestDelta maybe
 
+-- TODO there's probably an existing quickcheck fn for this, right?
+chooseFrom :: [a] -> Gen a
+chooseFrom xs = do
+  i <- choose (0, length xs - 1)
+  return $ xs !! i
+
+chooseForestPath :: HashForest a -> Gen FilePath
+chooseForestPath f = chooseFrom $ flattenForestPaths ("" :// f)
+
+arbitraryRm :: HashForest a -> Gen (Delta a)
+arbitraryRm forest = Rm <$> chooseForestPath forest
+
+-- TODO this one is a little trickier because it needs to pick a dir path, right?
+arbitraryAdd :: HashForest a -> Gen (Delta a)
+arbitraryAdd = undefined
+
+arbitraryEdit :: HashForest a -> Gen (Delta a)
+arbitraryEdit = undefined
+
+arbitraryMv :: HashForest a -> Gen (Delta a)
+arbitraryMv = undefined
+
 arbitraryDelta :: TestForest -> Gen (Delta B8.ByteString)
-arbitraryDelta forest = undefined
+arbitraryDelta forest = do
+  deltaFn <- chooseFrom [arbitraryAdd, arbitraryRm, arbitraryEdit, arbitraryMv]
+  deltaFn forest
+    -- paths = flattenForestPaths ("" :// forest)
 
 -- Generate steps. This can't actually be an Arbitrary instance because it requires a starting forest.
 -- TODO is IO the right idea to fit with QuickCheck here?
-arbitraryDeltas :: Int -> TestForest -> Gen [(Delta B8.ByteString, TestForest)]
-arbitraryDeltas nSteps forest
- | nSteps < 1 = return []
- | otherwise = do
-     delta <- arbitraryDelta forest
-     let forest' = undefined delta
-     deltas <- arbitraryDeltas (nSteps - 1) forest'
-     return $ (delta, forest') : deltas
+-- arbitraryDeltas :: Int -> TestForest -> Gen [(Delta B8.ByteString, TestForest)]
+-- arbitraryDeltas nSteps forest
+--  | nSteps < 1 = return []
+--  | otherwise = do
+--      delta <- arbitraryDelta forest
+--      let forest' = undefined $ simDelta forest delta
+--      deltas <- arbitraryDeltas (nSteps - 1) forest'
+--      return $ (delta, forest') : deltas
+arbitraryDeltas = undefined
 
 instance Arbitrary TestSim where
 
   arbitrary = do
     start <- arbitrary :: Gen TestForest
-    nSteps <- choose (0, 10)
+    nSteps <- choose (0, 10 :: Int)
     steps <- arbitraryDeltas nSteps start
     return $ TestSim { simStart = start, simSteps = steps }
 
