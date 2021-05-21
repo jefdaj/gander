@@ -16,6 +16,7 @@ import DeltaTest
 import qualified Data.ByteString.Char8 as B8
 import Test.QuickCheck
 import Data.Maybe (fromJust)
+import Data.Either (Either(..))
 
 {- A Sim is a randomly generated initial state along with a list of
  - randomly generated Deltas to apply. We want to confirm that we get the same
@@ -94,8 +95,8 @@ arbitraryEdit :: Arbitrary (HashTree a) => HashTree a -> Gen (Delta a)
 arbitraryEdit tree = do
   path <- chooseTreePath tree
   let subTree  = fromJust $ dropTo tree path
-  subTree' <- fmap (\t -> t {name = name tree}) arbitrary -- set the name to match the old one
-  return $ Edit path subTree subTree'
+  subTree' <- arbitrary
+  return $ Edit path subTree (subTree' { name = name subTree })
 
 arbitraryMv :: HashTree a -> Gen (Delta a)
 arbitraryMv = undefined
@@ -105,17 +106,19 @@ arbitraryDelta tree = do
   deltaFn <- chooseFrom [arbitraryAdd, arbitraryRm, arbitraryEdit, arbitraryMv]
   deltaFn tree
 
--- Generate steps. This can't actually be an Arbitrary instance because it requires a starting forest.
--- TODO is IO the right idea to fit with QuickCheck here?
--- arbitraryDeltas :: Int -> TestForest -> Gen [(TestDelta, TestForest)]
--- arbitraryDeltas nSteps forest
---  | nSteps < 1 = return []
---  | otherwise = do
---      delta <- arbitraryDelta forest
---      let forest' = undefined $ simDelta forest delta
---      deltas <- arbitraryDeltas (nSteps - 1) forest'
---      return $ (delta, forest') : deltas
-arbitraryDeltas = undefined
+-- Generate steps. This can't actually be an Arbitrary instance because it
+-- requires a starting forest.
+arbitraryDeltas :: Int -> TestForest -> Gen [(TestDelta, TestForest)]
+arbitraryDeltas nSteps forest@(HashForest trees)
+ | nSteps < 1 = return []
+ | otherwise = do
+     index <- choose (0 :: Int, length trees - 1)
+     let tree = trees !! index
+     delta <- arbitraryDelta tree
+     let Right tree' = simDelta tree delta -- TODO is this safe enough?
+     let forest' = HashForest $ replaceNth index tree' trees
+     deltas <- arbitraryDeltas (nSteps - 1) forest'
+     return $ (delta, forest') : deltas
 
 instance Arbitrary TestSim where
 
