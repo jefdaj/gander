@@ -83,13 +83,13 @@ chooseTree (HashForest trees) = chooseFrom trees
 -- chooseForestPath f = chooseFrom $ flattenForestPaths ("" :// f)
 
 arbitraryRm :: HashTree a -> Gen (Delta a)
-arbitraryRm tree = do
-  -- tree <- undefined -- TODO something like editTree :: (HashTree a -> HashTree a) -> Int -> HashForest a -> HashForest a
-  Rm <$> chooseTreePath tree
+arbitraryRm tree = Rm <$> chooseTreePath tree
 
 -- TODO this one is a little trickier because it needs to pick a dir path, right?
 arbitraryAdd :: HashTree a -> Gen (Delta a)
 arbitraryAdd = undefined
+  -- TODO find a random dir (what if there isn't one? how do we add a new tree here?)
+  -- TODO generate a random tree and insert it at <path> </> tree name, right?
 
 -- TODO is swapping a dir for a file or vice versa a valid edit? or should it be restricted to files only?
 arbitraryEdit :: Arbitrary (HashTree a) => HashTree a -> Gen (Delta a)
