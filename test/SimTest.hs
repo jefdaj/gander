@@ -44,6 +44,9 @@ data TestSim = TestSim
 -- TODO is there a way to pass data to the arbitrary fns?
 --      arbitraryDelta :: TestForest -> Gen TestDelta maybe
 
+-- TODO hey, are these arbitrary edits all on one tree? if so you should have
+-- them be that and compose them with replacenth!
+
 -- TODO there's probably an existing quickcheck fn for this, right?
 chooseFrom :: [a] -> Gen a
 chooseFrom xs = do
@@ -60,42 +63,47 @@ replaceNth n newVal (x:xs)
 chooseTreePath :: HashTree a -> Gen FilePath
 chooseTreePath tree = chooseFrom $ flattenTreePaths ("" :/ tree)
 
-chooseForestTree :: HashForest a -> Gen (HashTree a)
-chooseForestTree (HashForest trees) = chooseFrom trees
+filterDirs :: [HashTree a] -> [HashTree a]
+filterDirs [] = []
+filterDirs (  (File {}):ts) =     filterDirs ts
+filterDirs (d@(Dir  {}):ts) = d : filterDirs ts
 
-chooseForestPath :: HashForest a -> Gen FilePath
-chooseForestPath f = chooseFrom $ flattenForestPaths ("" :// f)
+-- same as chooseTreePath, but 
+-- TODO wait, this doesn't have the tree itself, just the filepath. separate fn for that?
+--      maybe rewrite flattenTree(') to return anchored trees and have those made into paths after
+-- chooseTreeDir :: HashTree a -> Gen FilePath
+-- chooseTreeDir 
 
-arbitraryRm :: HashForest a -> Gen (Delta a)
-arbitraryRm forest = do
-  tree <- undefined -- TODO something like editTree :: (HashTree a -> HashTree a) -> Int -> HashForest a -> HashForest a
-  Rm <$> chooseForestPath forest
+chooseTree :: HashForest a -> Gen (HashTree a)
+chooseTree (HashForest trees) = chooseFrom trees
+
+-- chooseForestPath :: HashForest a -> Gen FilePath
+-- chooseForestPath f = chooseFrom $ flattenForestPaths ("" :// f)
+
+arbitraryRm :: HashTree a -> Gen (Delta a)
+arbitraryRm tree = do
+  -- tree <- undefined -- TODO something like editTree :: (HashTree a -> HashTree a) -> Int -> HashForest a -> HashForest a
+  Rm <$> chooseTreePath tree
 
 -- TODO this one is a little trickier because it needs to pick a dir path, right?
-arbitraryAdd :: Arbitrary (HashTree a) => HashForest a -> Gen (Delta a)
+arbitraryAdd :: HashTree a -> Gen (Delta a)
 arbitraryAdd = undefined
 
-arbitraryEdit :: Arbitrary (HashTree a) => HashForest a -> Gen (Delta a)
-arbitraryEdit forest@(HashForest trees) = do
-  index <- choose (0, length trees - 1) -- TODO is -1 right?
-  let tree = trees !! index
-  tree' <- arbitrary -- :: Gen (HashForest a)
+-- TODO is swapping a dir for a file or vice versa a valid edit? or should it be restricted to files only?
+arbitraryEdit :: Arbitrary (HashTree a) => HashTree a -> Gen (Delta a)
+arbitraryEdit tree = do
   path <- chooseTreePath tree
-  let subTree = fromJust $ dropTo tree path
-  return $ Edit path tree tree'
+  let subTree  = fromJust $ dropTo tree path
+  subTree' <- fmap (\t -> t {name = name tree}) arbitrary -- set the name to match the old one
+  return $ Edit path subTree subTree'
 
-  -- path <- chooseForestPath forest
-  -- let old = fromJust $ dropTo forest path -- TODO is this safe?
-  -- return undefined
-
-arbitraryMv :: Arbitrary (HashTree a) => HashForest a -> Gen (Delta a)
+arbitraryMv :: HashTree a -> Gen (Delta a)
 arbitraryMv = undefined
 
-arbitraryDelta :: Arbitrary (HashTree a) => HashForest a -> Gen (Delta a)
-arbitraryDelta forest = do
+arbitraryDelta :: Arbitrary (HashTree a) => HashTree a -> Gen (Delta a)
+arbitraryDelta tree = do
   deltaFn <- chooseFrom [arbitraryAdd, arbitraryRm, arbitraryEdit, arbitraryMv]
-  deltaFn forest
-    -- paths = flattenForestPaths ("" :// forest)
+  deltaFn tree
 
 -- Generate steps. This can't actually be an Arbitrary instance because it requires a starting forest.
 -- TODO is IO the right idea to fit with QuickCheck here?
