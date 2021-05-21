@@ -41,6 +41,7 @@ data TestSim = TestSim
   { simStart :: TestForest
   , simSteps :: [(TestDelta, TestForest)] -- TODO remove the forests here?
   }
+  deriving (Eq, Read, Show)
 
 -- TODO is there a way to pass data to the arbitrary fns?
 --      arbitraryDelta :: TestForest -> Gen TestDelta maybe
