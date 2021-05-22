@@ -8,6 +8,7 @@ import Data.Gander.Sim
 import Data.Gander.HashTree
 import Data.Gander.HashForest
 import Data.Gander.Delta
+import Util (n2p)
 
 import HashTreeTest
 import HashForestTest
@@ -105,9 +106,11 @@ arbitraryRm tree = Rm <$> chooseTreePath tree
 
 -- TODO this one is a little trickier because it needs to pick a dir path, right?
 arbitraryAdd :: TestTree -> Gen TestDelta
-arbitraryAdd = undefined
-  -- TODO find a random dir (what if there isn't one? how do we add a new tree here?)
-  -- TODO generate a random tree and insert it at <path> </> tree name, right?
+arbitraryAdd tree = do
+  dstDir <- fmap (fst . fromMaybe ("", tree)) $ chooseDir tree
+  newTree <- arbitrary
+  let dstPath = dstDir </> n2p (name newTree)
+  return $ Add dstPath newTree
 
 -- TODO is swapping a dir for a file or vice versa a valid edit? or should it be restricted to files only?
 arbitraryEdit :: TestTree -> Gen TestDelta
