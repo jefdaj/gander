@@ -15,7 +15,7 @@ import DeltaTest
 
 import qualified Data.ByteString.Char8 as B8
 import Test.QuickCheck
-import Data.Maybe (fromJust, listToMaybe)
+import Data.Maybe (fromJust, listToMaybe, fromMaybe)
 import Data.Either (Either(..))
 import System.FilePath ((</>))
 
@@ -82,12 +82,12 @@ chooseTree (HashForest trees) = chooseFrom trees
 
 -- if the forest contains any matching nodes, choose one randomly
 -- TODO also include the path to it, like zipPaths
-chooseNodeMatching :: (HashTree a -> Bool) -> HashForest a -> Gen (Maybe (HashTree a))
-chooseNodeMatching pred (HashForest trees) = if null dirs then return Nothing else fmap Just $ chooseFrom dirs
+chooseNodeMatching :: (HashTree a -> Bool) -> HashTree a -> Gen (Maybe ((FilePath, HashTree a)))
+chooseNodeMatching pred tree = if null dirs then return Nothing else fmap Just $ chooseFrom dirs
   where
-    dirs = filter pred $ concatMap listTreeNodes trees
+    dirs = filter (pred . snd) $ listTreeNodePaths tree
 
-chooseDir :: HashForest a -> Gen (Maybe (HashTree a))
+chooseDir :: HashTree a -> Gen (Maybe ((FilePath, HashTree a)))
 chooseDir = chooseNodeMatching isDir
 
 -- chooseForestPath :: HashForest a -> Gen FilePath
@@ -122,7 +122,7 @@ arbitraryEdit tree = do
 arbitraryMv :: TestTree -> Gen TestDelta
 arbitraryMv tree = do
   oldPath <- chooseTreePath tree
-  newDir  <- undefined -- TODO pick a random dest dir, or default to the null path
+  newDir  <- fmap (fst . fromMaybe ("", tree)) $ chooseDir tree
   newName <- arbitrary :: Gen FilePath
   let newPath = newDir </> newName
   return $ Mv oldPath newPath
