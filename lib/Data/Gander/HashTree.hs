@@ -21,6 +21,7 @@ module Data.Gander.HashTree
   , flattenTree
   , flattenTreePaths
   , flattenTree' -- TODO name this something better
+  , flattenDir
   , deserializeTree
   , hashContents
   , dropTo
@@ -252,15 +253,15 @@ writeTree path tree = withFile path WriteMode $ \h ->
 writeBinTree :: FilePath -> ProdTree -> IO ()
 writeBinTree path tree = B8.writeFile path $ encode tree
 
-flattenTree :: HashTree a -> [HashLine]
-flattenTree = flattenTree' ""
-
 flattenTreePaths :: AnchoredHashTree a -> [FilePath]
 flattenTreePaths (r :/ f@(File {})) = [r </> n2p (name f)]
 flattenTreePaths (r :/ d@(Dir  {})) = sort $
   (r </> n2p (name d)) : concatMap (\c -> flattenTreePaths $ r' :/ c) (contents d)
   where
     r' = r </> n2p (name d)
+
+flattenTree :: HashTree a -> [HashLine]
+flattenTree = flattenTree' ""
 
 -- TODO need to handle unicode here?
 -- TODO does this affect memory usage?
@@ -270,6 +271,13 @@ flattenTree' dir (Dir  n h cs _) = subtrees ++ [wholeDir]
   where
     subtrees = concatMap (flattenTree' $ dir </> n2p n) cs
     wholeDir = HashLine (D, IndentLevel $ length (splitPath dir), h, n)
+
+-- TODO better name? this is based on the one in DirTree
+-- TODO is the nFiles (dirData) useful here?
+-- Note that this will come out in dirs-first order, which doesn't work for streaming hashes
+flattenDir :: HashTree a -> [HashTree a]
+flattenDir (Dir n h cs dd) = Dir n h [] dd : concatMap flattenDir cs
+flattenDir f               = [f]
 
 -- TODO error on null string/lines?
 -- TODO wtf why is reverse needed? remove that to save RAM
