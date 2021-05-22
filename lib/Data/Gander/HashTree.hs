@@ -21,7 +21,7 @@ module Data.Gander.HashTree
   , flattenTree
   , flattenTreePaths
   , flattenTree' -- TODO name this something better
-  , flattenDir
+  , listTreeNodes
   , deserializeTree
   , hashContents
   , dropTo
@@ -272,12 +272,13 @@ flattenTree' dir (Dir  n h cs _) = subtrees ++ [wholeDir]
     subtrees = concatMap (flattenTree' $ dir </> n2p n) cs
     wholeDir = HashLine (D, IndentLevel $ length (splitPath dir), h, n)
 
--- TODO better name? this is based on the one in DirTree
--- TODO is the nFiles (dirData) useful here?
--- Note that this will come out in dirs-first order, which doesn't work for streaming hashes
-flattenDir :: HashTree a -> [HashTree a]
-flattenDir (Dir n h cs dd) = Dir n h [] dd : concatMap flattenDir cs
-flattenDir f               = [f]
+-- TODO better name? this is based on flattenDir in DirTree
+-- Note that this will come out in dirs-first order, which doesn't work for streaming hashes.
+-- It also doesn't remove the tree contents the way the original DirTree version does,
+-- so it could use a lot of memory?
+listTreeNodes :: HashTree a -> [HashTree a]
+listTreeNodes (Dir n h cs dd) = Dir n h cs dd : concatMap listTreeNodes cs
+listTreeNodes f               = [f]
 
 -- TODO error on null string/lines?
 -- TODO wtf why is reverse needed? remove that to save RAM
