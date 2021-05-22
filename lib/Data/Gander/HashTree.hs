@@ -22,6 +22,8 @@ module Data.Gander.HashTree
   , flattenTreePaths
   , flattenTree' -- TODO name this something better
   , listTreeNodes
+  , listTreeNodePaths
+  , zipPaths
   , deserializeTree
   , hashContents
   , dropTo
@@ -272,6 +274,13 @@ flattenTree' dir (Dir  n h cs _) = subtrees ++ [wholeDir]
     subtrees = concatMap (flattenTree' $ dir </> n2p n) cs
     wholeDir = HashLine (D, IndentLevel $ length (splitPath dir), h, n)
 
+-- based on zipPaths in DirTree
+zipPaths :: HashTree a -> HashTree (FilePath, a)
+zipPaths tree = zipP "" tree
+  where
+    zipP p (File n h    fd) = File n h (p </> n2p n, fd)
+    zipP p (Dir  n h cs dd) = Dir n h (map (zipP $ p </> n2p n) cs) dd
+
 -- TODO better name? this is based on flattenDir in DirTree
 -- Note that this will come out in dirs-first order, which doesn't work for streaming hashes.
 -- It also doesn't remove the tree contents the way the original DirTree version does,
@@ -279,6 +288,12 @@ flattenTree' dir (Dir  n h cs _) = subtrees ++ [wholeDir]
 listTreeNodes :: HashTree a -> [HashTree a]
 listTreeNodes (Dir n h cs dd) = Dir n h cs dd : concatMap listTreeNodes cs
 listTreeNodes f               = [f]
+
+listTreeNodePaths :: HashTree a -> [(FilePath, HashTree a)]
+listTreeNodePaths tree = listP "" tree
+  where
+    listP p f@(File {name = n}) = [(p </> n2p n, f)]
+    listP p d@(Dir  {name = n}) =  (p </> n2p n, d) : concatMap (listP $ p </> n2p n) (contents d)
 
 -- TODO error on null string/lines?
 -- TODO wtf why is reverse needed? remove that to save RAM

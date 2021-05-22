@@ -16,6 +16,8 @@ module Data.Gander.HashForest
   , printForest
   , writeForest
   , writeBinForest
+  , listForestNodes
+  , listForestNodePaths
   )
   where
 
@@ -102,3 +104,9 @@ writeForest path forest = withFile path WriteMode $ \h ->
 
 writeBinForest :: FilePath -> HashForest () -> IO ()
 writeBinForest path forest = B8.writeFile path $ encode forest
+
+listForestNodes :: HashForest a -> [HashTree a]
+listForestNodes (HashForest trees) = concatMap listTreeNodes trees
+
+listForestNodePaths :: HashForest a -> [(FilePath, HashTree a)]
+listForestNodePaths (HashForest trees) = concatMap listTreeNodePaths trees

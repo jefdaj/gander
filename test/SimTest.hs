@@ -15,8 +15,9 @@ import DeltaTest
 
 import qualified Data.ByteString.Char8 as B8
 import Test.QuickCheck
-import Data.Maybe (fromJust)
+import Data.Maybe (fromJust, listToMaybe)
 import Data.Either (Either(..))
+import System.FilePath ((</>))
 
 {- A Sim is a randomly generated initial state along with a list of
  - randomly generated Deltas to apply. We want to confirm that we get the same
@@ -79,30 +80,54 @@ filterDirs (d@(Dir  {}):ts) = d : filterDirs ts
 chooseTree :: HashForest a -> Gen (HashTree a)
 chooseTree (HashForest trees) = chooseFrom trees
 
+-- if the forest contains any matching nodes, choose one randomly
+-- TODO also include the path to it, like zipPaths
+chooseNodeMatching :: (HashTree a -> Bool) -> HashForest a -> Gen (Maybe (HashTree a))
+chooseNodeMatching pred (HashForest trees) = if null dirs then return Nothing else fmap Just $ chooseFrom dirs
+  where
+    dirs = filter pred $ concatMap listTreeNodes trees
+
+chooseDir :: HashForest a -> Gen (Maybe (HashTree a))
+chooseDir = chooseNodeMatching isDir
+
 -- chooseForestPath :: HashForest a -> Gen FilePath
 -- chooseForestPath f = chooseFrom $ flattenForestPaths ("" :// f)
 
-arbitraryRm :: HashTree a -> Gen (Delta a)
+isDir :: HashTree a -> Bool
+isDir (Dir _ _ _ _) = True
+isDir (File _ _ _ ) = False
+
+isFile :: HashTree a -> Bool
+isFile = not . isDir
+
+arbitraryRm :: TestTree -> Gen TestDelta
 arbitraryRm tree = Rm <$> chooseTreePath tree
 
 -- TODO this one is a little trickier because it needs to pick a dir path, right?
-arbitraryAdd :: HashTree a -> Gen (Delta a)
+arbitraryAdd :: TestTree -> Gen TestDelta
 arbitraryAdd = undefined
   -- TODO find a random dir (what if there isn't one? how do we add a new tree here?)
   -- TODO generate a random tree and insert it at <path> </> tree name, right?
 
 -- TODO is swapping a dir for a file or vice versa a valid edit? or should it be restricted to files only?
-arbitraryEdit :: Arbitrary (HashTree a) => HashTree a -> Gen (Delta a)
+arbitraryEdit :: TestTree -> Gen TestDelta
 arbitraryEdit tree = do
   path <- chooseTreePath tree
   let subTree  = fromJust $ dropTo tree path
   subTree' <- arbitrary
   return $ Edit path subTree (subTree' { name = name subTree })
 
-arbitraryMv :: HashTree a -> Gen (Delta a)
-arbitraryMv = undefined
+-- TODO is it any different if the new path happens to exist already?
+-- TODO what if it's inside a new dir that doesn't exist already (requires mkdir)?
+arbitraryMv :: TestTree -> Gen TestDelta
+arbitraryMv tree = do
+  oldPath <- chooseTreePath tree
+  newDir  <- undefined -- TODO pick a random dest dir, or default to the null path
+  newName <- arbitrary :: Gen FilePath
+  let newPath = newDir </> newName
+  return $ Mv oldPath newPath
 
-arbitraryDelta :: Arbitrary (HashTree a) => HashTree a -> Gen (Delta a)
+arbitraryDelta :: TestTree -> Gen TestDelta
 arbitraryDelta tree = do
   deltaFn <- chooseFrom [arbitraryAdd, arbitraryRm, arbitraryEdit, arbitraryMv]
   deltaFn tree

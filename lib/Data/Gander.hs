@@ -17,6 +17,8 @@ module Data.Gander
   , flattenTree
   , flattenTreePaths
   , flattenTree' -- TODO name this something better
+  , listTreeNodes
+  , listTreeNodePaths
   , hashContents
   , listAllFiles
   , listLostFiles
