@@ -18,6 +18,7 @@ module Util
   , FileName(..)
   , n2p
   , p2n
+  , replaceNth
   -- , n2bs
   -- , bs2n
   )
@@ -189,3 +190,10 @@ p2n = FileName . (if os == "darwin"
 -- TODO should this have the option for a decoding error?
 -- bs2n :: BU.ByteString -> FileName
 -- bs2n = p2n . BU.toString
+
+-- from https://stackoverflow.com/a/5852820
+replaceNth :: Int -> a -> [a] -> [a]
+replaceNth _ _ [] = []
+replaceNth n newVal (x:xs)
+  | n == 0 = newVal:xs
+  | otherwise = x:replaceNth (n-1) newVal xs
