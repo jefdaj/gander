@@ -157,7 +157,7 @@ buildProdTree :: Bool -> [Pattern] -> FilePath -> IO ProdTree
 buildProdTree = buildTree (return . const ())
 
 -- TODO are contents sorted? they probably should be for stable hashes
-buildTree :: (FilePath -> IO a) -> Bool -> [Pattern] -> FilePath -> IO (HashTree a)
+buildTree :: Show a => (FilePath -> IO a) -> Bool -> [Pattern] -> FilePath -> IO (HashTree a)
 buildTree readFileFn beVerbose excludes path = do
   -- putStrLn $ "buildTree path: '" ++ path ++ "'"
   -- TODO attempt building lazily only to a certain depth... 10?
@@ -171,7 +171,7 @@ lazyDirDepth :: Int
 lazyDirDepth = 4
 
 -- TODO oh no, does AnchoredDirTree fail on cyclic symlinks?
-buildTree' :: (FilePath -> IO a) -> Bool -> Int -> [Pattern] -> DT.AnchoredDirTree a -> IO (HashTree a)
+buildTree' :: Show a => (FilePath -> IO a) -> Bool -> Int -> [Pattern] -> DT.AnchoredDirTree a -> IO (HashTree a)
 -- TODO catch and re-throw errors with better description and/or handle them here
 buildTree' _ _ _ _  (a DT.:/ (DT.Failed n e )) = error $ (a </> n2p n) ++ ": " ++ show e
 buildTree' readFileFn v depth es (a DT.:/ (DT.File n _)) = do
@@ -305,7 +305,7 @@ listTreeNodePaths tree = listP "" tree
 deserializeTree :: Maybe Int -> B8.ByteString -> ProdTree
 deserializeTree md = snd . head . foldr accTrees [] . reverse . parseHashes md
 
-countFiles :: HashTree a -> Int
+countFiles :: Show a => HashTree a -> Int
 countFiles  (File _ _ _  ) = 1
 countFiles d@(Dir _ _ _ _) = nFiles d
 
@@ -372,21 +372,21 @@ treeContainsHash (Dir  _ h1 cs _) h2
 -------------------
 
 -- TODO use this to implement hashing multiple trees at once?
-wrapInEmptyDir :: FilePath -> HashTree a -> HashTree a
+wrapInEmptyDir :: Show a => FilePath -> HashTree a -> HashTree a
 wrapInEmptyDir n t = do
   Dir { name = p2n n, hash = h, contents = cs, nFiles = nFiles t }
   where
     cs = [t]
     h = hashContents cs
 
-wrapInEmptyDirs :: FilePath -> HashTree a -> HashTree a
+wrapInEmptyDirs :: Show a => FilePath -> HashTree a -> HashTree a
 wrapInEmptyDirs p t = case pathComponents p of
-  []     -> error "wrapInEmptyDirs needs at least one dir"
+  []     -> t
   (n:[]) -> wrapInEmptyDir n t
   (n:ns) -> wrapInEmptyDir n $ wrapInEmptyDirs (joinPath ns) t
 
 -- TODO does the anchor here matter? maybe it's set to the full path accidentally
-addSubTree :: HashTree a -> HashTree a -> FilePath -> HashTree a
+addSubTree :: Show a => HashTree a -> HashTree a -> FilePath -> HashTree a
 addSubTree (File _ _ _) _ _ = error $ "attempt to insert tree into a file"
 addSubTree _ _ path | null (pathComponents path) = error "can't insert tree at null path"
 addSubTree main sub path = main { hash = h', contents = cs', nFiles = n' }
@@ -418,7 +418,7 @@ sortTreesByName = sortBy (compare `on` name)
  - Buuuut for now can just ignore nFiles as it's not needed for the rm itself.
  - TODO does this actually solve nFiles too?
  -}
-rmSubTree :: HashTree a -> FilePath -> Either String (HashTree a)
+rmSubTree :: Show a => HashTree a -> FilePath -> Either String (HashTree a)
 rmSubTree (File _ _ _) p = Left $ "no such subtree: '" ++ p ++ "'" -- TODO fix simtest error
 rmSubTree d@(Dir _ _ cs n) p = case dropTo d p of
   Nothing -> Left $ "no such subtree: '" ++ p ++ "'"

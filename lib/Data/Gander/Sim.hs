@@ -10,6 +10,8 @@ module Data.Gander.Sim
   )
   where
 
+import Debug.Trace
+
 import Data.Gander.HashTree
 import Data.Gander.HashForest
 import Data.Gander.Delta
@@ -43,10 +45,10 @@ import Data.List (findIndex, delete)
 -- simulate git operations --
 -----------------------------
 
-findMatchingTreeIndex :: HashForest a -> FilePath -> Maybe Int
+findMatchingTreeIndex :: Show a => HashForest a -> FilePath -> Maybe Int
 findMatchingTreeIndex (HashForest trees) path = findIndex (\t -> n2p (name t) == topDir path) trees
 
-simDelta :: HashTree a -> Delta a -> Either String (HashTree a)
+simDelta :: Show a => HashTree a -> Delta a -> Either String (HashTree a)
 simDelta t (Rm   p     ) = rmSubTree t p
 simDelta t (Edit p t1 t2)
   | t == t1 = Right t2
@@ -56,10 +58,11 @@ simDelta t (Mv   p1  p2) = case simDelta t (Rm p1) of
   Left  e  -> Left e
   Right t2 -> simDelta t2 $ Add p2 $ fromJust $ dropTo t p1 -- TODO path error here?
 
-simDeltas :: HashTree a -> [Delta a] -> Either String (HashTree a)
+simDeltas :: Show a => HashTree a -> [Delta a] -> Either String (HashTree a)
 simDeltas = foldM simDelta
 
-simDeltaForest :: HashForest a -> Delta a -> Either String (HashForest a)
+-- TODO remove Show constraint once done debugging?
+simDeltaForest :: Show a => HashForest a -> Delta a -> Either String (HashForest a)
 simDeltaForest f@(HashForest ts) d = case findMatchingTreeIndex f (deltaName d) of
   Nothing -> case d of
                (Add p t) -> let t' = wrapInEmptyDirs p t
@@ -72,12 +75,12 @@ simDeltaForest f@(HashForest ts) d = case findMatchingTreeIndex f (deltaName d) 
                              else simDeltaForest' ts d i
               _ -> simDeltaForest' ts d i
 
-simDeltaForest' :: [HashTree a] -> Delta a -> Int -> Either String (HashForest a)
+simDeltaForest' :: Show a => [HashTree a] -> Delta a -> Int -> Either String (HashForest a)
 simDeltaForest' ts d i = do
   t' <- simDelta (ts !! i) d
   return $ HashForest $ replaceNth i t' ts
 
-simDeltasForest :: HashForest a -> [Delta a] -> Either String (HashForest a)
+simDeltasForest :: Show a => HashForest a -> [Delta a] -> Either String (HashForest a)
 simDeltasForest = foldM simDeltaForest
 
 -- seems like what we really want is runDeltaIfSafe, which does simDelta, checks safety, then runDelta

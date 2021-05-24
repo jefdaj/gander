@@ -135,6 +135,16 @@ arbitraryDelta tree = do
 -- Generate steps. This can't actually be an Arbitrary instance because it
 -- requires a starting forest.
 arbitraryDeltas :: Int -> TestForest -> Gen [(TestDelta, TestForest)]
+
+-- for an empty forest, the only valid delta is Add so we have to do that first
+arbitraryDeltas nSteps f@(HashForest [])
+  | nSteps < 1 = return []
+  | otherwise = do
+                  t <- arbitrary
+                  let d = Add (n2p $ name t) t
+                  arbitraryDeltas' (nSteps - 1) f d
+                
+
 arbitraryDeltas nSteps forest@(HashForest trees)
  | nSteps < 1 = return []
  | otherwise = do
@@ -143,12 +153,14 @@ arbitraryDeltas nSteps forest@(HashForest trees)
      index <- choose (0 :: Int, length trees - 1)
      let tree = trees !! index
      delta <- arbitraryDelta tree
+     arbitraryDeltas' (nSteps - 1) forest delta
 
-     case simDeltaForest forest delta of
+arbitraryDeltas' nSteps forest delta = case simDeltaForest forest delta of
        Left  errMsg -> error errMsg
        Right forest' -> do
-         deltas <- arbitraryDeltas (nSteps - 1) forest' -- TODO something safer!
+         deltas <- arbitraryDeltas nSteps forest' -- TODO something safer!
          return $ (delta, forest') : deltas
+
 
 instance Arbitrary TestSim where
 
