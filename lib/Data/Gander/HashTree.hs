@@ -306,8 +306,8 @@ deserializeTree :: Maybe Int -> B8.ByteString -> ProdTree
 deserializeTree md = snd . head . foldr accTrees [] . reverse . parseHashes md
 
 countFiles :: HashTree a -> Int
-countFiles (File _ _ _  ) = 1
-countFiles (Dir  _ _ _ n) = n
+countFiles  (File _ _ _  ) = 1
+countFiles d@(Dir _ _ _ _) = nFiles d
 
 {- This one is confusing! It accumulates a list of trees and their indent
  - levels, and when it comes across a dir it uses the indents to determine
@@ -419,7 +419,7 @@ sortTreesByName = sortBy (compare `on` name)
  - TODO does this actually solve nFiles too?
  -}
 rmSubTree :: HashTree a -> FilePath -> Either String (HashTree a)
-rmSubTree (File _ _ _) p = Left $ "no such subtree: '" ++ p ++ "'"
+rmSubTree (File _ _ _) p = Left $ "no such subtree: '" ++ p ++ "'" -- TODO fix simtest error
 rmSubTree d@(Dir _ _ cs n) p = case dropTo d p of
   Nothing -> Left $ "no such subtree: '" ++ p ++ "'"
   Just t -> Right $ if t `elem` cs

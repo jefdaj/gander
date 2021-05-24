@@ -16,7 +16,7 @@ import Data.Gander.Delta
 import Control.Monad (when, foldM)
 import Data.Maybe (fromJust)
 import Util (n2p, replaceNth)
-import Data.List (findIndex)
+import Data.List (findIndex, delete)
 
 -- TODO remove Deltas from the name? Run doesn't have them. Or add it like RunDeltas
 
@@ -48,7 +48,9 @@ findMatchingTreeIndex (HashForest trees) path = findIndex (\t -> n2p (name t) ==
 
 simDelta :: HashTree a -> Delta a -> Either String (HashTree a)
 simDelta t (Rm   p     ) = rmSubTree t p
-simDelta t (Edit p _ t2) = Right $ addSubTree t t2 p
+simDelta t (Edit p t1 t2)
+  | t == t1 = Right t2
+  | otherwise = Right $ addSubTree t t2 p
 simDelta t (Add  p   t2) = Right $ addSubTree t t2 p
 simDelta t (Mv   p1  p2) = case simDelta t (Rm p1) of
   Left  e  -> Left e
@@ -63,9 +65,17 @@ simDeltaForest f@(HashForest ts) d = case findMatchingTreeIndex f (deltaName d) 
                (Add p t) -> let t' = wrapInEmptyDirs p t
                             in Right $ HashForest (t':ts) -- TODO order doesn't matter?
                _ -> Left $ "no such tree: '" ++ deltaName d ++ "'"
-  Just i -> do
-    t' <- simDelta (ts !! i) d
-    return $ HashForest $ replaceNth i t' ts
+  Just i -> case d of
+              (Rm p) -> let t = ts !! i
+                        in if p == n2p (name t)
+                             then Right $ HashForest $ delete t ts
+                             else simDeltaForest' ts d i
+              _ -> simDeltaForest' ts d i
+
+simDeltaForest' :: [HashTree a] -> Delta a -> Int -> Either String (HashForest a)
+simDeltaForest' ts d i = do
+  t' <- simDelta (ts !! i) d
+  return $ HashForest $ replaceNth i t' ts
 
 simDeltasForest :: HashForest a -> [Delta a] -> Either String (HashForest a)
 simDeltasForest = foldM simDeltaForest

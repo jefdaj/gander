@@ -33,6 +33,7 @@ import System.FilePath (splitDirectories)
 
 -- TODO should these have embedded hashtrees? seems unneccesary but needed for findMoves
 --      maybe only some of them are needed: add and edit. and edit only needs one.
+-- TODO what's the fist hashtree in an edit needed for?
 data Delta a
   = Add  FilePath (HashTree a)
   | Rm   FilePath

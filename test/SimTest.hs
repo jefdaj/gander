@@ -20,6 +20,7 @@ import Test.QuickCheck
 import Data.Maybe (fromJust, listToMaybe, fromMaybe)
 import Data.Either (Either(..), fromRight)
 import System.FilePath ((</>))
+import Control.Monad.IO.Class (liftIO)
 
 {- A Sim is a randomly generated initial state along with a list of
  - randomly generated Deltas to apply. We want to confirm that we get the same
@@ -143,9 +144,11 @@ arbitraryDeltas nSteps forest@(HashForest trees)
      let tree = trees !! index
      delta <- arbitraryDelta tree
 
-     let (Right forest') = simDeltaForest forest delta          -- TODO something safer!
-     deltas <- arbitraryDeltas (nSteps - 1) forest' -- TODO something safer!
-     return $ (delta, forest') : deltas
+     case simDeltaForest forest delta of
+       Left  errMsg -> error errMsg
+       Right forest' -> do
+         deltas <- arbitraryDeltas (nSteps - 1) forest' -- TODO something safer!
+         return $ (delta, forest') : deltas
 
 instance Arbitrary TestSim where
 

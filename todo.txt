@@ -1,3 +1,13 @@
+simtest errors:
+  no such subtree
+    happens when trying to remove the top level file in a single-file tree?
+  attempt to insert tree into a file
+    happens when editing the top level file in a single-tree file
+    this should simply return the new file instead right?
+  no match in in record selector nFiles
+  Data.Text.Internal.Encoding.decodeUtf8: Invalid UTF-8 stream
+    Exception: Cannot decode byte '\xca'
+
 decorated trees:
   x 1. add a decoration type to File constructor, but specialize everything using it to ()
   x 2. swap out () for any type a, but keep it in production functions
