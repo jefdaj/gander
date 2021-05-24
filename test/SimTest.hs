@@ -8,7 +8,7 @@ import Data.Gander.Sim
 import Data.Gander.HashTree
 import Data.Gander.HashForest
 import Data.Gander.Delta
-import Util (n2p)
+import Util (n2p, replaceNth)
 
 import HashTreeTest
 import HashForestTest
@@ -17,7 +17,7 @@ import DeltaTest
 import qualified Data.ByteString.Char8 as B8
 import Test.QuickCheck
 import Data.Maybe (fromJust, listToMaybe, fromMaybe)
-import Data.Either (Either(..))
+import Data.Either (Either(..), fromRight)
 import System.FilePath ((</>))
 
 {- A Sim is a randomly generated initial state along with a list of
@@ -52,17 +52,12 @@ data TestSim = TestSim
 -- them be that and compose them with replacenth!
 
 -- TODO there's probably an existing quickcheck fn for this, right?
+-- TODO what if hte list is empty?
 chooseFrom :: [a] -> Gen a
+chooseFrom [] = error "attempt to choose from empty list"
 chooseFrom xs = do
   i <- choose (0, length xs - 1)
   return $ xs !! i
-
--- from https://stackoverflow.com/a/5852820
-replaceNth :: Int -> a -> [a] -> [a]
-replaceNth _ _ [] = []
-replaceNth n newVal (x:xs)
-  | n == 0 = newVal:xs
-  | otherwise = x:replaceNth (n-1) newVal xs
 
 chooseTreePath :: HashTree a -> Gen FilePath
 chooseTreePath tree = chooseFrom $ flattenTreePaths ("" :/ tree)
@@ -144,9 +139,10 @@ arbitraryDeltas nSteps forest@(HashForest trees)
      index <- choose (0 :: Int, length trees - 1)
      let tree = trees !! index
      delta <- arbitraryDelta tree
-     let Right tree' = simDelta tree delta -- TODO is this safe enough?
-     let forest' = HashForest $ replaceNth index tree' trees
-     deltas <- arbitraryDeltas (nSteps - 1) forest'
+     -- let Right tree' = simDelta tree delta -- TODO fix this :/
+     -- let forest' = HashForest $ replaceNth index tree' trees
+     let forest' = fromRight $ simDeltaForest forest delta -- TODO something safer!
+     deltas <- fmap fromRight $ arbitraryDeltas (nSteps - 1) forest' -- TODO something safer!
      return $ (delta, forest') : deltas
 
 instance Arbitrary TestSim where

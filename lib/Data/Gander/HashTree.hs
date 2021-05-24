@@ -30,10 +30,13 @@ module Data.Gander.HashTree
   , treeContainsPath
   , treeContainsHash
   , addSubTree
+  , sortTreesByName
   , rmSubTree
   , accTrees -- TODO hide this better?
   -- for testing
   , countFiles
+  , wrapInEmptyDir
+  , wrapInEmptyDirs
   )
   where
 
@@ -392,7 +395,7 @@ addSubTree main sub path = main { hash = h', contents = cs', nFiles = n' }
     p1     = head comps
     path'  = joinPath $ tail comps
     h'     = hashContents cs'
-    cs'    = sortBy (compare `on` name) $ filter (\c -> name c /= p2n p1) (contents main) ++ [newSub]
+    cs'    = sortTreesByName $ filter (\c -> name c /= p2n p1) (contents main) ++ [newSub]
     n'     = nFiles main + nFiles newSub - case oldSub of { Nothing -> 0; Just s -> nFiles s; }
     sub'   = sub { name = p2n $ last comps }
     oldSub = find (\c -> name c == p2n p1) (contents main)
@@ -401,6 +404,9 @@ addSubTree main sub path = main { hash = h', contents = cs', nFiles = n' }
                else case oldSub of
                  Nothing -> wrapInEmptyDirs path sub'
                  Just d  -> addSubTree d sub' path'
+
+sortTreesByName :: [HashTree a] -> [HashTree a]
+sortTreesByName = sortBy (compare `on` name)
 
 ----------------------
 -- remove a subtree --

@@ -10,6 +10,7 @@ module Data.Gander
   , AnchoredHashTree(..)
   , TreeType(..)
   , addSubTree
+  , sortTreesByName
   , buildTree
   , buildProdTree
   , deserializeTree
@@ -32,6 +33,8 @@ module Data.Gander
   , serializeTree
   , treeContainsHash
   , treeContainsPath
+  , wrapInEmptyDir
+  , wrapInEmptyDirs
 
   -- hashforest
   , HashForest(..)
@@ -51,6 +54,7 @@ module Data.Gander
   , diff
   , prettyDelta
   , printDeltas
+  , deltaName
 
   -- sim
   , simDelta

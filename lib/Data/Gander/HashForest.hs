@@ -18,6 +18,7 @@ module Data.Gander.HashForest
   , writeBinForest
   , listForestNodes
   , listForestNodePaths
+  , addTree
   )
   where
 
@@ -110,3 +111,7 @@ listForestNodes (HashForest trees) = concatMap listTreeNodes trees
 
 listForestNodePaths :: HashForest a -> [(FilePath, HashTree a)]
 listForestNodePaths (HashForest trees) = concatMap listTreeNodePaths trees
+
+addTree :: HashForest a -> HashTree a -> HashForest addTree
+addTree (HashForest trees) newTree = undefined
+  -- TODO add the new tree on the end, then re-sort?

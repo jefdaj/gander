@@ -6,7 +6,9 @@ module Data.Gander.Delta
   , diff
   , prettyDelta
   , printDeltas
- )
+  , topDir -- TODO don't export?
+  , deltaName
+  )
   where
 
 {- This module calculates what a HashTree should look like after doing some git
@@ -27,6 +29,7 @@ import Data.Maybe          (fromJust)
 --import Data.Gander.DupeMap (listLostFiles)
 -- import Data.Gander.Hash    (prettyHash)
 import System.FilePath     ((</>))
+import System.FilePath (splitDirectories)
 
 -- TODO should these have embedded hashtrees? seems unneccesary but needed for findMoves
 --      maybe only some of them are needed: add and edit. and edit only needs one.
@@ -90,3 +93,12 @@ fixMoves t (d1@(Rm f1):ds) = case find (findMv t d1) ds of
   Just d2 -> error $ "findMv returned a non-add: " ++ show d2
   Nothing -> d1 : fixMoves t ds
 fixMoves t (d:ds) = d : fixMoves t ds
+
+topDir :: FilePath -> FilePath
+topDir = head . splitDirectories
+
+deltaName :: Delta a -> FilePath
+deltaName (Rm p )      = topDir p
+deltaName (Edit p _ _) = topDir p
+deltaName (Add p _ )   = topDir p
+deltaName (Mv p _)     = topDir p

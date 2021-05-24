@@ -2,15 +2,21 @@ module Data.Gander.Sim
   -- , safeDelta
   -- , safeDeltas
   ( simDelta
+  , simDeltaForest
   , simDeltas
+  , simDeltasForest
   , assertSameTrees -- TODO rename to mention diff
+  , findMatchingTreeIndex
   )
   where
 
 import Data.Gander.HashTree
+import Data.Gander.HashForest
 import Data.Gander.Delta
 import Control.Monad (when, foldM)
 import Data.Maybe (fromJust)
+import Util (n2p, replaceNth)
+import Data.List (findIndex)
 
 -- TODO remove Deltas from the name? Run doesn't have them. Or add it like RunDeltas
 
@@ -37,17 +43,32 @@ import Data.Maybe (fromJust)
 -- simulate git operations --
 -----------------------------
 
--- TODO think through how to report results more!
+findMatchingTreeIndex :: HashForest a -> FilePath -> Maybe Int
+findMatchingTreeIndex (HashForest trees) path = findIndex (\t -> n2p (name t) == topDir path) trees
+
+simDeltaForest :: HashForest a -> Delta a -> Either String (HashForest a)
+simDeltaForest f@(HashForest ts) d = case findMatchingTreeIndex f (deltaName d) of
+  Nothing -> case d of
+               (Add p t) -> let t' = wrapInEmptyDirs p t
+                            in Right $ HashForest (t':ts) -- TODO order doesn't matter?
+               _ -> Left $ "no such tree: '" ++ deltaName d ++ "'"
+  Just i -> do
+    t' <- simDelta (ts !! i) d
+    return $ HashForest $ replaceNth i t' ts
+
 simDelta :: HashTree a -> Delta a -> Either String (HashTree a)
-simDelta t (Rm   p    ) = rmSubTree t p
-simDelta t (Add  p  t2) = Right $ addSubTree t t2 p
+simDelta t (Rm   p     ) = rmSubTree t p
 simDelta t (Edit p _ t2) = Right $ addSubTree t t2 p
-simDelta t (Mv   p1 p2) = case simDelta t (Rm p1) of
+simDelta t (Add  p   t2) = Right $ addSubTree t t2 p
+simDelta t (Mv   p1  p2) = case simDelta t (Rm p1) of
   Left  e  -> Left e
   Right t2 -> simDelta t2 $ Add p2 $ fromJust $ dropTo t p1 -- TODO path error here?
 
 simDeltas :: HashTree a -> [Delta a] -> Either String (HashTree a)
 simDeltas = foldM simDelta
+
+simDeltasForest :: HashForest a -> [Delta a] -> Either String (HashForest a)
+simDeltasForest = foldM simDeltaForest
 
 -- seems like what we really want is runDeltaIfSafe, which does simDelta, checks safety, then runDelta
 
