@@ -1,6 +1,7 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module SimTest where
 
@@ -136,13 +137,14 @@ arbitraryDeltas :: Int -> TestForest -> Gen [(TestDelta, TestForest)]
 arbitraryDeltas nSteps forest@(HashForest trees)
  | nSteps < 1 = return []
  | otherwise = do
+
+     -- TODO does this still need to be done by tree rather than across the whole forest?
      index <- choose (0 :: Int, length trees - 1)
      let tree = trees !! index
      delta <- arbitraryDelta tree
-     -- let Right tree' = simDelta tree delta -- TODO fix this :/
-     -- let forest' = HashForest $ replaceNth index tree' trees
-     let forest' = fromRight $ simDeltaForest forest delta -- TODO something safer!
-     deltas <- fmap fromRight $ arbitraryDeltas (nSteps - 1) forest' -- TODO something safer!
+
+     let (Right forest') = simDeltaForest forest delta          -- TODO something safer!
+     deltas <- arbitraryDeltas (nSteps - 1) forest' -- TODO something safer!
      return $ (delta, forest') : deltas
 
 instance Arbitrary TestSim where
