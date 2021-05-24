@@ -47,6 +47,10 @@ data TestSim = TestSim
   }
   deriving (Eq, Read, Show)
 
+-- TODO what if null steps?
+simFinish :: TestSim -> TestForest
+simFinish = snd . last . simSteps
+
 -- TODO is there a way to pass data to the arbitrary fns?
 --      arbitraryDelta :: TestForest -> Gen TestDelta maybe
 
@@ -99,6 +103,7 @@ isFile :: HashTree a -> Bool
 isFile = not . isDir
 
 arbitraryRm :: TestTree -> Gen TestDelta
+arbitraryRm t@(File {}) = return $ Rm (n2p $ name t)
 arbitraryRm tree = Rm <$> chooseTreePath tree
 
 -- TODO this one is a little trickier because it needs to pick a dir path, right?
@@ -127,6 +132,7 @@ arbitraryMv tree = do
   let newPath = newDir </> newName
   return $ Mv oldPath newPath
 
+-- TODO are all the operations always valid once you have a tree?
 arbitraryDelta :: TestTree -> Gen TestDelta
 arbitraryDelta tree = do
   deltaFn <- chooseFrom [arbitraryAdd, arbitraryRm, arbitraryEdit, arbitraryMv]
@@ -143,13 +149,13 @@ arbitraryDeltas nSteps f@(HashForest [])
                   t <- arbitrary
                   let d = Add (n2p $ name t) t
                   arbitraryDeltas' (nSteps - 1) f d
-                
 
 arbitraryDeltas nSteps forest@(HashForest trees)
  | nSteps < 1 = return []
  | otherwise = do
 
      -- TODO does this still need to be done by tree rather than across the whole forest?
+     -- TODO does this ignore the possibility of adding or deleting top-level trees?
      index <- choose (0 :: Int, length trees - 1)
      let tree = trees !! index
      delta <- arbitraryDelta tree

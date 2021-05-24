@@ -49,12 +49,12 @@ findMatchingTreeIndex :: Show a => HashForest a -> FilePath -> Maybe Int
 findMatchingTreeIndex (HashForest trees) path = findIndex (\t -> n2p (name t) == topDir path) trees
 
 simDelta :: Show a => HashTree a -> Delta a -> Either String (HashTree a)
-simDelta t (Rm   p     ) = rmSubTree t p
+simDelta t d@(Rm   p     ) = trace ("simDelta rm t: '" ++ show t ++ "' d: '" ++ show d ++ "'") $ rmSubTree t p
 simDelta t (Edit p t1 t2)
   | t == t1 = Right t2
-  | otherwise = Right $ addSubTree t t2 p
-simDelta t (Add  p   t2) = Right $ addSubTree t t2 p
-simDelta t (Mv   p1  p2) = case simDelta t (Rm p1) of
+  | otherwise = Right $ trace "simDelta add" $ addSubTree t t2 p
+simDelta t (Add  p   t2) = trace "simDelta add" $ Right $ addSubTree t t2 p
+simDelta t (Mv   p1  p2) = trace "simDelta mv" $ case simDelta t (Rm p1) of
   Left  e  -> Left e
   Right t2 -> simDelta t2 $ Add p2 $ fromJust $ dropTo t p1 -- TODO path error here?
 
@@ -65,14 +65,14 @@ simDeltas = foldM simDelta
 simDeltaForest :: Show a => HashForest a -> Delta a -> Either String (HashForest a)
 simDeltaForest f@(HashForest ts) d = case findMatchingTreeIndex f (deltaName d) of
   Nothing -> case d of
-               (Add p t) -> let t' = wrapInEmptyDirs p t
+               (Add p t) -> let t' = if n2p (name t) == p then t else wrapInEmptyDirs p t
                             in Right $ HashForest (t':ts) -- TODO order doesn't matter?
                _ -> Left $ "no such tree: '" ++ deltaName d ++ "'"
   Just i -> case d of
               (Rm p) -> let t = ts !! i
                         in if p == n2p (name t)
                              then Right $ HashForest $ delete t ts
-                             else simDeltaForest' ts d i
+                             else trace ("simDeltaForest rm: '" ++ show d ++ "'") $ simDeltaForest' ts d i
               _ -> simDeltaForest' ts d i
 
 simDeltaForest' :: Show a => [HashTree a] -> Delta a -> Int -> Either String (HashForest a)

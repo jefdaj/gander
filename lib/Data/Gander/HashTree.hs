@@ -42,7 +42,7 @@ module Data.Gander.HashTree
 
 -- TODO would be better to adapt AnchoredDirTree with a custom node type than re-implement stuff
 
--- import Debug.Trace
+import Debug.Trace
 
 import Data.Gander.Hash
 import Data.Gander.HashLine
@@ -307,7 +307,7 @@ deserializeTree md = snd . head . foldr accTrees [] . reverse . parseHashes md
 
 countFiles :: Show a => HashTree a -> Int
 countFiles  (File _ _ _  ) = 1
-countFiles d@(Dir _ _ _ _) = nFiles d
+countFiles d@(Dir _ _ _ _) = traceShow d $ nFiles d
 
 {- This one is confusing! It accumulates a list of trees and their indent
  - levels, and when it comes across a dir it uses the indents to determine
@@ -374,7 +374,7 @@ treeContainsHash (Dir  _ h1 cs _) h2
 -- TODO use this to implement hashing multiple trees at once?
 wrapInEmptyDir :: Show a => FilePath -> HashTree a -> HashTree a
 wrapInEmptyDir n t = do
-  Dir { name = p2n n, hash = h, contents = cs, nFiles = nFiles t }
+  Dir { name = p2n n, hash = h, contents = cs, nFiles = traceShow t (nFiles t) }
   where
     cs = [t]
     h = hashContents cs
@@ -396,7 +396,7 @@ addSubTree main sub path = main { hash = h', contents = cs', nFiles = n' }
     path'  = joinPath $ tail comps
     h'     = hashContents cs'
     cs'    = sortTreesByName $ filter (\c -> name c /= p2n p1) (contents main) ++ [newSub]
-    n'     = nFiles main + nFiles newSub - case oldSub of { Nothing -> 0; Just s -> nFiles s; }
+    n'     = traceShow main (nFiles main) + traceShow newSub (nFiles newSub) - case oldSub of { Nothing -> 0; Just s -> traceShow s (nFiles s); }
     sub'   = sub { name = p2n $ last comps }
     oldSub = find (\c -> name c == p2n p1) (contents main)
     newSub = if length comps == 1
