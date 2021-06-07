@@ -16,15 +16,15 @@ before_cache:
 env:
   global:
   - TASTY_QUICKCHECK_TESTS=10000
+  - HOMEBREW_NO_AUTO_UPDATE=1
 
 # TODO see if the mac haskell build is fixed soon
 matrix:
   include:
   - env: GHCVER=8.6 STACK_YAML=stack.yaml HOMEBREW_NO_AUTO_UPDATE=1
     os: osx
-    addons:
-  - env: GHCVER=8.8 STACK_YAML=stack.yaml HOMEBREW_NO_AUTO_UPDATE=1
-    os: osx
+  # - env: GHCVER=8.8 STACK_YAML=stack.yaml HOMEBREW_NO_AUTO_UPDATE=1
+  # os: osx
 
 # these work?
 #   include:
