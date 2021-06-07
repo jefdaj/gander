@@ -21,7 +21,8 @@ os:
   - linux
   - osx
 
-compiler:
+matrix:
+  include:
   - ghc: 8.6.5
   - ghc: 8.8.4
   - ghc: 8.10.2
