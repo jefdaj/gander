@@ -3,7 +3,7 @@ language: haskell
 fast_finish: true
 
 git:
-  depth: 1
+  depth: 5
 
 cache:
   directories:
