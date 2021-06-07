@@ -30,7 +30,7 @@ matrix:
     os: osx
 
 install:
-  - sudo apt-get install -y git-annex
+  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew install git-annex; else sudo apt-get install -y git-annex; fi
   - curl -sSL https://get.haskellstack.org/ | sh
   - stack build --system-ghc --test --bench --no-run-tests --no-run-benchmarks
 
