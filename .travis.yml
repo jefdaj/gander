@@ -24,7 +24,7 @@ matrix:
     os: osx
     addons:
       homebrew:
-        update: false
+        update: true
         packages:
         - git-annex
         - haskell-stack
@@ -33,7 +33,7 @@ matrix:
     os: osx
     addons:
       homebrew:
-        update: false
+        update: true
         packages:
         - git-annex
         - haskell-stack
