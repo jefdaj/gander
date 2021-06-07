@@ -5,9 +5,6 @@ fast_finish: true
 git:
   depth: 1
 
-# TODO remove?
-cabal: "3.2"
-
 cache:
   directories:
   - "$HOME/.stack"
