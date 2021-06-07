@@ -20,24 +20,11 @@ env:
 # TODO see if the mac haskell build is fixed soon
 matrix:
   include:
-  - env: GHCVER=8.6.5 STACK_YAML=stack.yaml
+  - env: GHCVER=8.6 STACK_YAML=stack.yaml
     os: osx
     addons:
-      homebrew:
-        update: true
-        packages:
-        - git-annex
-        - haskell-stack
-        - ghc@8.6
-  - env: GHCVER=8.8.4 STACK_YAML=stack.yaml
+  - env: GHCVER=8.8 STACK_YAML=stack.yaml
     os: osx
-    addons:
-      homebrew:
-        update: true
-        packages:
-        - git-annex
-        - haskell-stack
-        - ghc@8.8
 
 # these work?
 #   include:
@@ -67,8 +54,9 @@ matrix:
 #         - ghc-8.10.2
 
 before_install:
-  # ghc (homebrew puts it in /usr/local/bin, which should be on PATH already)
+  # ghc
   - if [ "$TRAVIS_OS_NAME" = "linux" ]; then export PATH=/opt/ghc/$GHCVER/bin:$PATH; fi
+  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then travis_wait brew install git-annex haskellstack ghc-$GHCVER; fi
   # Download and unpack the stack executable
   - mkdir -p ~/.local/bin
   - export PATH=$HOME/.local/bin:$PATH
