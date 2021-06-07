@@ -8,69 +8,49 @@ cache:
   directories:
   - "$HOME/.stack"
   - "$TRAVIS_BUILD_DIR/.stack-work"
-  - "$HOME/Library/Caches/Homebew"
-
-before_cache:
-  -  if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew cleanup; fi
 
 env:
   global:
   - TASTY_QUICKCHECK_TESTS=10000
-  - HOMEBREW_NO_AUTO_UPDATE=1
-  - HOMEBREW_VERBOSE=1
 
-# TODO see if the mac haskell build is fixed soon
 matrix:
   include:
-  - env: GHCVER=8.6 STACK_YAML=stack.yaml HOMEBREW_NO_AUTO_UPDATE=1
-    os: osx
-  # - env: GHCVER=8.8 STACK_YAML=stack.yaml HOMEBREW_NO_AUTO_UPDATE=1
-  # os: osx
-
-# these work?
-#   include:
-#   - env: GHCVER=8.6.5 STACK_YAML=stack.yaml
-#     os: linux
-#     addons:
-#       apt:
-#         sources:
-#         - hvr-ghc
-#         packages:
-#         - ghc-8.6.5
-#   - env: GHCVER=8.8.4 STACK_YAML=stack.yaml
-#     os: linux
-#     addons:
-#       apt:
-#         sources:
-#         - hvr-ghc
-#         packages:
-#         - ghc-8.8.4
-#   - env: GHCVER=8.10.2 STACK_YAML=stack.yaml
-#     os: linux
-#     addons:
-#       apt:
-#         sources:
-#         - hvr-ghc
-#         packages:
-#         - ghc-8.10.2
+  - env: GHCVER=8.6.5 STACK_YAML=stack.yaml
+    os: linux
+    addons:
+      apt:
+        sources:
+        - hvr-ghc
+        packages:
+        - git-annex
+        - ghc-8.6.5
+  - env: GHCVER=8.8.4 STACK_YAML=stack.yaml
+    os: linux
+    addons:
+      apt:
+        sources:
+        - hvr-ghc
+        packages:
+        - git-annex
+        - ghc-8.8.4
+  - env: GHCVER=8.10.2 STACK_YAML=stack.yaml
+    os: linux
+    addons:
+      apt:
+        sources:
+        - hvr-ghc
+        packages:
+        - git-annex
+        - ghc-8.10.2
 
 before_install:
-  # ghc
   - if [ "$TRAVIS_OS_NAME" = "linux" ]; then export PATH=/opt/ghc/$GHCVER/bin:$PATH; fi
-  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then travis_wait brew install git-annex --verbose; fi
-  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then travis_wait brew install haskell-stack --verbose; fi
-  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then travis_wait brew install ghc@${GHCVER} --verbose; fi
-  # Download and unpack the stack executable
   - mkdir -p ~/.local/bin
   - export PATH=$HOME/.local/bin:$PATH
   - if [ "$TRAVIS_OS_NAME" = "linux" ]; then travis_retry curl -L https://get.haskellstack.org/stable/linux-x86_64.tar.gz | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'; fi
 
-# TODO install git-annex with apt in the matrix part
 install:
-  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo apt-get install -y git-annex; fi
   - travis_wait stack --no-terminal --skip-ghc-check setup
-    # - curl -sSL https://get.haskellstack.org/ | sh
-    # - stack build --system-ghc --test --bench --no-run-tests --no-run-benchmarks
 
 script:
   - stack --no-terminal --skip-ghc-check test
