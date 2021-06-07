@@ -1,5 +1,4 @@
-sudo: false
-fast_finish: true
+fast-finish: true
 
 git:
   depth: 5
