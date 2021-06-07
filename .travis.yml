@@ -1,5 +1,6 @@
 sudo: true
 language: haskell
+fast_finish: true
 
 git:
   depth: 1
