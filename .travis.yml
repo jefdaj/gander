@@ -31,7 +31,7 @@ matrix:
         packages:
         - git-annex
         - ghc-8.8.4
-  - env: GHCVER=8.10.4 STACK_YAML=stack-8102.yaml
+  - env: GHCVER=8.10.4 STACK_YAML=stack-8104.yaml
     os: linux
     addons:
       apt:
