@@ -8,6 +8,10 @@ cache:
   directories:
   - "$HOME/.stack"
   - "$TRAVIS_BUILD_DIR/.stack-work"
+  - "$HOME/Library/Caches/Homebew"
+
+before_cache:
+  -  if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew cleanup; fi
 
 env:
   global:
@@ -21,6 +25,7 @@ matrix:
     addons:
       homebrew:
         casks:
+        - git-annex
         - haskell-stack
         - ghc@8.6
   - env: GHCVER=8.8.4 STACK_YAML=stack.yaml
@@ -28,6 +33,7 @@ matrix:
     addons:
       homebrew:
         casks:
+        - git-annex
         - haskell-stack
         - ghc@8.8
 
@@ -66,8 +72,9 @@ before_install:
   - export PATH=$HOME/.local/bin:$PATH
   - if [ "$TRAVIS_OS_NAME" = "linux" ]; then travis_retry curl -L https://get.haskellstack.org/stable/linux-x86_64.tar.gz | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'; fi
 
+# TODO install git-annex with apt in the matrix part
 install:
-  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew install git-annex; else sudo apt-get install -y git-annex; fi
+  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo apt-get install -y git-annex; fi
   - travis_wait stack --no-terminal --skip-ghc-check setup
     # - curl -sSL https://get.haskellstack.org/ | sh
     # - stack build --system-ghc --test --bench --no-run-tests --no-run-benchmarks
