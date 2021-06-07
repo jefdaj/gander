@@ -17,15 +17,13 @@ env:
   global:
   - STACK_YAML="$TRAVIS_BUILD_DIR/stack.yaml"
 
-os:
-  - linux
-  - osx
-
 matrix:
   include:
   - ghc: 8.6.5
   - ghc: 8.8.4
   - ghc: 8.10.2
+  - os: linux
+  - os: osx
 
 install:
   - sudo apt-get install -y git-annex
