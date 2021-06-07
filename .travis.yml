@@ -56,7 +56,9 @@ matrix:
 before_install:
   # ghc
   - if [ "$TRAVIS_OS_NAME" = "linux" ]; then export PATH=/opt/ghc/$GHCVER/bin:$PATH; fi
-  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then travis_wait brew -v install git-annex haskell-stack ghc@${GHCVER}; fi
+  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then travis_wait brew -v install git-annex; fi
+  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then travis_wait brew -v install haskell-stack; fi
+  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then travis_wait brew -v install ghc@${GHCVER}; fi
   # Download and unpack the stack executable
   - mkdir -p ~/.local/bin
   - export PATH=$HOME/.local/bin:$PATH
