@@ -20,7 +20,7 @@ env:
 # TODO see if the mac haskell build is fixed soon
 matrix:
   include:
-  - env: GHCVER=8.6.5 STACK_YAML=stack.yaml
+  - env: GHCVER=8.6.5 STACK_YAML=stack.yaml HOMEBREW_NO_AUTO_UPDATE=1
     os: osx
     addons:
       homebrew:
@@ -28,7 +28,7 @@ matrix:
         - git-annex
         - haskell-stack
         - ghc@8.6
-  - env: GHCVER=8.8.4 STACK_YAML=stack.yaml
+  - env: GHCVER=8.8.4 STACK_YAML=stack.yaml HOMEBREW_NO_AUTO_UPDATE=1
     os: osx
     addons:
       homebrew:
