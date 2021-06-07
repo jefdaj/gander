@@ -13,6 +13,7 @@ cache:
 env:
   global:
   - STACK_YAML="$TRAVIS_BUILD_DIR/stack.yaml"
+  - TASTY_QUICKCHECK_TESTS=10000
 
 matrix:
   include:
