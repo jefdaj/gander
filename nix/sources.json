@@ -5,10 +5,10 @@
         "homepage": "http://docopt.org/",
         "owner": "jefdaj",
         "repo": "docopt.hs",
-        "rev": "cc6440551c4259d3546491c4828f2b61ab472d9e",
-        "sha256": "12g04q3g09zd9dr95i420z2sm69rh1j29nilnwrbm1b19sr2905n",
+        "rev": "304580160b7574e6b16b29306c363002e8e94546",
+        "sha256": "0kb7nrkmvwv9whw2x66bxhsai761z8s08g386axxr9aial0673gf",
         "type": "tarball",
-        "url": "https://github.com/jefdaj/docopt.hs/archive/cc6440551c4259d3546491c4828f2b61ab472d9e.tar.gz",
+        "url": "https://github.com/jefdaj/docopt.hs/archive/304580160b7574e6b16b29306c363002e8e94546.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "niv": {
@@ -24,15 +24,15 @@
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "nixpkgs": {
-        "branch": "release-20.09",
+        "branch": "release-21.05",
         "description": "Nix Packages collection",
         "homepage": "",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "2ee7cf423ba13320e4cbf57c6cdbf02b55cc62ab",
-        "sha256": "0nshrsc095cg1p4vvixvsvdvza91vr6yvsg7714vcszrj8ainh0i",
+        "rev": "77e8ea81e3ce0332804338fde2e6d52854a8bca8",
+        "sha256": "0ivzcf2i5vzzpxg12pd05k1yzf0zb3m8pf1yyx33vhgjx6hr0fiy",
         "type": "tarball",
-        "url": "https://github.com/NixOS/nixpkgs/archive/2ee7cf423ba13320e4cbf57c6cdbf02b55cc62ab.tar.gz",
+        "url": "https://github.com/NixOS/nixpkgs/archive/77e8ea81e3ce0332804338fde2e6d52854a8bca8.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     }
 }
