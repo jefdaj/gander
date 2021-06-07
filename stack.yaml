@@ -1,6 +1,12 @@
+# TODO should this change with ghc version in the travis tests?
 resolver: lts-16.18
+
+# TODO does this affect the travis tests?
+use-system-ghc: true
+
 packages:
 - '.'
+
 extra-deps:
 - bytestring-trie-0.2.5.0
 - store-0.7.7@sha256:8855feafa52b623f280d9a6b7abea36b7e9eec3cd68db4d476a5b1ece125a92a,8001
