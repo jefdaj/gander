@@ -21,12 +21,14 @@ matrix:
     addons:
       homebrew:
         casks:
+        - haskell-stack
         - ghc@8.6
   - env: GHCVER=8.8.4 STACK_YAML=stack.yaml
     os: osx
     addons:
       homebrew:
         casks:
+        - haskell-stack
         - ghc@8.8
 
 # these work?
@@ -62,7 +64,7 @@ before_install:
   # Download and unpack the stack executable
   - mkdir -p ~/.local/bin
   - export PATH=$HOME/.local/bin:$PATH
-  - travis_retry curl -L https://get.haskellstack.org/stable/linux-x86_64.tar.gz | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
+  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then travis_retry curl -L https://get.haskellstack.org/stable/linux-x86_64.tar.gz | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'; fi
 
 install:
   - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew install git-annex; else sudo apt-get install -y git-annex; fi
