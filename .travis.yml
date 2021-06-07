@@ -17,6 +17,7 @@ env:
   global:
   - TASTY_QUICKCHECK_TESTS=10000
   - HOMEBREW_NO_AUTO_UPDATE=1
+  - HOMEBREW_VERBOSE=1
 
 # TODO see if the mac haskell build is fixed soon
 matrix:
@@ -56,9 +57,9 @@ matrix:
 before_install:
   # ghc
   - if [ "$TRAVIS_OS_NAME" = "linux" ]; then export PATH=/opt/ghc/$GHCVER/bin:$PATH; fi
-  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then travis_wait brew -v install git-annex; fi
-  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then travis_wait brew -v install haskell-stack; fi
-  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then travis_wait brew -v install ghc@${GHCVER}; fi
+  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then travis_wait brew install git-annex --verbose; fi
+  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then travis_wait brew install haskell-stack --verbose; fi
+  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then travis_wait brew install ghc@${GHCVER} --verbose; fi
   # Download and unpack the stack executable
   - mkdir -p ~/.local/bin
   - export PATH=$HOME/.local/bin:$PATH
