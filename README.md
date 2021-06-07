@@ -3,6 +3,8 @@
 gander
 ======
 
+![travis badge](https://img.shields.io/travis/com/jefdaj/gander/master?label=master)
+
 The "Git ANnex DedupER" deduplicates files, optionally using [git-annex][1] to track changes.
 
 It's especially suited for cases where you have so many files that git
