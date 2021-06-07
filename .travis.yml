@@ -15,28 +15,26 @@ env:
   - STACK_YAML="$TRAVIS_BUILD_DIR/stack.yaml"
   - TASTY_QUICKCHECK_TESTS=10000
 
+# TODO see if the mac haskell build is fixed soon
 matrix:
   include:
   - ghc: 8.6.5
     os: linux
-  - ghc: 8.6.5
-    os: osx
   - ghc: 8.8.4
     os: linux
-  - ghc: 8.8.4
-    os: osx
   - ghc: 8.10.2
     os: linux
-  - ghc: 8.10.2
-    os: osx
+  # - ghc: 8.6.5
+  # os: osx
+  # - ghc: 8.8.4
+  # os: osx
+  # - ghc: 8.10.2
+  # os: osx
 
 install:
   - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew install git-annex; else sudo apt-get install -y git-annex; fi
   - curl -sSL https://get.haskellstack.org/ | sh
   - stack build --system-ghc --test --bench --no-run-tests --no-run-benchmarks
-
-script:
-  - stack test --system-ghc
 
 notifications:
   email: false
