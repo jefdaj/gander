@@ -26,6 +26,21 @@ compiler:
   - ghc: 8.8.4
   - ghc: 8.10.2
 
+matrix:
+  include:
+  - ghc: 8.6.5
+    os: linux
+  - ghc: 8.6.5
+    os: osx
+  - ghc: 8.8.4
+    os: linux
+  - ghc: 8.8.4
+    os: osx
+  - ghc: 8.10.2
+    os: linux
+  - ghc: 8.10.2
+    os: osx
+
 install:
   - sudo apt-get install -y git-annex
   - curl -sSL https://get.haskellstack.org/ | sh
