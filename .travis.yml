@@ -40,9 +40,6 @@ matrix:
     os: linux
   - ghc: 8.10.2
     os: osx
-  os:
-  - linux
-  - osx
 
 install:
   - sudo apt-get install -y git-annex
