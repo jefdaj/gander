@@ -106,6 +106,7 @@ arbitraryRm :: TestTree -> Gen TestDelta
 arbitraryRm t@(File {}) = error $ "attempt to rm top-level File: " ++ show t
 arbitraryRm tree = Rm <$> chooseTreePath tree
 
+-- TODO what happens if this is being added to the top level of a forest?
 -- TODO this one is a little trickier because it needs to pick a dir path, right?
 arbitraryAdd :: TestTree -> Gen TestDelta
 arbitraryAdd tree = do
@@ -161,9 +162,17 @@ arbitraryDeltas nSteps forest@(HashForest trees)
 
      -- TODO does this still need to be done by tree rather than across the whole forest?
      -- TODO does this ignore the possibility of adding or deleting top-level trees?
-     index <- choose (0 :: Int, length trees - 1)
-     let tree = trees !! index
-     delta <- arbitraryDelta tree
+     op <- choose (0 :: Int, 3)
+     delta <- if op == 0
+                then do
+                  -- add a new tree
+                  new <- arbitrary :: Gen TestTree
+                  return $ Add (n2p $ name new) new
+                else do
+                  -- edit an existing tree
+                  index <- choose (0 :: Int, length trees - 1)
+                  let tree = trees !! index
+                  arbitraryDelta tree
      arbitraryDeltas' (nSteps - 1) forest delta
 
 arbitraryDeltas' nSteps forest delta = case simDeltaForest forest delta of
