@@ -7,6 +7,8 @@
 
 module HashTreeTest where
 
+import Debug.Trace
+
 import qualified Data.Attoparsec.ByteString.Char8 as A8
 import qualified Data.ByteString.Char8            as B8
 -- import qualified Data.Text                        as T
@@ -48,6 +50,7 @@ instance Arbitrary TreeType where
     return $ [F, D] !! n
 
   -- you could shrink D -> F, but not without changing the rest of the hashline
+  -- TODO still, that might help debug
   shrink _ = []
 
 instance Arbitrary IndentLevel where
@@ -231,3 +234,10 @@ prop_roundtrip_testtree_to_dir = monadicIO $ do
   t1 <- pick arbitrary
   t2 <- run $ roundtrip_testtree_to_dir t1
   assert $ force t2 == t1 -- force evaluation to prevent any possible conflicts
+
+-- TODO is this circular logic?
+prop_file_count_matches_n_file_nodes :: TestTree -> Bool
+prop_file_count_matches_n_file_nodes t@(File {}) = countFiles t == 1
+prop_file_count_matches_n_file_nodes t@(Dir  {}) = count t == nFiles t
+  where
+    count t = sum $ map countFiles $ contents t

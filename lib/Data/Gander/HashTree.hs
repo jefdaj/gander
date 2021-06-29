@@ -42,7 +42,7 @@ module Data.Gander.HashTree
 
 -- TODO would be better to adapt AnchoredDirTree with a custom node type than re-implement stuff
 
-import Debug.Trace
+-- import Debug.Trace
 
 import Data.Gander.Hash
 import Data.Gander.HashLine
@@ -51,7 +51,7 @@ import qualified Data.ByteString.Char8 as B8
 import qualified Data.ByteString.Short as BS
 import qualified Data.Text.Encoding as T
 
-import Util (pathComponents, FileName, p2n, n2p)
+import Util (FileName, p2n, n2p)
 import qualified System.Directory.Tree as DT
 
 import Control.Monad        (msum)
@@ -207,7 +207,7 @@ buildTree' readFileFn v depth es d@(a DT.:/ (DT.Dir n _)) = do
   -- use lazy evaluation up to 5 levels deep, then strict
   return $ (if depth < lazyDirDepth
               then id
-              else (\r -> (hash r `seq` nFiles r `seq` hash r) `seq` r))
+              else (\r -> (hash r `seq` nFiles r `seq` hash r) `seq` r)) -- TODO nFiles bug here?
          $ Dir
             { name     = n
             , contents = cs''
@@ -307,7 +307,7 @@ deserializeTree md = snd . head . foldr accTrees [] . reverse . parseHashes md
 
 countFiles :: Show a => HashTree a -> Int
 countFiles  (File _ _ _  ) = 1
-countFiles d@(Dir _ _ _ _) = traceShow d $ nFiles d
+countFiles d@(Dir _ _ _ _) = nFiles d
 
 {- This one is confusing! It accumulates a list of trees and their indent
  - levels, and when it comes across a dir it uses the indents to determine
@@ -338,9 +338,9 @@ accTrees (HashLine (t, (IndentLevel i), h, p)) cs = case t of
 -- treeContainsPath (File f1 _     ) f2 = f1 == f2
 -- treeContainsPath (Dir  f1 _ cs _) f2
 --   | f1 == f2 = True
---   | length (pathComponents f2) < 2 = False
---   | otherwise = let n   = head $ pathComponents f2
---                     f2' = joinPath $ tail $ pathComponents f2
+--   | length (splitPath f2) < 2 = False
+--   | otherwise = let n   = head $ splitPath f2
+--                     f2' = joinPath $ tail $ splitPath f2
 --                 in if f1 /= n
 --                   then False
 --                   else any (\c -> treeContainsPath c f2') cs
@@ -352,9 +352,9 @@ dropTo :: HashTree a -> FilePath -> Maybe (HashTree a)
 dropTo t@(File f1 _ _   ) f2 = if n2p f1 == f2 then Just t else Nothing
 dropTo t@(Dir  f1 _ cs _) f2
   | n2p f1 == f2 = Just t
-  | length (pathComponents f2) < 2 = Nothing
-  | otherwise = let n   = p2n $ head $ pathComponents f2
-                    f2' = joinPath $ tail $ pathComponents f2
+  | length (splitPath f2) < 2 = Nothing
+  | otherwise = let n   = p2n $ head $ splitPath f2
+                    f2' = joinPath $ tail $ splitPath f2
                 in if f1 /= n
                   then Nothing
                   else msum $ map (\c -> dropTo c f2') cs
@@ -374,13 +374,13 @@ treeContainsHash (Dir  _ h1 cs _) h2
 -- TODO use this to implement hashing multiple trees at once?
 wrapInEmptyDir :: Show a => FilePath -> HashTree a -> HashTree a
 wrapInEmptyDir n t = do
-  Dir { name = p2n n, hash = h, contents = cs, nFiles = traceShow t (nFiles t) }
+  Dir { name = p2n n, hash = h, contents = cs, nFiles = countFiles t }
   where
     cs = [t]
     h = hashContents cs
 
 wrapInEmptyDirs :: Show a => FilePath -> HashTree a -> HashTree a
-wrapInEmptyDirs p t = case pathComponents p of
+wrapInEmptyDirs p t = case splitPath p of
   []     -> t
   (n:[]) -> wrapInEmptyDir n t
   (n:ns) -> wrapInEmptyDir n $ wrapInEmptyDirs (joinPath ns) t
@@ -388,15 +388,15 @@ wrapInEmptyDirs p t = case pathComponents p of
 -- TODO does the anchor here matter? maybe it's set to the full path accidentally
 addSubTree :: Show a => HashTree a -> HashTree a -> FilePath -> HashTree a
 addSubTree (File _ _ _) _ _ = error $ "attempt to insert tree into a file"
-addSubTree _ _ path | null (pathComponents path) = error "can't insert tree at null path"
+addSubTree _ _ path | null (splitPath path) = error "can't insert tree at null path"
 addSubTree main sub path = main { hash = h', contents = cs', nFiles = n' }
   where
-    comps  = pathComponents path
+    comps  = splitPath path
     p1     = head comps
     path'  = joinPath $ tail comps
     h'     = hashContents cs'
     cs'    = sortTreesByName $ filter (\c -> name c /= p2n p1) (contents main) ++ [newSub]
-    n'     = traceShow main (nFiles main) + traceShow newSub (nFiles newSub) - case oldSub of { Nothing -> 0; Just s -> traceShow s (nFiles s); }
+    n'     = nFiles main + nFiles newSub - case oldSub of { Nothing -> 0; Just s -> nFiles s; }
     sub'   = sub { name = p2n $ last comps }
     oldSub = find (\c -> name c == p2n p1) (contents main)
     newSub = if length comps == 1

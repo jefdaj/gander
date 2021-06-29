@@ -5,12 +5,13 @@
 
 module Util
   ( absolutize
+  , absolutize'
   , dropDir
   , dropDir'
   , findAnnex
   , inAnnex
   , noSlash
-  , pathComponents
+  -- , pathComponents
   , userSaysYes
   , withAnnex
   , isAnnexSymlink
@@ -32,8 +33,8 @@ import Prelude hiding (log)
 import Data.List             (isPrefixOf, isInfixOf)
 import Data.Maybe            (fromJust)
 import System.Directory      (getCurrentDirectory, getHomeDirectory, doesDirectoryExist, canonicalizePath)
-import System.FilePath       (pathSeparator, splitPath, joinPath, takeDirectory, (</>), takeBaseName, addTrailingPathSeparator, normalise)
-import System.Path.NameManip (guess_dotdot, absolute_path)
+import System.FilePath       (pathSeparator, joinPath, takeDirectory, (</>), takeBaseName, addTrailingPathSeparator, normalise)
+import System.Path.NameManip (guess_dotdot_comps, absolute_path, slice_path, unslice_path)
 import System.IO        (hFlush, stdout)
 import System.Posix.Files (getSymbolicLinkStatus, isSymbolicLink, readSymbolicLink)
 
@@ -54,21 +55,25 @@ import qualified Data.ByteString.Char8 as B8
 import Control.DeepSeq
 import GHC.Generics
 
-pathComponents :: FilePath -> [FilePath]
-pathComponents f = filter (not . null)
-                 $ map (filter (/= pathSeparator))
-                 $ splitPath f
+-- TODO bug? converts both "" and "/" -> []
+-- TODO why was this needed on top of splitPath?
+-- pathComponents :: FilePath -> [FilePath]
+-- pathComponents f = filter (not . null)
+                 -- $ map (filter (/= pathSeparator))
+                 -- $ splitPath f
 
 -- TODO is there a potential for infinite recursion bugs here?
 absolutize :: FilePath -> IO (Maybe FilePath)
 absolutize path = do
+  -- putStrLn $ "path: " ++ path
   path' <- absolutize' path
   case path' of
     Nothing -> return Nothing
     Just p' -> if p' == path
                  then fmap Just $ canonicalizePath p'
-                 else absolutize p'
+                 else canonicalizePath p' >>= absolutize
 
+-- TODO explicitly prevent ~ except as the first path component?
 -- based on: schoolofhaskell.com/user/dshevchenko/cookbook
 absolutize' :: FilePath -> IO (Maybe FilePath)
 absolutize' aPath
@@ -77,13 +82,13 @@ absolutize' aPath
         homePath <- getHomeDirectory
         return $ Just $ normalise $ addTrailingPathSeparator homePath
                              ++ tail aPath
+    -- TODO is this branch really, really slow? might be a bottleneck
     | otherwise = do
-        -- let aPath' = guess_dotdot aPath 
         aPath' <- absolute_path aPath
-        case guess_dotdot aPath' of
-          Nothing -> return $ Just aPath
-          Just p  -> return $ Just p
-        -- return $ guess_dotdot pathMaybeWithDots -- TODO this is totally wrong sometimes!
+        let comps = slice_path aPath'
+        return $ Just $ case guess_dotdot_comps comps of
+          Nothing -> aPath'
+          Just ps -> unslice_path ps
 
 -- absolutize :: FilePath -> IO FilePath
 -- absolutize p = do
@@ -92,7 +97,7 @@ absolutize' aPath
 
 -- TODO this fails on the leading / in a full path?
 dropDir :: FilePath -> FilePath
-dropDir = joinPath . tail . splitPath
+dropDir = joinPath . tail . slice_path
 
 dropDir' :: FilePath -> FilePath
 dropDir' path = case path of
@@ -120,7 +125,7 @@ findAnnex path = do
   foundIt <- doesDirectoryExist aPath
   if foundIt
     then return $ Just $ takeDirectory $ takeDirectory aPath
-    else if (null $ pathComponents absPath)
+    else if (null $ slice_path absPath)
       then return Nothing
       else findAnnex $ takeDirectory absPath
 
