@@ -103,7 +103,7 @@ isFile :: HashTree a -> Bool
 isFile = not . isDir
 
 arbitraryRm :: TestTree -> Gen TestDelta
-arbitraryRm t@(File {}) = return $ Rm (n2p $ name t)
+arbitraryRm t@(File {}) = error $ "attempt to rm top-level File: " ++ show t
 arbitraryRm tree = Rm <$> chooseTreePath tree
 
 -- TODO this one is a little trickier because it needs to pick a dir path, right?
@@ -116,6 +116,9 @@ arbitraryAdd tree = do
 
 -- TODO is swapping a dir for a file or vice versa a valid edit? or should it be restricted to files only?
 arbitraryEdit :: TestTree -> Gen TestDelta
+arbitraryEdit f@(File {}) = do
+  new <- arbitrary
+  return $ Edit (n2p $ name f) f new
 arbitraryEdit tree = do
   path <- chooseTreePath tree
   let subTree  = fromJust $ dropTo tree path
@@ -135,7 +138,9 @@ arbitraryMv tree = do
 -- TODO are all the operations always valid once you have a tree?
 arbitraryDelta :: TestTree -> Gen TestDelta
 arbitraryDelta tree = do
-  deltaFn <- chooseFrom [arbitraryAdd, arbitraryRm, arbitraryEdit, arbitraryMv]
+  deltaFn <- chooseFrom $ case tree of
+                            (File {}) -> [arbitraryEdit] -- TODO any others?
+                            (Dir  {}) -> [arbitraryAdd, arbitraryRm, arbitraryEdit, arbitraryMv]
   deltaFn tree
 
 -- Generate steps. This can't actually be an Arbitrary instance because it

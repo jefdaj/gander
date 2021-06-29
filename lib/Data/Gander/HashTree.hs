@@ -419,11 +419,11 @@ sortTreesByName = sortBy (compare `on` name)
  - TODO does this actually solve nFiles too?
  -}
 rmSubTree :: Show a => HashTree a -> FilePath -> Either String (HashTree a)
-rmSubTree (File _ _ _) p = Left $ "no such subtree: '" ++ p ++ "'" -- TODO fix simtest error
+rmSubTree (File _ _ _) p = Left $ "rmSubTree on a File: '" ++ p ++ "'" -- TODO fix simtest error
 rmSubTree d@(Dir _ _ cs n) p = case dropTo d p of
   Nothing -> Left $ "no such subtree: '" ++ p ++ "'"
   Just t -> Right $ if t `elem` cs
     then d { contents = delete t cs, nFiles = n - countFiles t }
     else d { contents = map (\c -> fromRight c $ rmSubTree c $ joinPath $ tail $ splitPath p) cs
-           , nFiles = n - countFiles t
+           , nFiles = n - countFiles t -- TODO would subtracting the removed files count be faster?
            }
