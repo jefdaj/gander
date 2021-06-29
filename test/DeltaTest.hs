@@ -1,4 +1,6 @@
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE DeriveAnyClass #-}
 
 module DeltaTest where
 
@@ -23,6 +25,8 @@ import           Control.Applicative     ((<$>), (<*>))
 import Data.ByteString.Char8 as B8
 
 type TestDelta = Delta B8.ByteString
+
+deriving instance Arbitrary TestDelta
 
 -- data Delta
 --   = Add  FilePath HashTree

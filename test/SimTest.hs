@@ -68,7 +68,7 @@ chooseFrom xs = do
   return $ xs !! i
 
 chooseTreePath :: HashTree a -> Gen FilePath
-chooseTreePath tree = chooseFrom $ flattenTreePaths ("" :/ tree)
+chooseTreePath = chooseFrom . map fst . listTreeNodePaths
 
 filterDirs :: [HashTree a] -> [HashTree a]
 filterDirs [] = []
@@ -192,6 +192,6 @@ instance Arbitrary TestSim where
     steps <- arbitraryDeltas nSteps start
     return $ TestSim { simStart = start, simSteps = steps }
 
-  shrink = undefined -- TODO just shrink the deltas, not the tree for now
+  shrink s@(TestSim {}) = map (\ss -> s {simSteps = ss}) (shrink $ simSteps s)
 
 -- TODO prop for dropTo always working on paths found in the tree
