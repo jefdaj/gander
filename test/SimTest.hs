@@ -49,9 +49,9 @@ data TestSim = TestSim
   }
   deriving (Eq, Read, Show)
 
--- TODO what if null steps?
 simFinish :: TestSim -> TestForest
-simFinish = snd . last . simSteps
+simFinish (TestSim {simStart = start, simSteps = []}) = start
+simFinish s = snd $ last $ simSteps s
 
 -- TODO is there a way to pass data to the arbitrary fns?
 --      arbitraryDelta :: TestForest -> Gen TestDelta maybe
@@ -194,4 +194,6 @@ instance Arbitrary TestSim where
 
   shrink s@(TestSim {}) = map (\ss -> s {simSteps = ss}) (shrink $ simSteps s)
 
--- TODO prop for dropTo always working on paths found in the tree
+-- TODO is there a better way to put this?
+prop_sims_finish_without_errors :: TestSim -> Bool
+prop_sims_finish_without_errors d = simFinish d `seq` True
