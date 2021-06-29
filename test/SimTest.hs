@@ -177,3 +177,5 @@ instance Arbitrary TestSim where
     return $ TestSim { simStart = start, simSteps = steps }
 
   shrink = undefined -- TODO just shrink the deltas, not the tree for now
+
+-- TODO prop for dropTo always working on paths found in the tree
