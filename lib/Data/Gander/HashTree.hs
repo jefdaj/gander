@@ -352,10 +352,10 @@ dropTo :: HashTree a -> FilePath -> Maybe (HashTree a)
 dropTo t@(File f1 _ _   ) f2 = if n2p f1 == f2 then Just t else Nothing
 dropTo t@(Dir  f1 _ cs _) f2
   | n2p f1 == f2 = Just t
-  | length (splitPath f2) < 2 = Nothing
-  | otherwise = let n   = p2n $ head $ splitPath f2
+  | null (splitPath f2) = Nothing
+  | otherwise = let n   = init $ head $ splitPath f2
                     f2' = joinPath $ tail $ splitPath f2
-                in if f1 /= n
+                in if n2p f1 /= n
                   then Nothing
                   else msum $ map (\c -> dropTo c f2') cs
 

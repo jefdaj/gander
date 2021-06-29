@@ -5,6 +5,8 @@
 
 module SimTest where
 
+-- import Debug.Trace
+
 import Data.Gander.Sim
 import Data.Gander.HashTree
 import Data.Gander.HashForest
@@ -122,7 +124,7 @@ arbitraryEdit f@(File {}) = do
   return $ Edit (n2p $ name f) f new
 arbitraryEdit tree = do
   path <- chooseTreePath tree
-  let subTree  = fromJust $ dropTo tree path
+  let subTree  = fromJust $ dropTo tree path -- TODO bug here
   subTree' <- arbitrary
   return $ Edit path subTree (subTree' { name = name subTree })
 
