@@ -5,7 +5,7 @@
 
 module Util
   ( absolutize
-  , absolutize'
+  -- , absolutize'
   , dropDir
   , dropDir'
   , findAnnex
@@ -31,7 +31,6 @@ module Util
 import Prelude hiding (log)
 
 import Data.List             (isPrefixOf, isInfixOf)
-import Data.Maybe            (fromJust)
 import System.Directory      (getCurrentDirectory, getHomeDirectory, doesDirectoryExist, canonicalizePath)
 import System.FilePath       (pathSeparator, joinPath, takeDirectory, (</>), takeBaseName, addTrailingPathSeparator, normalise)
 import System.Path.NameManip (guess_dotdot_comps, absolute_path, slice_path, unslice_path)
@@ -120,14 +119,17 @@ userSaysYes question = do
 -- TODO should this return the main dir or .git/annex inside it?
 findAnnex :: FilePath -> IO (Maybe FilePath)
 findAnnex path = do
-  absPath <- fmap fromJust $ absolutize path -- TODO can this fail?
-  let aPath = absPath </> ".git" </> "annex"
-  foundIt <- doesDirectoryExist aPath
-  if foundIt
-    then return $ Just $ takeDirectory $ takeDirectory aPath
-    else if (null $ slice_path absPath)
-      then return Nothing
-      else findAnnex $ takeDirectory absPath
+  absPath <- absolutize path -- TODO can this fail?
+  case absPath of 
+    Nothing -> return Nothing
+    Just p  -> do
+      let aPath = p </> ".git" </> "annex"
+      foundIt <- doesDirectoryExist aPath
+      if foundIt
+        then return $ Just $ takeDirectory $ takeDirectory aPath
+        else if (null $ slice_path p)
+          then return Nothing
+          else findAnnex $ takeDirectory p
 
 inAnnex :: FilePath -> IO Bool
 inAnnex = fmap (not . null) . findAnnex
