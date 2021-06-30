@@ -23,6 +23,18 @@
         "url": "https://github.com/nmattia/niv/archive/94080ae8286024820c570a2a24ed7c36d7ad04a9.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
+    "nixpkgs-darwin": {
+        "branch": "nixpkgs-21.05-darwin",
+        "description": "Nix Packages collection",
+        "homepage": "",
+        "owner": "nixos",
+        "repo": "nixpkgs",
+        "rev": "e9148dc1c30e02aae80cc52f68ceb37b772066f3",
+        "sha256": "1xs5all93r3fg4ld13s9lmzri0bgq25d9dydb08caqa7pc10f5ki",
+        "type": "tarball",
+        "url": "https://github.com/nixos/nixpkgs/archive/e9148dc1c30e02aae80cc52f68ceb37b772066f3.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    },
     "nixpkgs": {
         "branch": "release-21.05",
         "description": "Nix Packages collection",

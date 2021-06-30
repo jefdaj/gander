@@ -1,8 +1,10 @@
 let
   sources = import ./nix/sources.nix;
+  pkgs1   = import <nixpkgs> {};
+  pkgs2   = import (if pkgs1.stdenv.isDarwin then sources.nixpkgs-darwin else sources.nixpkgs) {};
 in
 { compiler ? "ghc884"
-, pkgs ? import sources.nixpkgs { }
+, pkgs ? pkgs2
 }:
 
 let
