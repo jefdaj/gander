@@ -19,7 +19,7 @@ import DeltaTest
 
 import qualified Data.ByteString.Char8 as B8
 import Test.QuickCheck
-import Data.Maybe (fromJust, listToMaybe, fromMaybe)
+import Data.Maybe (listToMaybe, fromMaybe)
 import Data.Either (Either(..), fromRight)
 import System.FilePath ((</>))
 import Control.Monad.IO.Class (liftIO)
@@ -68,7 +68,10 @@ chooseFrom xs = do
   return $ xs !! i
 
 chooseTreePath :: HashTree a -> Gen FilePath
-chooseTreePath = chooseFrom . map fst . listTreeNodePaths
+chooseTreePath = fmap fst . chooseTreeNode
+
+chooseTreeNode :: HashTree a -> Gen (FilePath, HashTree a)
+chooseTreeNode = chooseFrom . listTreeNodePaths
 
 filterDirs :: [HashTree a] -> [HashTree a]
 filterDirs [] = []
@@ -123,8 +126,8 @@ arbitraryEdit f@(File {}) = do
   new <- arbitrary
   return $ Edit (n2p $ name f) f new
 arbitraryEdit tree = do
-  path <- chooseTreePath tree
-  let subTree  = fromJust $ dropTo tree path -- TODO bug here
+  (path, subTree) <- chooseTreeNode tree
+  -- let subTree  = fromJust $ dropTo tree path -- TODO bug here
   subTree' <- arbitrary
   return $ Edit path subTree (subTree' { name = name subTree })
 
