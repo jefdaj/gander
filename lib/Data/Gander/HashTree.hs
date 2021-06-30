@@ -17,6 +17,7 @@ module Data.Gander.HashTree
   , printTree
   , writeBinTree
   , serializeTree
+  , splitPath'
   , writeTree
   , flattenTree
   , flattenTreePaths
@@ -271,11 +272,11 @@ flattenTree = flattenTree' ""
 -- TODO need to handle unicode here?
 -- TODO does this affect memory usage?
 flattenTree' :: FilePath -> HashTree a -> [HashLine]
-flattenTree' dir (File n h _   ) = [HashLine (F, IndentLevel $ length (splitPath dir), h, n)]
+flattenTree' dir (File n h _   ) = [HashLine (F, IndentLevel $ length (splitPath' dir), h, n)]
 flattenTree' dir (Dir  n h cs _) = subtrees ++ [wholeDir]
   where
     subtrees = concatMap (flattenTree' $ dir </> n2p n) cs
-    wholeDir = HashLine (D, IndentLevel $ length (splitPath dir), h, n)
+    wholeDir = HashLine (D, IndentLevel $ length (splitPath' dir), h, n)
 
 -- based on zipPaths in DirTree
 zipPaths :: HashTree a -> HashTree (FilePath, a)
@@ -348,13 +349,18 @@ accTrees (HashLine (t, (IndentLevel i), h, p)) cs = case t of
 treeContainsPath :: ProdTree -> FilePath -> Bool
 treeContainsPath tree path = isJust $ dropTo tree path
 
+-- TODO is there a reason the main fn doesn't work this way?
+splitPath' :: FilePath -> [FilePath]
+splitPath' = map (reverse . dropWhile (== '/') . reverse) . splitPath
+
 dropTo :: HashTree a -> FilePath -> Maybe (HashTree a)
 dropTo t@(File f1 _ _   ) f2 = if n2p f1 == f2 then Just t else Nothing
 dropTo t@(Dir  f1 _ cs _) f2
   | n2p f1 == f2 = Just t
-  | null (splitPath f2) = Nothing
-  | otherwise = let n   = init $ head $ splitPath f2
-                    f2' = joinPath $ tail $ splitPath f2
+  | null (splitPath' f2) = Nothing
+  | otherwise = let f2cs = splitPath' f2
+                    f2'  = joinPath $ tail f2cs
+                    n    = head f2cs
                 in if n2p f1 /= n
                   then Nothing
                   else msum $ map (\c -> dropTo c f2') cs
@@ -380,7 +386,7 @@ wrapInEmptyDir n t = do
     h = hashContents cs
 
 wrapInEmptyDirs :: Show a => FilePath -> HashTree a -> HashTree a
-wrapInEmptyDirs p t = case splitPath p of
+wrapInEmptyDirs p t = case splitPath' p of
   []     -> t
   (n:[]) -> wrapInEmptyDir n t
   (n:ns) -> wrapInEmptyDir n $ wrapInEmptyDirs (joinPath ns) t
@@ -388,10 +394,10 @@ wrapInEmptyDirs p t = case splitPath p of
 -- TODO does the anchor here matter? maybe it's set to the full path accidentally
 addSubTree :: Show a => HashTree a -> HashTree a -> FilePath -> HashTree a
 addSubTree (File _ _ _) _ _ = error $ "attempt to insert tree into a file"
-addSubTree _ _ path | null (splitPath path) = error "can't insert tree at null path"
+addSubTree _ _ path | null (splitPath' path) = error "can't insert tree at null path"
 addSubTree main sub path = main { hash = h', contents = cs', nFiles = n' }
   where
-    comps  = splitPath path
+    comps  = splitPath' path
     p1     = head comps
     path'  = joinPath $ tail comps
     h'     = hashContents cs'
@@ -424,6 +430,6 @@ rmSubTree d@(Dir _ _ cs n) p = case dropTo d p of
   Nothing -> Left $ "no such subtree: '" ++ p ++ "'"
   Just t -> Right $ if t `elem` cs
     then d { contents = delete t cs, nFiles = n - countFiles t }
-    else d { contents = map (\c -> fromRight c $ rmSubTree c $ joinPath $ tail $ splitPath p) cs
+    else d { contents = map (\c -> fromRight c $ rmSubTree c $ joinPath $ tail $ splitPath' p) cs
            , nFiles = n - countFiles t -- TODO would subtracting the removed files count be faster?
            }
