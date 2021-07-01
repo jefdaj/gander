@@ -41,6 +41,7 @@ import System.Posix.Files (getSymbolicLinkStatus, isSymbolicLink, readSymbolicLi
 -- import qualified Data.ByteString.Short as BS
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
+import Data.Text.Encoding.Error (lenientDecode)
 import qualified Data.ByteString.UTF8             as BU
 import qualified Data.ByteString.Char8 as B8
 
@@ -188,7 +189,7 @@ n2p (FileName t) = (if os == "darwin"
 
 p2n :: FilePath -> FileName
 p2n = FileName . (if os == "darwin"
-                    then TE.decodeUtf8 . B8.pack
+                    then (TE.decodeUtf8With lenientDecode) . B8.pack -- TODO mac cannot always decode here
                     else T.pack)
 
 -- n2bs :: FileName -> BU.ByteString

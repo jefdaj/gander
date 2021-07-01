@@ -50,9 +50,9 @@ import Data.Gander.HashLine
 
 import qualified Data.ByteString.Char8 as B8
 import qualified Data.ByteString.Short as BS
-import qualified Data.Text.Encoding as T
+import qualified Data.Text as T
 
-import Util (FileName, p2n, n2p)
+import Util (FileName(..), p2n, n2p)
 import qualified System.Directory.Tree as DT
 
 import Control.Monad        (msum)
@@ -93,7 +93,12 @@ import GHC.Generics (Generic)
 data HashTree a
   = File { name :: !FileName, hash :: !Hash, fileData :: !a }
   | Dir  { name :: !FileName, hash :: Hash, contents :: [HashTree a], nFiles :: Int }
-  deriving (Read, Show, Ord, Generic) -- TODO switch to hash-based equality after testing
+  deriving (Read, Ord, Generic) -- TODO switch to hash-based equality after testing
+
+-- TODO does this fix the UTF8 decode error when showing trees in the Mac terminal?
+instance Show a => Show (HashTree a) where
+  show t@(File {name = (FileName n)}) = "File {name = FileName " ++ show n ++ ", hash = " ++ show (hash t) ++ ", fileData = " ++ show (fileData t) ++ "}"
+  show t@(Dir  {name = (FileName n)}) =  "Dir {name = FileName " ++ show n ++ ", hash = " ++ show (hash t) ++ ", contents = " ++ show (contents t) ++ ", nFiles = " ++ show (nFiles t) ++ "}"
 
 -- based on the DirTree code
 data AnchoredHashTree a = (:/) { anchor :: !FilePath, hashTree :: HashTree a }
