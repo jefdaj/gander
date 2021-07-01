@@ -196,6 +196,7 @@ instance Arbitrary TestSim where
     steps <- arbitraryDeltas nSteps start
     return $ TestSim { simStart = start, simSteps = steps }
 
+  -- TODO also shrink the filenames
   shrink s@(TestSim {}) = map (\ss -> s {simSteps = ss}) (shrink $ simSteps s)
 
 -- TODO is there a better way to put this?

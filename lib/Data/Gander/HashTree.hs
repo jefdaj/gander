@@ -93,13 +93,13 @@ import GHC.Generics (Generic)
 data HashTree a
   = File { name :: !FileName, hash :: !Hash, fileData :: !a }
   | Dir  { name :: !FileName, hash :: Hash, contents :: [HashTree a], nFiles :: Int }
-  deriving (Read, Ord, Generic) -- TODO switch to hash-based equality after testing
+  deriving (Read, Show, Ord, Generic) -- TODO switch to hash-based equality after testing
 
 -- TODO does this fix the UTF8 decode error when showing trees in the Mac terminal?
-instance Show a => Show (HashTree a) where
-  show t@(File {name = (FileName n)}) = "File {name = FileName " ++ show n ++ ", hash = " ++ show (hash t) ++ ", fileData = " ++ show (fileData t) ++ "}"
-  show t@(Dir  {name = (FileName n)}) =  "Dir {name = FileName " ++ show n ++ ", hash = " ++ show (hash t) ++ ", contents = " ++ show (contents t) ++ ", nFiles = " ++ show (nFiles t) ++ "}"
-
+-- instance Show a => Show (HashTree a) where
+--   show t@(File {name = (FileName n)}) = "File {name = FileName " ++ show n ++ ", hash = " ++ show (hash t) ++ ", fileData = " ++ show (fileData t) ++ "}"
+--   show t@(Dir  {name = (FileName n)}) =  "Dir {name = FileName " ++ show n ++ ", hash = " ++ show (hash t) ++ ", contents = " ++ show (contents t) ++ ", nFiles = " ++ show (nFiles t) ++ "}"
+-- 
 -- based on the DirTree code
 data AnchoredHashTree a = (:/) { anchor :: !FilePath, hashTree :: HashTree a }
   deriving (Read, Show)
@@ -430,6 +430,7 @@ sortTreesByName = sortBy (compare `on` name)
  - Also edits have to be done on the parent tree (so no File branch).
  - Buuuut for now can just ignore nFiles as it's not needed for the rm itself.
  - TODO does this actually solve nFiles too?
+ - TODO when shrinking (or showing?) tests, require a Right from this
  -}
 rmSubTree :: Show a => HashTree a -> FilePath -> Either String (HashTree a)
 rmSubTree f@(File _ _ _) p = Left $ "rmSubTree on a File: f: '" ++ show f ++ "' p: '" ++ show p ++ "'"

@@ -173,7 +173,10 @@ isNonAnnexSymlink path = do
 -- The newtype is needed to prevent overlapping with the standard Arbitrary
 -- Text instance in the tests
 newtype FileName = FileName T.Text
-  deriving (Eq, Ord, Read, Show, Generic)
+  deriving (Eq, Ord, Read, Generic)
+
+instance Show FileName where
+  show (FileName t) = "FileName \"" ++ T.unpack t ++ "\""
 
 deriving instance NFData FileName
 

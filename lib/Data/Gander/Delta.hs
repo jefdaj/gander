@@ -96,7 +96,7 @@ fixMoves t (d1@(Rm f1):ds) = case find (findMv t d1) ds of
 fixMoves t (d:ds) = d : fixMoves t ds
 
 topDir :: FilePath -> FilePath
-topDir [] = []
+topDir [] = [] -- this should never happen
 topDir p  = head $ splitDirectories p
 
 deltaName :: Delta a -> FilePath
