@@ -398,7 +398,9 @@ wrapInEmptyDirs p t = case splitPath' p of
 
 -- TODO does the anchor here matter? maybe it's set to the full path accidentally
 addSubTree :: Show a => HashTree a -> HashTree a -> FilePath -> HashTree a
-addSubTree (File _ _ _) _ _ = error $ "attempt to insert tree into a file"
+addSubTree t@(File {}) t' p
+  | p2n p == name t = t'
+  | otherwise = error $ "attempt to insert tree into a file. f: " ++ show t ++ " p: " ++ show p
 addSubTree _ _ path | null (splitPath' path) = error "can't insert tree at null path"
 addSubTree main sub path = main { hash = h', contents = cs', nFiles = n' }
   where
