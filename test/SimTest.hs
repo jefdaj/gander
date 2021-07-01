@@ -123,8 +123,9 @@ arbitraryAdd tree = do
 -- TODO is swapping a dir for a file or vice versa a valid edit? or should it be restricted to files only?
 arbitraryEdit :: TestTree -> Gen TestDelta
 arbitraryEdit f@(File {}) = do
-  new <- arbitrary
-  return $ Edit (n2p $ name f) f new
+  f' <- arbitrary :: Gen TestTree
+  let f'' = f' {name = name f} -- name should match the existing one
+  return $ Edit (n2p $ name f) f f'' -- path should also match
 arbitraryEdit tree = do
   (path, subTree) <- chooseTreeNode tree
   -- let subTree  = fromJust $ dropTo tree path -- TODO bug here
