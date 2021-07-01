@@ -434,7 +434,7 @@ sortTreesByName = sortBy (compare `on` name)
 rmSubTree :: Show a => HashTree a -> FilePath -> Either String (HashTree a)
 rmSubTree f@(File _ _ _) p = Left $ "rmSubTree on a File: f: '" ++ show f ++ "' p: '" ++ show p ++ "'"
 rmSubTree d@(Dir _ _ cs n) p = case dropTo d p of
-  Nothing -> Left $ "no such subtree: '" ++ p ++ "'"
+  Nothing -> Left $ "no such subtree p: '" ++ p ++ "' in tree d: '" ++ show d ++ "'"
   Just t -> Right $ if t `elem` cs
     then d { contents = delete t cs, nFiles = n - countFiles t }
     else d { contents = map (\c -> fromRight c $ rmSubTree c $ joinPath $ tail $ splitPath' p) cs
