@@ -29,7 +29,7 @@ import qualified Filesystem.Path.CurrentOS as OS
  - TODO wait, is the empty string also a valid filename?
  -}
 instance Arbitrary FileName where
-  arbitrary = FileName <$> (arbitrary :: Gen T.Text) `suchThat` validFileName
+  arbitrary = FileName <$> resize 1 (arbitrary :: Gen T.Text) `suchThat` validFileName
   shrink (FileName t) = FileName <$> filter validFileName (shrink t)
 
 validFileName :: T.Text -> Bool

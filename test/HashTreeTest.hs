@@ -90,7 +90,7 @@ duplicateFilenames = if os == "darwin" then macDupes else unixDupes
 instance Arbitrary TestTree where
 
   arbitrary = do
-    n <- arbitrary :: Gen FileName
+    n <- resize 1 (arbitrary :: Gen FileName)
     -- TODO there's got to be a better way, right?
     i <- choose (0,5 :: Int)
     if i == 0
