@@ -432,7 +432,7 @@ sortTreesByName = sortBy (compare `on` name)
  - TODO does this actually solve nFiles too?
  -}
 rmSubTree :: Show a => HashTree a -> FilePath -> Either String (HashTree a)
-rmSubTree (File _ _ _) p = Left $ "rmSubTree on a File: '" ++ p ++ "'" -- TODO fix simtest error
+rmSubTree f@(File _ _ _) p = Left $ "rmSubTree on a File: f: '" ++ show f ++ "' p: '" ++ show p ++ "'"
 rmSubTree d@(Dir _ _ cs n) p = case dropTo d p of
   Nothing -> Left $ "no such subtree: '" ++ p ++ "'"
   Just t -> Right $ if t `elem` cs
