@@ -1,5 +1,10 @@
 # based on https://discourse.nixos.org/t/another-simple-flake-for-haskell-development/18164
 
+# TODO add current equivalent of executableSystemDepends with:
+#        gitAndTools.git
+#        gitAndTools.gitAnnex
+#        rsync
+
 {
   inputs = {
     nixpkgs.url = "https://github.com/NixOS/nixpkgs/archive/refs/tags/22.05.tar.gz";
@@ -15,12 +20,12 @@
 
         name = "gander";
 
-        project = devTools: # [1]
+        project = devTools:
           let addBuildTools = (t.flip hl.addBuildTools) devTools;
           in haskellPackages.developPackage {
             root = lib.sourceFilesBySuffices ./. [ ".cabal" ".hs" ".txt" ];
             name = name;
-            returnShellEnv = !(devTools == [ ]); # [2]
+            returnShellEnv = !(devTools == [ ]);
 
             modifier = (t.flip t.pipe) [
               addBuildTools
@@ -33,11 +38,11 @@
           };
 
       in {
-        packages.pkg = project [ ]; # [3]
+        packages.pkg = project [ ];
 
         defaultPackage = self.packages.${system}.pkg;
 
-        devShell = project (with haskellPackages; [ # [4]
+        devShell = project (with haskellPackages; [
           cabal-fmt
           cabal-install
           haskell-language-server
