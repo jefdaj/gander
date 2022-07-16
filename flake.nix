@@ -1,11 +1,9 @@
 # based on https://discourse.nixos.org/t/another-simple-flake-for-haskell-development/18164
 
-# TODO add current equivalent of executableSystemDepends with:
-#        gitAndTools.git
-#        gitAndTools.gitAnnex
-#        rsync
+# TODO why can't the tests find git-annex? or are they just failing separately?
 
 {
+
   inputs = {
     nixpkgs.url = "https://github.com/NixOS/nixpkgs/archive/refs/tags/22.05.tar.gz";
     flake-utils.url = "github:numtide/flake-utils";
@@ -37,16 +35,23 @@
             ];
           };
 
-      in {
+      in rec {
+        # empty devTools tells it to build the package
         packages.pkg = project [ ];
 
         defaultPackage = self.packages.${system}.pkg;
 
-        devShell = project (with haskellPackages; [
+        executableSystemDepends = [
+          gitAndTools.git
+          gitAndTools.gitAnnex
+          rsync
+        ];
+
+        devShell = project (executableSystemDepends ++ (with haskellPackages; [
           cabal-fmt
           cabal-install
           haskell-language-server
           hlint
-        ]);
+        ]));
       });
 }
