@@ -5,7 +5,7 @@
 {
 
   inputs = {
-    nixpkgs.url = "https://github.com/NixOS/nixpkgs/archive/refs/tags/22.05.tar.gz";
+    nixpkgs.url = "https://github.com/NixOS/nixpkgs/archive/refs/tags/22.11.tar.gz";
     flake-utils.url = "github:numtide/flake-utils";
   };
 
