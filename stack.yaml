@@ -10,5 +10,5 @@ extra-deps:
   commit: 080c3ba6badd736f1b4a3f1f13dbd4c107614136
 
 nix:
-  enable: true # TODO harmonize with niv
+  enable: false # TODO harmonize with niv
   pure: false
