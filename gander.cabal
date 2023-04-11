@@ -13,9 +13,9 @@ common deps
   hs-source-dirs:      lib
 
   -- TODO which of these are actually needed for efficiency?
-  ghc-options:         -Wall -O2
+  -- ghc-options:         -Wall -O2
   -- cc-options:          -static
-  -- ld-options:          -static -pthread
+  -- ld-options:          -static
 
   build-depends:       base,
                        Glob,
