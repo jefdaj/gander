@@ -11,7 +11,7 @@
 
   outputs = { self, nixpkgs, flake-utils }:
     flake-utils.lib.eachDefaultSystem (system:
-      with nixpkgs.legacyPackages.${system}.pkgsMusl;
+      with nixpkgs.legacyPackages.${system}.pkgsStatic.pkgsMusl;
       let
         t = lib.trivial;
         hl = haskell.lib;
