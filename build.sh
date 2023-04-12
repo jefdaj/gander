@@ -15,12 +15,13 @@ stack_build() {
 	code=$?
 	[[ $code == 0 ]] || exit $code
 	bindir=$(find .stack-work -type d -name bin | sort | tail -n1)
+	rm -f gander-${os}
 	cp "${bindir}/gander" gander-${os}
 }
 
 # TODO remove? not getting cache hits anymore
 use_cachix() {
-	nix-env -iA cachix -f https://cachix.org/api/v1/install
+	which cachix || nix-env -iA cachix -f https://cachix.org/api/v1/install
 	cachix use static-haskell-nix
 }
 
@@ -30,12 +31,13 @@ nix_build() {
 	nix build
 	code=$?
 	[[ $code == 0 ]] || exit $code
+	rm -f gander-${os}
 	cp ./result/bin/gander gander-${os}
 
 }
 
 case $(uname) in
-	Darwin) stack_build mac;;
-	Linux) nix_build linux;;
+	Darwin) stack_build mac && otool -L gander-mac;;
+	Linux) nix_build linux && ldd gander-linux;;
 	*) echo "unknown OS! trying nix build"; nix_build unknown;;
 esac
