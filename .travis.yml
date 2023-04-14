@@ -1,10 +1,5 @@
-sudo: true
-language: haskell
-
 git:
-  depth: 1
-
-cabal: "3.2"
+  depth: 5
 
 cache:
   directories:
@@ -13,21 +8,52 @@ cache:
 
 env:
   global:
-  - STACK_YAML="$TRAVIS_BUILD_DIR/stack.yaml"
+  - TASTY_QUICKCHECK_TESTS=10000
 
 matrix:
+  fast_finish: true
   include:
-  - ghc: 8.6.5
-  - ghc: 8.8.4
-  - ghc: 8.10.2
+  - env: GHCVER=8.8.4 STACK_YAML=stack.yaml
+    os: linux
+    addons:
+      apt:
+        sources:
+        - hvr-ghc
+        packages:
+        - git-annex
+        - ghc-8.8.4
+  - env: GHCVER=8.10.4 STACK_YAML=stack-8104.yaml
+    os: linux
+    addons:
+      apt:
+        sources:
+        - hvr-ghc
+        packages:
+        - git-annex
+        - ghc-8.10.4
+
+# TODO add once there's an lts release
+#   - env: GHCVER=9.0.1 STACK_YAML=stack-901.yaml
+#     os: linux
+#     addons:
+#       apt:
+#         sources:
+#         - hvr-ghc
+#         packages:
+#         - git-annex
+#         - ghc-9.0.1
+
+before_install:
+  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then export PATH=/opt/ghc/$GHCVER/bin:$PATH; fi
+  - mkdir -p ~/.local/bin
+  - export PATH=$HOME/.local/bin:$PATH
+  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then travis_retry curl -L https://get.haskellstack.org/stable/linux-x86_64.tar.gz | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'; fi
 
 install:
-  - sudo apt-get install -y git-annex
-  - curl -sSL https://get.haskellstack.org/ | sh
-  - stack build --system-ghc --test --bench --no-run-tests --no-run-benchmarks
+  - travis_wait stack --no-terminal --skip-ghc-check setup
 
 script:
-  - stack test --system-ghc
+  - stack --no-terminal --skip-ghc-check test
 
 notifications:
   email: false
