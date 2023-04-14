@@ -36,10 +36,21 @@
           };
 
       in rec {
+
         # empty devTools tells it to build the package
         packages.pkg = project [ ];
 
+        # use `nix build` to build the static binary
         defaultPackage = self.packages.${system}.pkg;
+
+        # use `nix build .#docker` to build the docker image
+        # TODO is it missing something? how can it be smaller than the binary?
+        packages.docker = pkgs.dockerTools.buildImage {
+          name = "gander";
+          config = {
+            Cmd = [ "${packages.pkg}/bin/gander" ];
+          };
+        };
 
         executableSystemDepends = [
           gitAndTools.git
