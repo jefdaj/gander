@@ -44,7 +44,7 @@ main = do
         , check    = flag 'c'
         , exclude  = eList
         }
-  -- print cfg
+  print cfg
   if cmd "hash" then do
      let paths = lst "path"
      cmdHash cfg paths
