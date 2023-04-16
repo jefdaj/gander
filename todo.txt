@@ -21,6 +21,9 @@ compress-hash-files:
     lz4
       https://jolynch.github.io/posts/use_fast_data_algorithms/
       what is it?
+    zstd
+      https://hackage.haskell.org/package/zstd
+      has the same output size as xz -9 in my initial test, but works from haskell
 
 decorated trees:
   x 1. add a decoration type to File constructor, but specialize everything using it to ()

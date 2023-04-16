@@ -49,7 +49,8 @@ common deps
                        with-utf8,
                        system-filepath,
                        MissingH,
-                       unix
+                       unix,
+                       zstd
 
 library
   import:              deps

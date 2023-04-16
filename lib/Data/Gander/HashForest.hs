@@ -28,6 +28,10 @@ import qualified Data.ByteString.Char8 as B8
 import System.IO            (withFile, IOMode(..))
 import Control.Exception.Safe (catchAny)
 
+-- TODO figure lazy out to avoid huge RAM usage
+-- import Codec.Compression.Zstd.Lazy
+import Codec.Compression.Zstd
+
 {- A forest is just a list of trees without an overall content hash. It's used
  - at the top level when reading potentially more than one tree from the
  - command line.
@@ -81,4 +85,4 @@ writeForest path forest = withFile path WriteMode $ \h ->
   mapM_ (B8.hPutStrLn h) (serializeForest forest)
 
 writeBinForest :: FilePath -> HashForest () -> IO ()
-writeBinForest path forest = B8.writeFile path $ encode forest
+writeBinForest path forest = B8.writeFile path $ compress maxCLevel $ encode forest
