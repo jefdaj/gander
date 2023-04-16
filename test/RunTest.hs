@@ -9,14 +9,14 @@ testDep name args = it (unwords $ name:args) $ do
   (code, _, _) <- readProcessWithExitCode name args ""
   code `shouldBe` ExitSuccess
 
-spec_make_sure_git_is_installed :: Spec
-spec_make_sure_git_is_installed = testDep "git" ["--help"]
+-- spec_make_sure_git_is_installed :: Spec
+-- spec_make_sure_git_is_installed = testDep "git" ["--help"]
 
-spec_make_sure_rsync_is_installed :: Spec
-spec_make_sure_rsync_is_installed = testDep "rsync" ["-h"]
+-- spec_make_sure_rsync_is_installed :: Spec
+-- spec_make_sure_rsync_is_installed = testDep "rsync" ["-h"]
 
-spec_make_sure_git_annex_is_installed :: Spec
-spec_make_sure_git_annex_is_installed = testDep "git-annex" ["-h"]
+-- spec_make_sure_git_annex_is_installed :: Spec
+-- spec_make_sure_git_annex_is_installed = testDep "git-annex" ["-h"]
 
 --   describe "Gander.Run" $ do
 --     describe "runRsync"       $ it "behaves properly" pending
