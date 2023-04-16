@@ -9,6 +9,11 @@ test bin vs txt:
 compress-hash-files:
   would this save much space overall? maybe with lots of duplicate filenames
   can test bycompressing the final files before/after reading and writing
+  good candidates:
+    xz -9
+      tiny files, large memory usage
+      https://hackage.haskell.org/package/lzma
+      try it first and only switch if memory becomes a problem
 
 decorated trees:
   x 1. add a decoration type to File constructor, but specialize everything using it to ()
