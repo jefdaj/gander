@@ -2,6 +2,7 @@ test bin vs txt:
   there's probably no reason to use anything other than bytestrings internally, right?
   so read + store + write binary filenames and only convert for printing user messages
   and if so, might as well switch to binary hashtree files by default too right?
+  they might be made by the "txt" fns with a different encoding though rather than the "bin" fns
   before committing to that, test properties of binary hashtree files here
   test results:
     oddly, binhashes files are bigger than txthashes ones so no point in storing that way?
@@ -10,10 +11,16 @@ compress-hash-files:
   would this save much space overall? maybe with lots of duplicate filenames
   can test bycompressing the final files before/after reading and writing
   good candidates:
+    gzip
+      more mature/simpler haskell interface
+      https://hackage.haskell.org/package/zlib-0.6.3.0/docs/Codec-Compression-GZip.html
     xz -9
       tiny files, large memory usage
       https://hackage.haskell.org/package/lzma
       try it first and only switch if memory becomes a problem
+    lz4
+      https://jolynch.github.io/posts/use_fast_data_algorithms/
+      what is it?
 
 decorated trees:
   x 1. add a decoration type to File constructor, but specialize everything using it to ()
