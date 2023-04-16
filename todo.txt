@@ -1,3 +1,15 @@
+test bin vs txt:
+  there's probably no reason to use anything other than bytestrings internally, right?
+  so read + store + write binary filenames and only convert for printing user messages
+  and if so, might as well switch to binary hashtree files by default too right?
+  before committing to that, test properties of binary hashtree files here
+  test results:
+    oddly, binhashes files are bigger than txthashes ones so no point in storing that way?
+
+compress-hash-files:
+  would this save much space overall? maybe with lots of duplicate filenames
+  can test bycompressing the final files before/after reading and writing
+
 decorated trees:
   x 1. add a decoration type to File constructor, but specialize everything using it to ()
   x 2. swap out () for any type a, but keep it in production functions
