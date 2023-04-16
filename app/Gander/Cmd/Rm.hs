@@ -4,28 +4,28 @@ module Gander.Cmd.Rm where
 -- TODO next: fix relative paths thing, write a nice lost files warning, fix any last bugs... then good :D
 -- TODO oh, write a couple other messages if it would help brian. lost files should be mentioned even when 0!
 
-import Data.Gander
-import Prelude hiding (log)
+-- import Data.Gander
+-- import Prelude hiding (log)
 
-import Text.Pretty.Simple (pPrint)
+-- import Text.Pretty.Simple (pPrint)
 -- import Gander.Run    (safeRunDeltas)
 -- import Util   (log)
-import Gander.Run    (safeRunDeltas)
+-- import Gander.Run    (safeRunDeltas)
 -- import Util   (userSaysYes)
-import Gander.Config (Config(..))
+-- import Gander.Config (Config(..))
 -- import Data.Maybe    (fromJust)
 
 -- import qualified Data.ByteString as B
 
 -- TODO list files with no duplicates when confirming
 -- TODO aha! ok to be missing folder hashes, just not files
-cmdRm :: Config -> FilePath -> FilePath -> FilePath -> IO ()
-cmdRm cfg target _ rmPath = do -- TODO correct toRm path using root!
+-- cmdRm :: Config -> FilePath -> FilePath -> FilePath -> IO ()
+-- cmdRm cfg target _ rmPath = do -- TODO correct toRm path using root!
 -- cmdRm cfg target = do -- TODO correct toRm path using root!
   -- let rmPath' = "./" ++ rmPath -- TODO fix this of course
-  let ds  = [Rm rmPath]
-      msg = unwords ["gander rm", rmPath] -- TODO sanitize!
-  pPrint (ds :: [Delta ()])
+  -- let ds  = [Rm rmPath]
+  --     msg = unwords ["gander rm", rmPath] -- TODO sanitize!
+  -- pPrint (ds :: [Delta ()])
   -- TODO need to pass this the hashes and root path in case of standalone cmd too?
   -- safeRunDeltas cfg ds msg
 

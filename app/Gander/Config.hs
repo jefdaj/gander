@@ -14,8 +14,7 @@ import Control.Monad (when)
  -}
 -- TODO remove from non-Cmd modules
 data Config = Config
-  { annex    :: Maybe FilePath
-  , bin      :: Maybe FilePath
+  { bin      :: Maybe FilePath
   , txt      :: Maybe FilePath
   , maxdepth :: Maybe Int
   , verbose  :: Bool
@@ -25,11 +24,9 @@ data Config = Config
   }
   deriving (Read, Show)
 
--- TODO separate defaults for annex and standalone?
 defaultConfig :: Config
 defaultConfig = Config
-  { annex    = Nothing
-  , bin      = Nothing
+  { bin      = Nothing
   , txt      = Nothing
   , maxdepth = Nothing
   , verbose  = True
