@@ -223,9 +223,11 @@ renameRoot newName tree = tree { name = p2n newName }
 -- TODO can Foldable or Traversable simplify these?
 -- TODO need to handle unicode here?
 -- TODO does map evaluation influence memory usage?
+-- TODO create a single ByteString rather than a list for compression?
 serializeTree :: ProdTree -> [B8.ByteString]
 serializeTree = map prettyHashLine . flattenTree
 
+-- TODO remove and make this a special case of WriteTree? or vice versa?
 printTree :: ProdTree -> IO ()
 printTree = mapM_ printLine . flattenTree
   where

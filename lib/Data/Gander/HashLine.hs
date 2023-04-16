@@ -21,7 +21,7 @@ module Data.Gander.HashLine
 
 import Data.Gander.Hash
 
-import qualified Data.ByteString.Char8 as B8
+import qualified Data.ByteString.Char8 as B8 -- TODO switch to Word8?
 import qualified Data.ByteString.Short as BS
 import qualified Data.Text.Encoding as T
 
@@ -72,6 +72,7 @@ newtype HashLine = HashLine (TreeType, IndentLevel, Hash, FileName)
   deriving (Read, Show, Eq, Ord)
 
 -- TODO actual Pretty instance
+-- TODO avoid encoding as UTF-8 if possible; use actual bytestring directly
 -- note: p can have weird characters, so it should be handled only as ByteString
 prettyHashLine :: HashLine -> B8.ByteString
 prettyHashLine (HashLine (t, (IndentLevel n), h, FileName p)) = B8.unwords
@@ -93,6 +94,7 @@ hashP = do
  - filename contains a newline followed by D or F. You could still construct a
  - filename that would fool it, but it would be extremely unlikely to happen by
  - chance.
+ - TODO can it use null-separated lines instead like -print0?
  -}
 breakP :: Parser ()
 breakP = endOfLine >> choice [typeP >> indentP >> hashP >> return (), endOfInput]
