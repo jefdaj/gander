@@ -4,7 +4,6 @@ Usage:
   gander [-vc]  hash   <path>... [-e <exclude>] [-t <txt>] [-b <bin>]
   gander [-vc]  diff   <old> <new>
   gander [-vc]  dupes  <hashes>... [-t <txt>] [-m <maxdepth>]
-  gander [-vfc] rm     <target> <rootpath> <rmpath>
   gander [-vfc] update <main> <sub> <path>
   gander [-vc]  test   <path>...
 
@@ -28,9 +27,6 @@ Commands:
   hash    Reads files + folders and prints their hashes to stdout.
   dupes   List duplicate files + folders in <hashes>.
   diff    Print changes in <new> relative to <old>. TODO take hashes here too!
-  rm      `git rm` a path after checking that all files in it are duplicates.
-          Prompts to confirm unless `--force`d. <target> is the hashes file or dir to hash,
-          <rootpath> is where to read hash paths from, and <rmpath> is the one to delete.
   update  Updates <main> hashes with new ones from <sub>, inserted at <path>.
   test    Run tests on the given directories.
 

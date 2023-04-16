@@ -1,7 +1,5 @@
 # based on https://discourse.nixos.org/t/another-simple-flake-for-haskell-development/18164
 
-# TODO why can't the tests find git-annex? or are they just failing separately?
-
 {
 
   inputs = {
@@ -11,7 +9,7 @@
 
   outputs = { self, nixpkgs, flake-utils }:
     flake-utils.lib.eachDefaultSystem (system:
-      with nixpkgs.legacyPackages.${system}.pkgsStatic;
+      with nixpkgs.legacyPackages.${system}.pkgsStatic; # TODO non static during development?
       let
         t = lib.trivial;
         hl = haskell.lib;
@@ -53,9 +51,6 @@
         };
 
         executableSystemDepends = [
-          gitAndTools.git
-          gitAndTools.gitAnnex
-          rsync
         ];
 
         devShell = project (executableSystemDepends ++ (with haskellPackages; [
