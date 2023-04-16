@@ -25,12 +25,13 @@ import TH.Derive
 import Data.Store             (Store(..), encode, decodeIO)
 import System.FilePath.Glob (Pattern)
 import qualified Data.ByteString.Char8 as B8
+import qualified Data.ByteString.Lazy.Char8 as BL
 import System.IO            (withFile, IOMode(..))
 import Control.Exception.Safe (catchAny)
 
 -- TODO figure lazy out to avoid huge RAM usage
--- import Codec.Compression.Zstd.Lazy
-import Codec.Compression.Zstd
+import Codec.Compression.Zstd.Lazy as ZL
+import Codec.Compression.Zstd      as Z
 
 {- A forest is just a list of trees without an overall content hash. It's used
  - at the top level when reading potentially more than one tree from the
@@ -72,8 +73,13 @@ readOrBuildTrees verbose mmaxdepth excludes paths = HashForest <$> mapM (readOrB
 serializeForest :: HashForest () -> [B8.ByteString]
 serializeForest (HashForest ts) = concatMap serializeTree ts 
 
+serializeForestZstd :: HashForest () -> B8.ByteString
+serializeForestZstd = Z.compress Z.maxCLevel . B8.intercalate (B8.pack "\n") . serializeForest
+
 deserializeForest :: Maybe Int -> B8.ByteString -> HashForest ()
-deserializeForest md = HashForest <$> fmap snd . foldr accTrees [] . reverse . parseHashes md
+deserializeForest md = HashForest <$> fmap snd . foldr accTrees [] . reverse . parseHashes' md . ZL.decompress . BL.fromStrict
+  where
+    parseHashes' x = parseHashes x . BL.toStrict
 
 printForest :: HashForest () -> IO ()
 printForest (HashForest ts) = mapM_ printTree ts
@@ -82,7 +88,8 @@ printForest (HashForest ts) = mapM_ printTree ts
 -- TODO rename writeHashes? this is a confusing way to say that
 writeForest :: FilePath -> HashForest () -> IO ()
 writeForest path forest = withFile path WriteMode $ \h ->
-  mapM_ (B8.hPutStrLn h) (serializeForest forest)
+  -- mapM_ (B8.hPutStrLn h) (serializeForest forest)
+  B8.hPutStrLn h $ serializeForestZstd forest
 
 writeBinForest :: FilePath -> HashForest () -> IO ()
-writeBinForest path forest = B8.writeFile path $ compress maxCLevel $ encode forest
+writeBinForest path forest = B8.writeFile path $ encode forest
