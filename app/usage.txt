@@ -1,9 +1,9 @@
 The "Git ANnex DEdupeR" deduplicates files and folders using git-annex.
 
 Usage:
-  gander [-vc]  hash   <path>... [-e <exclude>] [-t <txt>] [-b <bin>]
+  gander [-vc]  hash   [-e <exclude>] [-t <txt>] [-b <bin>] <path>...
   gander [-vc]  diff   <old> <new>
-  gander [-vc]  dupes  <hashes>... [-t <txt>] [-m <maxdepth>]
+  gander [-vc]  dupes  [-t <txt>] [-m <maxdepth>] <hashes>...
   gander [-vfc] update <main> <sub> <path>
   gander [-vc]  test   <path>...
 
