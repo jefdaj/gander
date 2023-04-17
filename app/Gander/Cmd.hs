@@ -1,7 +1,8 @@
 module Gander.Cmd
   -- ( cmdAdd
   -- , cmdDedup
-  ( cmdDiff
+  ( cmdCat
+  , cmdDiff
   , cmdDupes
   , cmdHash
   -- , cmdInit
@@ -14,6 +15,7 @@ module Gander.Cmd
 
 -- import Gander.Cmd.Add
 -- import Gander.Cmd.Dedup
+import Gander.Cmd.Cat
 import Gander.Cmd.Diff
 import Gander.Cmd.Dupes
 import Gander.Cmd.Hash

@@ -89,6 +89,7 @@ executable gander
                        setlocale
   other-modules:       Gander.Cmd,
                        Gander.Cmd.Add,
+                       Gander.Cmd.Cat,
                        Gander.Cmd.Dedup,
                        Gander.Cmd.Diff,
                        Gander.Cmd.Dupes,

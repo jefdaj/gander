@@ -45,29 +45,32 @@ main = do
         , exclude  = eList
         }
   print cfg
-  if cmd "hash" then do
+  if cmd "cat" then do
+     let paths = lst "path"
+     cmdCat cfg paths
+  else if cmd "hash" then do
      let paths = lst "path"
      cmdHash cfg paths
-   else if cmd "diff" then do
-     old <- arg "old"
-     new <- arg "new"
-     cmdDiff cfg old new
-   else if cmd "dupes" then do
-     let hashes = lst "hashes"
-     cmdDupes cfg hashes
-   else if cmd "test"  then do
-     let paths = lst "path"
-     cmdTest cfg paths
-   else if cmd "update" then do
-     mainTree <- arg "main"
-     subTree  <- arg "sub"
-     subPath  <- arg "path"
-     cmdUpdate cfg mainTree subTree subPath
-   -- else if cmd "rm" then do
-   --   target <- arg "target"
-   --   rPath  <- arg "rootpath"
-   --   dPath  <- arg "rmpath"
-   --   cmdRm cfg target rPath dPath
-   else do
-     print args
-     print cfg
+  else if cmd "diff" then do
+    old <- arg "old"
+    new <- arg "new"
+    cmdDiff cfg old new
+  else if cmd "dupes" then do
+    let hashes = lst "hashes"
+    cmdDupes cfg hashes
+  else if cmd "test"  then do
+    let paths = lst "path"
+    cmdTest cfg paths
+  else if cmd "update" then do
+    mainTree <- arg "main"
+    subTree  <- arg "sub"
+    subPath  <- arg "path"
+    cmdUpdate cfg mainTree subTree subPath
+  -- else if cmd "rm" then do
+  --   target <- arg "target"
+  --   rPath  <- arg "rootpath"
+  --   dPath  <- arg "rmpath"
+  --   cmdRm cfg target rPath dPath
+  else do
+    print args
+    print cfg

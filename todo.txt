@@ -7,6 +7,8 @@ test bin vs txt:
   test results:
     oddly, binhashes files are bigger than txthashes ones so no point in storing that way?
 
+how hard would it be to remove all dupesets contained in larger dupesets?
+
 compress-hash-files:
   would this save much space overall? maybe with lots of duplicate filenames
   can test bycompressing the final files before/after reading and writing

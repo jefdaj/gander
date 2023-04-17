@@ -56,6 +56,7 @@ $($(derive [d|
 readTrees :: Maybe Int -> [FilePath] -> IO (HashForest ())
 readTrees md paths = HashForest <$> mapM (readTree md) paths
 
+-- TODO remove existing bin case and only handle "txt" hashes now? (which will be partly binary)
 readForest :: Maybe Int -> FilePath -> IO (HashForest ())
 readForest md path = catchAny
                       (B8.readFile path >>= decodeIO)
