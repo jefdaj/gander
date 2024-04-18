@@ -72,6 +72,9 @@ import TH.Derive
 import Control.DeepSeq
 import GHC.Generics (Generic)
 
+import Codec.Compression.Zstd.Lazy as ZL
+import qualified Data.ByteString.Lazy.Char8 as BL
+
 {- A tree of file names matching (a subdirectory of) the annex,
  - where each dir and file node contains a hash of its contents.
  - TODO read and write files
@@ -128,7 +131,7 @@ keepPath excludes path = not $ any (\ptn -> matchWith opts ptn path) excludes
 readTree :: Maybe Int -> FilePath -> IO (ProdTree)
 readTree md path = catchAny
                     (B8.readFile path >>= decodeIO)
-                    (\_ -> fmap (deserializeTree md) $ B8.readFile path)
+                    (\_ -> fmap (deserializeTree md) $ fmap ZL.decompress $ fmap BL.fromStrict $ B8.readFile path)
 --   (do
 --      (hs :: [HashLine]) <- decodeIO =<< B8.readFile path
 --      return $ snd $ head $ foldr accTrees [] hs)
@@ -259,8 +262,8 @@ flattenTree' dir (Dir  n h cs _) = subtrees ++ [wholeDir]
 -- TODO wtf why is reverse needed? remove that to save RAM
 -- TODO refactor so there's a proper buildTree function and this uses it
 -- TODO what about files with newlines in them? might need to split at \n(file|dir)
-deserializeTree :: Maybe Int -> B8.ByteString -> ProdTree
-deserializeTree md = snd . head . foldr accTrees [] . reverse . parseHashes md
+deserializeTree :: Maybe Int -> BL.ByteString -> ProdTree
+deserializeTree md = snd . head . foldr accTrees [] . reverse . (parseHashes md . BL.toStrict)
 
 countFiles :: HashTree a -> Int
 countFiles (File _ _ _  ) = 1
